@@ -9,7 +9,7 @@ public enum EdadRecomendada {
 
     protected final byte value;
 
-    EdadRecomendada (byte value) {
+    private EdadRecomendada (byte value) {
         this.value = value;
     }
 

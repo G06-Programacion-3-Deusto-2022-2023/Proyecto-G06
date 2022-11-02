@@ -20,7 +20,7 @@ public enum Genero {
         this.value = value;
     }
 
-    private short getValue () {
+    public short getValue () {
         return this.value;
     }
 }
