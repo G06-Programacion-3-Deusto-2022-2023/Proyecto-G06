@@ -76,6 +76,6 @@ public class Complemento {
     }
 
     protected BigDecimal aplicarDescuento (int descuento) {
-        return this.precio.subtract (this.precio.multiply (new BigDecimal (descuento).divide (new BigDecimal (100))));
+        return this.precio.subtract (this.precio.multiply (new BigDecimal (descuento).scaleByPowerOfTen (-2)));
     }
 }

@@ -1,110 +1,83 @@
 package cine;
 
-import java.sql.Date;
-import java.util.Objects;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class Entrada {
+    public static final BigDecimal PRECIOESTANDAR = new BigDecimal (7.9);
+    public static final int DESCUENTOESPECTADOR = 30;
+
     protected UUID id;
-    protected Date fecha;
-    protected int butaca;
-    protected int precio;
-    protected Pelicula pelicula;
-    protected Complementos complemento;
     protected Espectador espectador;
+    protected Pelicula pelicula;
+    protected Calendar.Builder fecha;
     protected Sala sala;
-
-    public Entrada (Date fecha, int butaca, int precio, Pelicula pelicula, Complementos complemento,
-            Espectador espectador, Sala sala) {
-        super ();
-
-        this.id = UUID.randomUUID ();
-        this.fecha = fecha;
-        this.butaca = butaca;
-        this.precio = precio;
-        this.setPelicula (pelicula);
-        this.setComplemento (complemento);
-        this.setEspectador (espectador);
-        this.setSala (sala);
-    }
+    protected int butaca;
+    protected HashMap <Complemento, Integer> complementos;
+    protected BigDecimal precio;
 
     public Entrada () {
+        this (new Espectador ());
+    }
+
+    public Entrada (Espectador espectador) {
+        this (espectador, new Pelicula ());
+    }
+
+    public Entrada (Espectador espectador, Pelicula pelicula) {
+        this (espectador, pelicula, new Calendar.Builder ().setDate (2003, 21, 02));
+    }
+
+    public Entrada (Espectador espectador, Pelicula pelicula, Calendar.Builder fecha) {
+        this (espectador, pelicula, fecha, null, 0);
+    }
+
+    public Entrada (Espectador espectador, Pelicula pelicula, Calendar.Builder fecha, Sala sala, int butaca) {
+        this (espectador, pelicula, fecha, sala, butaca, new HashMap <Complemento, Integer> ());
+    }
+
+    public Entrada (Espectador espectador, Pelicula pelicula, Calendar.Builder fecha, Sala sala, int butaca,
+            HashMap <Complemento, Integer> complementos) {
+        this (UUID.randomUUID (), espectador, pelicula, fecha, sala, butaca, complementos);
+    }
+
+    public Entrada (UUID id, Espectador espectador, Pelicula pelicula, Calendar.Builder fecha, Sala sala, int butaca,
+            HashMap <Complemento, Integer> complementos) {
         super ();
 
-        this.id = UUID.randomUUID ();
-        this.fecha = fecha;
-        this.butaca = 0;
-        this.precio = 0;
-    }
-
-    public UUID getId () {
-        return id;
-    }
-
-    public void setId (UUID id) {
         this.id = id;
+        this.setEspectador (espectador);
+        this.setPelicula (pelicula);
+        this.setFecha (fecha);
+        this.setSala (sala);
+        this.setButaca (butaca);
+        this.setComplementos (complementos);
     }
 
-    public Date getFecha () {
-        return fecha;
-    }
-
-    public void setFecha (Date fecha) {
-        this.fecha = fecha;
-    }
-
-    public int getButaca () {
-        return butaca;
-    }
-
-    public void setButaca (int butaca) {
-        this.butaca = butaca;
-    }
-
-    public int getPrecio () {
-        return precio;
-    }
-
-    public void setPrecio (int precio) {
-        this.precio = precio;
-    }
-
-    public Pelicula getPelicula () {
-        return pelicula;
-    }
-
-    public void setPelicula (Pelicula pelicula) {
-        this.pelicula = pelicula;
-    }
-
-    public Complementos getComplemento () {
-        return complemento;
-    }
-
-    public void setComplemento (Complementos complemento) {
-        this.complemento = complemento;
-    }
-
-    public Espectador getEspectador () {
-        return espectador;
-    }
-
-    public void setEspectador (Espectador espectador) {
-        this.espectador = espectador;
-    }
-
-    public Sala getSala () {
-        return sala;
-    }
-
-    public void setSala (Sala sala) {
-        this.sala = sala;
+    public Entrada (Entrada entrada) {
+        this (entrada.id, entrada.espectador, entrada.pelicula, entrada.fecha, entrada.sala, entrada.butaca,
+                entrada.complementos);
     }
 
     @Override
     public String toString () {
         return "Entrada [id=" + id + ", fecha=" + fecha + ", butaca=" + butaca + ", precio=" + precio
-                + ", pelicula=" + pelicula + ", complemento=" + complemento + ", espectador=" + espectador
+                + ", pelicula=" + pelicula + ", complemento=" + complementos + ", espectador=" + espectador
                 + ", sala=" + sala + "]";
+    }
+
+    protected void calcularPrecio () {
+        this.precio = Entrada.PRECIOESTANDAR
+                .subtract (new BigDecimal (Entrada.DESCUENTOESPECTADOR).scaleByPowerOfTen (-2));
+
+        ArrayList <Map.Entry <Complemento, Integer>> keyValueArray = new ArrayList <Map.Entry <Complemento, Integer>> (
+                complementos.entrySet ());
+        for (int i = 0; i < complementos.size (); i++)
+            this.precio = this.precio.add (keyValueArray.get (i).getKey ().getPrecio ()
+                    .multiply (new BigDecimal (keyValueArray.get (i).getValue ())));
     }
 }
