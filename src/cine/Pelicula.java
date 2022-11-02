@@ -117,8 +117,11 @@ public class Pelicula {
         return value;
     }
 
-    @Override
-    public String toString () {
-        return super.toString ();
-    }
+	@Override
+	public String toString() {
+		return "Pelicula [id=" + id + ", nombre=" + nombre + ", rutaImagen=" + rutaImagen + ", valoracion=" + valoracion
+				+ ", director=" + director + ", duracion=" + duracion + ", edad=" + edad + ", generos=" + generos + "]";
+	}
+
+   
 }
