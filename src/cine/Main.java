@@ -47,6 +47,7 @@ public class Main {
 		List<Pelicula> peliculas = new ArrayList<>();
 		
 		Pelicula pelicula1 = new Pelicula();
+		Pelicula pelicula1 = new Pelicula()
 		ArrayList Generos1 = new ArrayList<>();
 		Generos1.add(Genero.ACCION);
 		Generos1.add(Genero.COMEDIA);
