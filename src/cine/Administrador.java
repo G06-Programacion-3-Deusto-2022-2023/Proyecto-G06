@@ -5,23 +5,19 @@ import java.util.UUID;
 
 public class Administrador extends Usuario{
 	
-	protected String llave;
 	protected ArrayList<SetPeliculas> adminDpeliculas;
 	
 	
 	public Administrador(String nombre, String contraseña, UUID id, String llave,
 			ArrayList<SetPeliculas> adminDpeliculas) {
 		super(nombre, contraseña, id);
-		this.llave = llave;
 		this.adminDpeliculas = adminDpeliculas;
 	}
+	public Administrador(String nombre, String contraseña, UUID id) {
+		super(nombre, contraseña, id);
+		this.adminDpeliculas = new ArrayList<SetPeliculas>()  ;
+	}
 	
-	public String getLlave() {
-		return llave;
-	}
-	public void setLlave(String llave) {
-		this.llave = llave;
-	}
 
 	public ArrayList<SetPeliculas> getAdminDpeliculas() {
 		return adminDpeliculas;
@@ -32,7 +28,7 @@ public class Administrador extends Usuario{
 
 	@Override
 	public String toString() {
-		return "Administrador [llave=" + llave + ", adminDpeliculas=" + adminDpeliculas + "]";
+		return "Administrador [llave=" + ", adminDpeliculas=" + adminDpeliculas + "]";
 	}
 	
 }
