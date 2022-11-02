@@ -12,4 +12,8 @@ public enum EdadRecomendada {
     EdadRecomendada (byte value) {
         this.value = value;
     }
+
+    public byte getValue () {
+        return this.value;
+    }
 }
