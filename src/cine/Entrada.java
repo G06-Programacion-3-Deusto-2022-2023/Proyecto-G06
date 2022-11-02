@@ -5,130 +5,106 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class Entrada {
+    protected UUID id;
+    protected Date fecha;
+    protected int butaca;
+    protected int precio;
+    protected Pelicula pelicula;
+    protected Complementos complemento;
+    protected Espectador espectador;
+    protected Sala sala;
 
-		UUID id;
-		protected Date fecha;
-		protected int butaca;
-		protected int precio;
-		protected Pelicula pelicula;
-		protected Complementos complemento;
-		protected Espectador espectador;
-		protected Sala sala;
-		
-		public Entrada(UUID id, Date fecha, int butaca, int precio, Pelicula pelicula, Complementos complemento,
-				Espectador espectador, Sala sala) {
-			super();
-			
-			this.id = UUID.randomUUID ();
-			this.fecha = fecha;
-			this.butaca = butaca;
-			this.precio = precio;
-			this.setPelicula(pelicula);;
-			this.setComplemento(complemento);
-			this.setEspectador(espectador);
-			this.setSala(sala);
-		}
-		
-		public Entrada() {
-			super();
-			
-			this.id = UUID.randomUUID ();
-			this.fecha = fecha;
-			this.butaca = 0;
-			this.precio = 0;
-		}
+    public Entrada (Date fecha, int butaca, int precio, Pelicula pelicula, Complementos complemento,
+            Espectador espectador, Sala sala) {
+        super ();
 
-		public UUID getId() {
-			return id;
-		}
+        this.id = UUID.randomUUID ();
+        this.fecha = fecha;
+        this.butaca = butaca;
+        this.precio = precio;
+        this.setPelicula (pelicula);
+        this.setComplemento (complemento);
+        this.setEspectador (espectador);
+        this.setSala (sala);
+    }
 
-		public void setId(UUID id) {
-			this.id = id;
-		}
+    public Entrada () {
+        super ();
 
-		public Date getFecha() {
-			return fecha;
-		}
+        this.id = UUID.randomUUID ();
+        this.fecha = fecha;
+        this.butaca = 0;
+        this.precio = 0;
+    }
 
-		public void setFecha(Date fecha) {
-			this.fecha = fecha;
-		}
+    public UUID getId () {
+        return id;
+    }
 
-		public int getButaca() {
-			return butaca;
-		}
+    public void setId (UUID id) {
+        this.id = id;
+    }
 
-		public void setButaca(int butaca) {
-			this.butaca = butaca;
-		}
+    public Date getFecha () {
+        return fecha;
+    }
 
-		public int getPrecio() {
-			return precio;
-		}
+    public void setFecha (Date fecha) {
+        this.fecha = fecha;
+    }
 
-		public void setPrecio(int precio) {
-			this.precio = precio;
-		}
+    public int getButaca () {
+        return butaca;
+    }
 
-		public Pelicula getPelicula() {
-			return pelicula;
-		}
+    public void setButaca (int butaca) {
+        this.butaca = butaca;
+    }
 
-		public void setPelicula(Pelicula pelicula) {
-			this.pelicula = pelicula;
-		}
+    public int getPrecio () {
+        return precio;
+    }
 
-		public Complementos getComplemento() {
-			return complemento;
-		}
+    public void setPrecio (int precio) {
+        this.precio = precio;
+    }
 
-		public void setComplemento(Complementos complemento) {
-			this.complemento = complemento;
-		}
+    public Pelicula getPelicula () {
+        return pelicula;
+    }
 
-		public Espectador getEspectador() {
-			return espectador;
-		}
+    public void setPelicula (Pelicula pelicula) {
+        this.pelicula = pelicula;
+    }
 
-		public void setEspectador(Espectador espectador) {
-			this.espectador = espectador;
-		}
+    public Complementos getComplemento () {
+        return complemento;
+    }
 
-		public Sala getSala() {
-			return sala;
-		}
+    public void setComplemento (Complementos complemento) {
+        this.complemento = complemento;
+    }
 
-		public void setSala(Sala sala) {
-			this.sala = sala;
-		}
+    public Espectador getEspectador () {
+        return espectador;
+    }
 
-		@Override
-		public String toString() {
-			return "Entrada [id=" + id + ", fecha=" + fecha + ", butaca=" + butaca + ", precio=" + precio
-					+ ", pelicula=" + pelicula + ", complemento=" + complemento + ", espectador=" + espectador
-					+ ", sala=" + sala + "]";
-		}
+    public void setEspectador (Espectador espectador) {
+        this.espectador = espectador;
+    }
 
-		@Override
-		public int hashCode() {
-			return Objects.hash(id);
-		}
+    public Sala getSala () {
+        return sala;
+    }
 
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			Entrada other = (Entrada) obj;
-			return Objects.equals(id, other.id);
-		}
-		
-		
-		
-		
-		
-		
+    public void setSala (Sala sala) {
+        this.sala = sala;
+    }
+
+    @Override
+    public String toString () {
+        return "Entrada [id=" + id + ", fecha=" + fecha + ", butaca=" + butaca + ", precio=" + precio
+                + ", pelicula=" + pelicula + ", complemento=" + complemento + ", espectador=" + espectador
+                + ", sala=" + sala + "]";
+    }
 }

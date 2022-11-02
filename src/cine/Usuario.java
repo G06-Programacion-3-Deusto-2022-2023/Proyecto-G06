@@ -2,44 +2,66 @@ package cine;
 
 import java.util.UUID;
 
+import org.passay.CharacterRule;
+import org.passay.EnglishCharacterData;
+import org.passay.PasswordGenerator;
+
 public abstract class Usuario {
+    protected UUID id;
     protected String nombre;
     protected String contrasena;
-    protected UUID id;
 
-    public Usuario (String nombre, String contrasena) {
-        super ();
-        this.nombre = nombre;
-        this.contrasena = contrasena;
-        this.id = UUID.randomUUID ();
+    protected Usuario () {
+        this ("");
     }
 
-    public Usuario () {
+    protected Usuario (String nombre) {
+        this (nombre, "");
+    }
+
+    protected Usuario (String nombre, String contrasena) {
+        this (UUID.randomUUID (), nombre, contrasena);
+    }
+
+    protected Usuario (UUID id, String nombre, String contrasena) {
         super ();
-        this.nombre = "";
-        this.contrasena = "";
-        this.id = UUID.randomUUID ();
+
+        this.id = id;
+        this.setNombre (nombre);
+        this.setContrasena (contrasena);
+    }
+
+    public UUID getId () {
+        return this.id;
     }
 
     public String getNombre () {
-        return nombre;
+        return this.nombre;
     }
 
     public void setNombre (String nombre) {
-        this.nombre = nombre;
+        this.nombre = nombre == null || nombre.equals ("") ? this.id.toString () : nombre;
     }
 
-    public String getcontrasena () {
-        return contrasena;
+    public String getContrasena () {
+        return this.contrasena;
     }
 
-    public void setcontrasena (String contrasena) {
-        this.contrasena = contrasena;
+    public void setContrasena (String contrasena) {
+        this.contrasena = contrasena == null || contrasena.equals ("")
+            ? new PasswordGenerator ().generatePassword (
+                14,
+                new CharacterRule (EnglishCharacterData.Special),
+                new CharacterRule (EnglishCharacterData.LowerCase),
+                new CharacterRule (EnglishCharacterData.UpperCase),
+                new CharacterRule (EnglishCharacterData.Digit)
+            )
+            : contrasena
+        ;
     }
 
     @Override
     public String toString () {
-        return "Usuario [nombre=" + nombre + ", contraseña=" + contrasena + ", id=" + id + "]";
+        return "[nombre=" + this.nombre + ", contraseña=" + this.contrasena + ", id=" + this.id + "]";
     }
-
 }

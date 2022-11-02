@@ -30,9 +30,14 @@ public class Pelicula {
 
     public Pelicula (String nombre, String rutaImagen, double valoracion, String director, Duration duracion,
             EdadRecomendada edad, Genero... generos) {
+        this (UUID.randomUUID (), nombre, rutaImagen, valoracion, director, duracion, edad, generos);
+    }
+
+    public Pelicula (UUID id, String nombre, String rutaImagen, double valoracion, String director, Duration duracion,
+            EdadRecomendada edad, Genero... generos) {
         super ();
 
-        this.id = UUID.randomUUID ();
+        this.id = id;
         this.setNombre (nombre);
         this.setRutaImagen (rutaImagen);
         this.setValoracion (valoracion);
@@ -43,7 +48,7 @@ public class Pelicula {
     }
 
     public Pelicula (Pelicula pelicula) {
-        this (pelicula.nombre, pelicula.rutaImagen, pelicula.valoracion, pelicula.director, pelicula.duracion,
+        this (pelicula.id, pelicula.nombre, pelicula.rutaImagen, pelicula.valoracion, pelicula.director, pelicula.duracion,
                 pelicula.edad, pelicula.generos.toArray (new Genero [pelicula.generos.size ()]));
     }
 
@@ -107,21 +112,21 @@ public class Pelicula {
     }
 
     public void setGeneros (ArrayList <Genero> generos) {
-        this.generos = (ArrayList <Genero>) generos.clone ();
+        this.generos = generos == null ? new ArrayList <Genero> (Arrays.asList (Genero.NADA)) : (ArrayList <Genero>) generos.clone ();
     }
 
     public short valorGeneros () {
         short value = Genero.NADA.getValue ();
-            for (int i = 0; i < this.getGeneros ().size (); value |= this.getGeneros ().get (i++).getValue ());
+        for (int i = 0; i < this.getGeneros ().size (); value |= this.getGeneros ().get (i++).getValue ())
+            ;
 
         return value;
     }
 
-	@Override
-	public String toString() {
-		return "Pelicula [id=" + id + ", nombre=" + nombre + ", rutaImagen=" + rutaImagen + ", valoracion=" + valoracion
-				+ ", director=" + director + ", duracion=" + duracion + ", edad=" + edad + ", generos=" + generos + "]";
-	}
+    @Override
+    public String toString () {
+        return "Pelicula [id=" + id + ", nombre=" + nombre + ", rutaImagen=" + rutaImagen + ", valoracion=" + valoracion
+                + ", director=" + director + ", duracion=" + duracion + ", edad=" + edad + ", generos=" + generos + "]";
+    }
 
-   
 }

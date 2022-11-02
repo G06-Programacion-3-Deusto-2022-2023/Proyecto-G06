@@ -3,7 +3,6 @@ package test;
 import static org.junit.Assert.*;
 
 import java.time.Duration;
-import java.util.function.Consumer;
 
 import org.junit.Test;
 

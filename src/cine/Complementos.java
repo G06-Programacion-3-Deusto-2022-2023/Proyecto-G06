@@ -3,7 +3,6 @@ package cine;
 import java.math.BigDecimal;
 
 public class Complementos {
-
     protected String nombre;
     protected BigDecimal precio;
     protected int descuento;
@@ -57,6 +56,5 @@ public class Complementos {
             precio = precio.subtract (precio.multiply (new BigDecimal (descuento / 100)));
         }
         return precio;
-
     }
 }
