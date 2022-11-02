@@ -8,13 +8,13 @@ public class Administrador extends Usuario{
 	protected ArrayList<SetPeliculas> adminDpeliculas;
 	
 	
-	public Administrador(String nombre, String contraseÃ±a, UUID id, String llave,
+	public Administrador(String nombre, String contraseña, UUID id, String llave,
 			ArrayList<SetPeliculas> adminDpeliculas) {
-		super(nombre, contraseÃ±a, id);
+		super(nombre, contraseña, id);
 		this.adminDpeliculas = adminDpeliculas;
 	}
-	public Administrador(String nombre, String contraseÃ±a, UUID id) {
-		super(nombre, contraseÃ±a, id);
+	public Administrador(String nombre, String contraseña, UUID id) {
+		super(nombre, contraseña, id);
 		this.adminDpeliculas = new ArrayList<SetPeliculas>()  ;
 	}
 	

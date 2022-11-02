@@ -6,19 +6,19 @@ public abstract class Usuario  {
 	
 	
 	protected String nombre;
-	protected String contraseña;
+	protected String contrase�a;
 	protected UUID id;
 	
-	public Usuario(String nombre, String contraseña, UUID id) {
+	public Usuario(String nombre, String contrase�a, UUID id) {
 		super();
 		this.nombre = nombre;
-		this.contraseña = contraseña;
+		this.contrase�a = contrase�a;
 		this.id = UUID.randomUUID();
 	}
 	public Usuario() {
 		super();
 		this.nombre = "";
-		this.contraseña = "";
+		this.contrase�a = "";
 		this.id = UUID.randomUUID();
 	}
 	public String getNombre() {
@@ -27,16 +27,16 @@ public abstract class Usuario  {
 	public void setNombre(String nombre) {
 		this.nombre = nombre;
 	}
-	public String getContraseña() {
-		return contraseña;
+	public String getContrase�a() {
+		return contrase�a;
 	}
-	public void setContraseña(String contraseña) {
-		this.contraseña = contraseña;
+	public void setContrase�a(String contrase�a) {
+		this.contrase�a = contrase�a;
 	}
 	
 	@Override
 	public String toString() {
-		return "Usuario [nombre=" + nombre + ", contraseña=" + contraseña + ", id=" + id + "]";
+		return "Usuario [nombre=" + nombre + ", contraseña=" + contrase�a + ", id=" + id + "]";
 	}
 	
 	
