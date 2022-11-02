@@ -35,7 +35,7 @@ public class Pelicula {
         this.setRutaImagen (rutaImagen);
         this.setValoracion (valoracion);
         this.setDirector (director);
-        this.setDuration (duracion);
+        this.setDuracion (duracion);
         this.setEdad (edad);
         this.setGeneros (new ArrayList <Genero> (Arrays.asList (generos)));
     }
@@ -103,7 +103,7 @@ public class Pelicula {
         return this.generos;
     }
 
-    public void setGenero (ArrayList <Genero> generos) {
+    public void setGeneros (ArrayList <Genero> generos) {
         this.generos = (ArrayList <Genero>) generos.clone ();
     }
 
