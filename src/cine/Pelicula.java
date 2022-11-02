@@ -128,5 +128,4 @@ public class Pelicula {
         return "Pelicula [id=" + id + ", nombre=" + nombre + ", rutaImagen=" + rutaImagen + ", valoracion=" + valoracion
                 + ", director=" + director + ", duracion=" + duracion + ", edad=" + edad + ", generos=" + generos + "]";
     }
-
 }
