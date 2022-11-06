@@ -20,11 +20,11 @@ public class Administrador extends Usuario {
     }
 
     public Administrador (String nombre, String contrasena,
-            ArrayList <SetPeliculas> setsPeliculas) {
+            List <SetPeliculas> setsPeliculas) {
         this (UUID.randomUUID (), nombre, contrasena, setsPeliculas);
     }
 
-    public Administrador (UUID id, String nombre, String contrasena, ArrayList <SetPeliculas> setsPeliculas) {
+    public Administrador (UUID id, String nombre, String contrasena, List <SetPeliculas> setsPeliculas) {
         super (id, nombre, contrasena);
 
         this.setSetsPeliculas (setsPeliculas);
@@ -38,7 +38,7 @@ public class Administrador extends Usuario {
         return this.setsPeliculas;
     }
 
-    public void setSetsPeliculas (ArrayList <SetPeliculas> setsPeliculas) {
+    public void setSetsPeliculas (List <SetPeliculas> setsPeliculas) {
         this.setsPeliculas = setsPeliculas == null ? new ArrayList <SetPeliculas> () : (ArrayList <SetPeliculas>) setsPeliculas;
     }
 

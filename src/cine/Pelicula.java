@@ -3,6 +3,7 @@ package cine;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -87,8 +88,7 @@ public class Pelicula {
     }
 
     public void setDirector (String director) {
-        this.director = director == null || director.equals ("") ? ""
-                : director;
+        this.director = director == null ? "" : director;
     }
 
     public Duration getDuracion () {
@@ -96,7 +96,7 @@ public class Pelicula {
     }
 
     public void setDuracion (Duration duracion) {
-        this.duracion = Duration.ofMinutes (duracion.toMinutes ());
+        this.duracion = duracion == null ? this.duracion : Duration.ofMinutes (duracion.toMinutes ());
     }
 
     public EdadRecomendada getEdad () {
@@ -111,16 +111,8 @@ public class Pelicula {
         return this.generos;
     }
 
-    public void setGeneros (ArrayList <Genero> generos) {
-        this.generos = generos == null ? new ArrayList <Genero> (Arrays.asList (Genero.NADA)) : (ArrayList <Genero>) generos.clone ();
-    }
-
-    public short valorGeneros () {
-        short value = Genero.NADA.getValue ();
-        for (int i = 0; i < this.getGeneros ().size (); value |= this.getGeneros ().get (i++).getValue ())
-            ;
-
-        return value;
+    public void setGeneros (List <Genero> generos) {
+        this.generos = new ArrayList <Genero> (generos == null ? Collections.singletonList (Genero.NADA) : generos);
     }
 
     @Override

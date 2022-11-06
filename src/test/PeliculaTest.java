@@ -29,9 +29,9 @@ public class PeliculaTest {
 
     @Test
     public void constructorTest3 () {
-        pelicula = new Pelicula ("mineons", Genero.ACCION, Genero.CIENCIA_FICCION);
+        pelicula = new Pelicula ("Versos Perversos", Genero.ACCION, Genero.CIENCIA_FICCION);
 
-        assertEquals ("mineons", pelicula.getNombre ());
+        assertEquals ("Versos Perversos", pelicula.getNombre ());
         assertArrayEquals (new Genero [] { Genero.ACCION, Genero.CIENCIA_FICCION }, pelicula.getGeneros ().toArray ());
     }
 
@@ -46,6 +46,7 @@ public class PeliculaTest {
         assertEquals ("José Mourinho", pelicula.getDirector ());
         assertEquals (127, pelicula.getDuracion ().toMinutes ());
         assertEquals (2, pelicula.getEdad ().getValue ());
-        assertEquals (Genero.DRAMA.getValue () | Genero.ROMANCE.getValue (), pelicula.valorGeneros ());
+        assertEquals (Genero.DRAMA.getValue () | Genero.ROMANCE.getValue (), Genero.toValor (pelicula.getGeneros ()));
+        assertEquals (pelicula.getGeneros(), Genero.toGeneros (Genero.toValor (pelicula.getGeneros ())));
     }
 }
