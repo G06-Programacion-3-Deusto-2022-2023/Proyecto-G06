@@ -133,7 +133,8 @@ public class Entrada {
 
     private void calcularPrecio () {
         this.precio = Entrada.PRECIOESTANDAR
-                .subtract (new BigDecimal (Entrada.DESCUENTOESPECTADOR).scaleByPowerOfTen (-2).multiply(false ? BigDecimal.ONE : BigDecimal.ZERO));
+                .subtract (new BigDecimal (Entrada.DESCUENTOESPECTADOR).scaleByPowerOfTen (-2)
+                        .multiply (false ? BigDecimal.ONE : BigDecimal.ZERO));
 
         ArrayList <Map.Entry <Complemento, Integer>> keyValueArray = new ArrayList <Map.Entry <Complemento, Integer>> (
                 complementos.entrySet ());

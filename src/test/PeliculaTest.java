@@ -29,16 +29,16 @@ public class PeliculaTest {
 
     @Test
     public void constructorTest3 () {
-        pelicula = new Pelicula ("Versos Perversos", Genero.ACCION, Genero.CIENCIA_FICCION);
+        pelicula = new Pelicula ("Versos Perversos", Genero.Nombre.ACCION, Genero.Nombre.CIENCIA_FICCION);
 
         assertEquals ("Versos Perversos", pelicula.getNombre ());
-        assertArrayEquals (new Genero [] { Genero.ACCION, Genero.CIENCIA_FICCION }, pelicula.getGeneros ().toArray ());
+        assertArrayEquals (new Genero [] { Genero.Nombre.ACCION, Genero.Nombre.CIENCIA_FICCION }, pelicula.getGeneros ().toArray ());
     }
 
     @Test
     public void constructorTest4 () {
         pelicula = new Pelicula (new Pelicula ("Padreando", "", 7.1, "José Mourinho", Duration.ofMinutes (127), EdadRecomendada.DOCE,
-                Genero.DRAMA, Genero.ROMANCE));
+                Genero.Nombre.DRAMA, Genero.Nombre.ROMANCE));
 
         assertEquals ("Padreando", pelicula.getNombre ());
         assertEquals ("", pelicula.getRutaImagen ());
@@ -46,7 +46,7 @@ public class PeliculaTest {
         assertEquals ("José Mourinho", pelicula.getDirector ());
         assertEquals (127, pelicula.getDuracion ().toMinutes ());
         assertEquals (2, pelicula.getEdad ().getValue ());
-        assertEquals (Genero.DRAMA.getValue () | Genero.ROMANCE.getValue (), Genero.toValor (pelicula.getGeneros ()));
-        assertEquals (pelicula.getGeneros(), Genero.toGeneros (Genero.toValor (pelicula.getGeneros ())));
+        assertEquals (Genero.Nombre.DRAMA.getValue () | Genero.Nombre.ROMANCE.getValue (), Genero.Nombre.toValor (pelicula.getGeneros ()));
+        assertEquals (pelicula.getGeneros(), Genero.Nombre.toGeneros (Genero.Nombre.toValor (pelicula.getGeneros ())));
     }
 }

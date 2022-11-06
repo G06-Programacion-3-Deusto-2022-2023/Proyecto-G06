@@ -15,27 +15,27 @@ public class Pelicula {
     protected String director;
     protected Duration duracion;
     protected EdadRecomendada edad;
-    protected ArrayList <Genero> generos;
+    protected ArrayList <Genero.Nombre> generos;
 
     public Pelicula () {
         this ("");
     }
 
     public Pelicula (String nombre) {
-        this (nombre, Genero.NADA);
+        this (nombre, Genero.Nombre.NADA);
     }
 
-    public Pelicula (String nombre, Genero... generos) {
+    public Pelicula (String nombre, Genero.Nombre... generos) {
         this (nombre, "", Double.NaN, "", Duration.ZERO, EdadRecomendada.TODOS, generos);
     }
 
     public Pelicula (String nombre, String rutaImagen, double valoracion, String director, Duration duracion,
-            EdadRecomendada edad, Genero... generos) {
+            EdadRecomendada edad, Genero.Nombre... generos) {
         this (UUID.randomUUID (), nombre, rutaImagen, valoracion, director, duracion, edad, generos);
     }
 
     public Pelicula (UUID id, String nombre, String rutaImagen, double valoracion, String director, Duration duracion,
-            EdadRecomendada edad, Genero... generos) {
+            EdadRecomendada edad, Genero.Nombre... generos) {
         super ();
 
         this.id = id;
@@ -45,12 +45,12 @@ public class Pelicula {
         this.setDirector (director);
         this.setDuracion (duracion);
         this.setEdad (edad);
-        this.setGeneros (new ArrayList <Genero> (Arrays.asList (generos)));
+        this.setGeneros (new ArrayList <Genero.Nombre> (Arrays.asList (generos)));
     }
 
     public Pelicula (Pelicula pelicula) {
         this (pelicula.id, pelicula.nombre, pelicula.rutaImagen, pelicula.valoracion, pelicula.director, pelicula.duracion,
-                pelicula.edad, pelicula.generos.toArray (new Genero [pelicula.generos.size ()]));
+                pelicula.edad, pelicula.generos.toArray (new Genero.Nombre [pelicula.generos.size ()]));
     }
 
     public UUID getId () {
@@ -107,12 +107,12 @@ public class Pelicula {
         this.edad = edad;
     }
 
-    public List <Genero> getGeneros () {
+    public List <Genero.Nombre> getGeneros () {
         return this.generos;
     }
 
-    public void setGeneros (List <Genero> generos) {
-        this.generos = new ArrayList <Genero> (generos == null ? Collections.singletonList (Genero.NADA) : generos);
+    public void setGeneros (List <Genero.Nombre> generos) {
+        this.generos = new ArrayList <Genero.Nombre> (generos == null ? Collections.singletonList (Genero.Nombre.NADA) : generos);
     }
 
     @Override
