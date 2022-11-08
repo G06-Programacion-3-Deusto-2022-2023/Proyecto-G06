@@ -32,18 +32,23 @@ public class GestorBD {
 		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
 		     Statement stmt = con.createStatement()) {
 			
-	        String sql = "CREATE TABLE IF NOT EXISTS PELICULA (\n"
+	        String sql1 = "CREATE TABLE IF NOT EXISTS PELICULA (\n"
 	                   + " ID_PELICULA STRING ,\n"
-	                   + " NOMBRE TEXT PRIMARY KEY NOT NULL,\n"
-	                   + " VALORACION DOUBLE NOT NULL,\n"
-	                   + " DIRECTOR TEXT NOT NULL,\n"
+	                   + " NOMBRE STRING PRIMARY KEY NOT NULL,\n"
+	                   + " VALORACION INTEGER NOT NULL,\n"
+	                   + " DIRECTOR STRING NOT NULL,\n"
 	                   + " DURACION INTEGER NOT NULL,\n"
-	                   + " EDAD_RECOMENDADA TEXT NOT NULL,\n"
-	                   + " GENEROS ARRAY NOT NULL\n"
+	                   + " EDAD_RECOMENDADA STRING NOT NULL,\n"
+	                   + " GENEROS INTEGER NOT NULL\n"
+	                   + ");";
+	        String sql2 = "CREATE TABLE IF NOT EXISTS USUARIO (\n"
+	                   + " ID_USUARIO STRING ,\n"
+	                   + " NOMBRE_USUARIO STRING PRIMARY KEY NOT NULL ,\n"
+	                   + " CONTRASENA_USUARIO STRING \n"
 	                   + ");";
 	        	        
-	        if (!stmt.execute(sql)) {
-	        	System.out.println("- Se ha creado la tabla pelicula");
+	        if (!stmt.execute(sql1) && !stmt.execute(sql2)) {
+	        	System.out.println("- Se ha creado la tabla pelicula" + " y la tabla usuario");
 	        }
 		} catch (Exception ex) {
 			System.err.println(String.format("* Error al crear la BBDD: %s", ex.getMessage()));
@@ -77,21 +82,44 @@ public class GestorBD {
 		}
 	}
 	
-	public void insertarDatos(Pelicula... peliculas ) {
+	public void insertarDatosPelicula(Pelicula... peliculas) {
 		//Se abre la conexión y se obtiene el Statement
 		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
 		     Statement stmt = con.createStatement()) {
 			//Se define la plantilla de la sentencia SQL
-			String sql = "INSERT INTO PELICULA (ID_PELICULA, NOMBRE, VALORACION, DIRECTOR, DURACION, EDAD_RECOMENDADA, GENEROS) VALUES ('%s', '%s', '%f','%s', '%d', '%s', '%s');";
+			String sql = "INSERT INTO PELICULA (ID_PELICULA, NOMBRE, VALORACION, DIRECTOR, DURACION, EDAD_RECOMENDADA, GENEROS) VALUES ('%s', '%s', %d,'%s', %d, '%s', %d);";
 			
 			System.out.println("- Insertando peliculas...");
 			
 			//Se recorren los clientes y se insertan uno a uno
 			for (Pelicula p : peliculas) {
-				if (1 == stmt.executeUpdate(String.format(sql, p.getId().toString(), p.getNombre(), p.getValoracion(), p.getDirector(),(int) p.getDuracion().toMinutes(), p.getEdad(), Genero.ACCION))) {					
+				int Valoracion = (int) (p.getValoracion() * 10);
+				if (1 == stmt.executeUpdate(String.format(sql, p.getId().toString(), p.getNombre(),(int)Valoracion, p.getDirector(),(int) p.getDuracion().toMinutes(), p.getEdad(), Genero.toValor(p.getGeneros())))) {					
 					System.out.println(String.format(" - Pelicula insertada: %s", p.toString()));
 				} else {
 					System.out.println(String.format(" - No se ha insertado la pelicula: %s", p.toString()));
+				}
+			}			
+		} catch (Exception ex) {
+			System.err.println(String.format("* Error al insertar datos de la BBDD: %s", ex.getMessage()));
+			ex.printStackTrace();						
+		}				
+	}
+	public void insertarDatosUsuario(Usuario... usuarios) {
+		//Se abre la conexión y se obtiene el Statement
+		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
+		     Statement stmt = con.createStatement()) {
+			//Se define la plantilla de la sentencia SQL
+			String sql = "INSERT INTO USUARIO (ID_USUARIOS, NOMBRE_USUARIO, CONTRASENA_USUARIO) VALUES ('%s', '%s', %s');";
+			
+			System.out.println("- Insertando usuarios...");
+			
+			//Se recorren los clientes y se insertan uno a uno
+			for (Usuario u : usuarios) {
+				if (1 == stmt.executeUpdate(String.format(sql,u.getId(),u.getNombre(),u.getContrasena()))) {					
+					System.out.println(String.format(" - Usuario insertada: %s", u.toString()));
+				} else {
+					System.out.println(String.format(" - No se ha insertado el usuario: %s", u.toString()));
 				}
 			}			
 		} catch (Exception ex) {
@@ -115,13 +143,15 @@ public class GestorBD {
 			//Se recorre el ResultSet y se crean objetos Cliente
 			while (rs.next()) {
 				pelicula = new Pelicula ();
-
+				
+				double Valoracion = ((double)rs.getInt("VALORACION"))/10;
+				
                 pelicula.setNombre (rs.getString ("NOMBRE"));
-                pelicula.setValoracion (rs.getDouble ("VALORACION"));
+                pelicula.setValoracion (Valoracion);
                 pelicula.setDirector (rs.getString ("DIRECTOR"));
                 pelicula.setDuracion (Duration.ofMinutes (rs.getInt ("DURACION")));
                 pelicula.setEdad (EdadRecomendada.valueOf (rs.getString ("EDAD_RECOMENDADA")));
-                pelicula.setGeneros (new ArrayList<> ());
+                pelicula.setGeneros (Genero.toGeneros((short) rs.getInt("GENEROS")));
                 
                 peliculas.add(pelicula);
 				

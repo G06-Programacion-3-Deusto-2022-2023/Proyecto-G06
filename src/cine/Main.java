@@ -14,14 +14,14 @@ public class Main {
 		
 		//INSERT: Insertar datos en la BBDD		
 		List<Pelicula> peliculas = initPeliculas();
-		gestorBD.insertarDatos(peliculas.toArray(new Pelicula[peliculas.size()]));
+		gestorBD.insertarDatosPelicula(peliculas.toArray(new Pelicula[peliculas.size()]));
 		
 		//SELECT: Se obtienen datos de la BBDD
 		peliculas = gestorBD.obtenerDatos();
 		printClientes(peliculas);
 		
 		//UPDATE: Se actualiza la password de un cliente
-		double newValoracion = 4.5;
+		int newValoracion = 5;
 		gestorBD.actualizarValoracion(peliculas.get(0), newValoracion);
 
 		//SELECT: Se obtienen datos de la BBDD
@@ -47,26 +47,21 @@ public class Main {
 		List<Pelicula> peliculas = new ArrayList<>();
 		
 		Pelicula pelicula1 = new Pelicula();
-		ArrayList Generos1 = new ArrayList<>();
-		Generos1.add(Genero.ACCION);
-		Generos1.add(Genero.COMEDIA);
-		pelicula1.setValoracion(4.0);
+		pelicula1.setValoracion(4);
 		pelicula1.setNombre("Piratas del caribe");
 		pelicula1.setDirector("Rob Marshall");
 		pelicula1.setDuracion(Duration.ofMinutes(143));
 		pelicula1.setEdad(EdadRecomendada.DIECISEIS);
-		pelicula1.setGeneros(Generos1);
+		pelicula1.setGeneros(Genero.toGeneros((short)0b11));
 		peliculas.add(pelicula1);
 		
 		Pelicula pelicula2 = new Pelicula();
-		ArrayList Generos2 = new ArrayList<>();
-		Generos2.add(Genero.CIENCIA_FICCION);
 		pelicula2.setValoracion(5);
 		pelicula2.setNombre("Origen");
 		pelicula2.setDirector("Crishtopher nolan");
 		pelicula2.setDuracion(Duration.ofMinutes(148));
 		pelicula2.setEdad(EdadRecomendada.DIECISEIS);
-		pelicula2.setGeneros(Generos2);
+		pelicula2.setGeneros(Genero.toGeneros((short)0b101));
 		peliculas.add(pelicula2);
 		
 		return peliculas;
