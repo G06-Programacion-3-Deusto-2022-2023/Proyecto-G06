@@ -1,11 +1,11 @@
 package cine;
 
-import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.UUID;
+import java.time.Duration;
 
 public class Pelicula {
     protected UUID id;
@@ -26,16 +26,32 @@ public class Pelicula {
     }
 
     public Pelicula (String nombre, Genero.Nombre... generos) {
+        this (nombre, new ArrayList <Genero.Nombre> (Arrays.asList (generos)));
+    }
+
+    public Pelicula (String nombre, List <Genero.Nombre> generos) {
         this (nombre, "", Double.NaN, "", Duration.ZERO, EdadRecomendada.TODOS, generos);
     }
 
     public Pelicula (String nombre, String rutaImagen, double valoracion, String director, Duration duracion,
             EdadRecomendada edad, Genero.Nombre... generos) {
+        this (UUID.randomUUID (), nombre, rutaImagen, valoracion, director, duracion, edad,
+                new ArrayList <Genero.Nombre> (Arrays.asList (generos)));
+    }
+
+    public Pelicula (String nombre, String rutaImagen, double valoracion, String director, Duration duracion,
+            EdadRecomendada edad, List <Genero.Nombre> generos) {
         this (UUID.randomUUID (), nombre, rutaImagen, valoracion, director, duracion, edad, generos);
     }
 
     public Pelicula (UUID id, String nombre, String rutaImagen, double valoracion, String director, Duration duracion,
             EdadRecomendada edad, Genero.Nombre... generos) {
+        this (id, nombre, rutaImagen, valoracion, director, duracion, edad,
+                new ArrayList <Genero.Nombre> (Arrays.asList (generos)));
+    }
+
+    public Pelicula (UUID id, String nombre, String rutaImagen, double valoracion, String director, Duration duracion,
+            EdadRecomendada edad, List <Genero.Nombre> generos) {
         super ();
 
         this.id = id;
@@ -45,12 +61,13 @@ public class Pelicula {
         this.setDirector (director);
         this.setDuracion (duracion);
         this.setEdad (edad);
-        this.setGeneros (new ArrayList <Genero.Nombre> (Arrays.asList (generos)));
+        this.setGeneros (generos);
     }
 
     public Pelicula (Pelicula pelicula) {
-        this (pelicula.id, pelicula.nombre, pelicula.rutaImagen, pelicula.valoracion, pelicula.director, pelicula.duracion,
-                pelicula.edad, pelicula.generos.toArray (new Genero.Nombre [pelicula.generos.size ()]));
+        this (pelicula.id, pelicula.nombre, pelicula.rutaImagen, pelicula.valoracion, pelicula.director,
+                pelicula.duracion,
+                pelicula.edad, pelicula.generos);
     }
 
     public UUID getId () {
@@ -104,7 +121,7 @@ public class Pelicula {
     }
 
     public void setEdad (EdadRecomendada edad) {
-        this.edad = edad;
+        this.edad = edad == null ? EdadRecomendada.TODOS : edad;
     }
 
     public List <Genero.Nombre> getGeneros () {
@@ -112,12 +129,17 @@ public class Pelicula {
     }
 
     public void setGeneros (List <Genero.Nombre> generos) {
-        this.generos = new ArrayList <Genero.Nombre> (generos == null ? Collections.singletonList (Genero.Nombre.NADA) : generos);
+        this.generos = new ArrayList <Genero.Nombre> (
+                generos == null ? Collections.singletonList (Genero.Nombre.NADA) : generos);
     }
 
     @Override
     public String toString () {
         return "Pelicula [id=" + id + ", nombre=" + nombre + ", rutaImagen=" + rutaImagen + ", valoracion=" + valoracion
                 + ", director=" + director + ", duracion=" + duracion + ", edad=" + edad + ", generos=" + generos + "]";
+    }
+
+    public static Pelicula random () {
+        return new Pelicula ("", Genero.randomGeneros ());
     }
 }

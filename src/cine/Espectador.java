@@ -2,11 +2,14 @@ package cine;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
 public class Espectador extends Usuario {
+    public static final byte EDAD_DEFAULT = 18;
+
     protected byte edad;
     protected TreeMap <Genero.Nombre, Genero.Preferencia> preferencias;
     protected ArrayList <Entrada> historial;
@@ -20,7 +23,7 @@ public class Espectador extends Usuario {
     }
 
     public Espectador (String nombre, String contrasena) {
-        this (nombre, contrasena, (byte) 18);
+        this (nombre, contrasena, Espectador.EDAD_DEFAULT);
     }
 
     public Espectador (String nombre, String contrasena, byte edad) {
@@ -29,7 +32,7 @@ public class Espectador extends Usuario {
 
     public Espectador (String nombre, String contrasena, byte edad,
             Map <Genero.Nombre, Genero.Preferencia> preferencias) {
-        this (nombre, contrasena, edad, preferencias, new ArrayList <Entrada> ());
+        this (nombre, contrasena, edad, preferencias, null);
     }
 
     public Espectador (String nombre, String contrasena, byte edad,
@@ -56,7 +59,7 @@ public class Espectador extends Usuario {
     }
 
     public void setEdad (byte edad) {
-        this.edad = (edad < 0 || edad > 100) ? 18 : edad;
+        this.edad = edad < 0 ? Espectador.EDAD_DEFAULT : edad;
     }
 
     public Map <Genero.Nombre, Genero.Preferencia> getPreferencias () {
@@ -64,8 +67,7 @@ public class Espectador extends Usuario {
     }
 
     public void setPreferencias (Map <Genero.Nombre, Genero.Preferencia> preferencias) {
-        this.preferencias = new TreeMap <Genero.Nombre, Genero.Preferencia> (
-                preferencias == null ? null : preferencias);
+        this.preferencias = new TreeMap <Genero.Nombre, Genero.Preferencia> (preferencias == null ? Collections.emptyMap () : preferencias);
 
         for (int i = 0; i < Genero.Nombre.values ().length; i++)
             if (!this.preferencias.containsKey (Genero.Nombre.values () [i]))
@@ -77,12 +79,16 @@ public class Espectador extends Usuario {
     }
 
     public void setHistorial (List <Entrada> historial) {
-        this.historial = new ArrayList <Entrada> (historial == null ? null : historial);
+        this.historial = new ArrayList <Entrada> (historial == null ? Collections.emptyList () : historial);
     }
 
     @Override
     public String toString () {
         return "Usuario " + super.toString () + ", preferencias = " + preferencias.toString ();
+    }
+
+    public static Espectador random () {
+        return new Espectador ("", "", (byte) (Math.random () * 100 + 1), Genero.randomPrefs ());
     }
 
     public byte fromPreferencias (Pelicula pelicula) {

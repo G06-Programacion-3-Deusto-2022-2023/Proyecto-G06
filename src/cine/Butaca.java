@@ -4,7 +4,7 @@ public class Butaca {
     protected Espectador espectador;
 
     public Butaca () {
-        this.setEspectador (null);
+        this (null, null);
     }
 
     public Butaca (Espectador espectador, Pelicula pelicula) {
@@ -12,13 +12,17 @@ public class Butaca {
     }
 
     public Butaca (Espectador espectador, double probabilidad) {
+        this (espectador, !((Double) probabilidad).isNaN () && Math.random () <= probabilidad);
+    }
+
+    public Butaca (Espectador espectador, boolean ocupada) {
         super ();
 
-        this.setEspectador (((Double) probabilidad).isNaN () || Math.random () > probabilidad ? null : espectador);
+        this.setEspectador (ocupada ? espectador : null);
     }
 
     public Butaca (Butaca butaca) {
-        this (butaca.espectador, 1);
+        this (butaca.espectador, butaca.espectador != null);
     }
 
     public Espectador getEspectador () {
@@ -29,7 +33,7 @@ public class Butaca {
         this.espectador = espectador;
     }
 
-    private static double calcularProbabilidad (Espectador espectador, Pelicula pelicula) {
+    public static double calcularProbabilidad (Espectador espectador, Pelicula pelicula) {
         return espectador == null || pelicula == null ? 0 : (
             0.5
             + 0.25 * espectador.fromPreferencias (pelicula) / Genero.Nombre.values ().length

@@ -7,6 +7,8 @@ import org.passay.EnglishCharacterData;
 import org.passay.PasswordGenerator;
 
 public abstract class Usuario {
+    private static final int RPASSLEN = 14;
+
     protected UUID id;
     protected String nombre;
     protected String contrasena;
@@ -50,7 +52,7 @@ public abstract class Usuario {
     public void setContrasena (String contrasena) {
         this.contrasena = contrasena == null || contrasena.equals ("")
             ? new PasswordGenerator ().generatePassword (
-                14,
+                Usuario.RPASSLEN,
                 new CharacterRule (EnglishCharacterData.Special),
                 new CharacterRule (EnglishCharacterData.LowerCase),
                 new CharacterRule (EnglishCharacterData.UpperCase),

@@ -1,6 +1,7 @@
 package cine;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,7 +17,7 @@ public class Administrador extends Usuario {
     }
 
     public Administrador (String nombre, String contrasena) {
-        this (nombre, contrasena, new ArrayList <SetPeliculas> ());
+        this (nombre, contrasena, null);
     }
 
     public Administrador (String nombre, String contrasena,
@@ -39,7 +40,7 @@ public class Administrador extends Usuario {
     }
 
     public void setSetsPeliculas (List <SetPeliculas> setsPeliculas) {
-        this.setsPeliculas = setsPeliculas == null ? new ArrayList <SetPeliculas> () : (ArrayList <SetPeliculas>) setsPeliculas;
+        this.setsPeliculas = new ArrayList <SetPeliculas> (setsPeliculas == null ? Collections.emptyList () : (ArrayList <SetPeliculas>) setsPeliculas);
     }
 
     @Override

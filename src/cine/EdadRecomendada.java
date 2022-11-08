@@ -7,7 +7,7 @@ public enum EdadRecomendada {
     DIECISEIS ((byte) 3),
     DIECIOCHO ((byte) 4);
 
-    protected final byte value;
+    private final byte value;
 
     private EdadRecomendada (byte value) {
         this.value = value;
