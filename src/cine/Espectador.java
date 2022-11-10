@@ -4,10 +4,12 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Random;
 import java.util.TreeMap;
 import java.util.UUID;
 
 public class Espectador extends Usuario {
+    private static final Random random = new Random ();
     public static final byte EDAD_DEFAULT = 18;
 
     protected byte edad;
@@ -88,7 +90,7 @@ public class Espectador extends Usuario {
     }
 
     public static Espectador random () {
-        return new Espectador ("", "", (byte) (Math.random () * 100 + 1), Genero.randomPrefs ());
+        return new Espectador ("", "", (byte) Espectador.random.nextInt (100), Genero.randomPrefs ());
     }
 
     public byte fromPreferencias (Pelicula pelicula) {

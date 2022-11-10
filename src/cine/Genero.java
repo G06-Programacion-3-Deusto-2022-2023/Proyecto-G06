@@ -26,6 +26,7 @@ public interface Genero {
         DOCUMENTAL ((short) (1 << 10));
 
         private final short value;
+        protected static Random random = new Random ();
 
         private Nombre (short value) {
             this.value = value;
@@ -76,9 +77,11 @@ public interface Genero {
 
     static List <Genero.Nombre> randomGeneros () {
         ArrayList <Genero.Nombre> generos = new ArrayList <Genero.Nombre> (Arrays.asList (Genero.Nombre.values ()));
+        generos.remove (Genero.Nombre.NADA);
         Collections.shuffle (generos);
 
-        for (int i = 0, n = new Random ().nextInt (Genero.Nombre.values ().length); i < n; generos.remove (generos.size () - (i++ + 1)))
+        for (int i = 0, n = Genero.Nombre.random.nextInt (generos.size ()); i < n && i < generos.size (); generos
+                .remove (generos.size () - (i++ + 1)))
             ;
 
         return generos;
@@ -87,11 +90,11 @@ public interface Genero {
     static Map <Genero.Nombre, Genero.Preferencia> randomPrefs () {
         TreeMap <Genero.Nombre, Genero.Preferencia> map = new TreeMap <Genero.Nombre, Genero.Preferencia> ();
 
-        Random random = new Random ();
         for (int i = 0, p; i < Genero.Nombre.values ().length; map.put (Genero.Nombre.values () [i++],
-                (p = new Random ().nextInt (2)) == 0 ? Genero.Preferencia.NADA
+                (p = Genero.Nombre.random.nextInt (2)) == 0 ? Genero.Preferencia.NADA
                         : p == 1 ? Genero.Preferencia.BIEN : Genero.Preferencia.MAL))
             ;
+        map.remove (Genero.Nombre.NADA);
 
         return map;
     }

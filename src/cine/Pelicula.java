@@ -3,11 +3,20 @@ package cine;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.time.Duration;
 
 public class Pelicula {
+    // Media y desviación estándar de la distribución de las valoraciones de las películas sacadas de los primeros 1048576 elementos
+    // de la columna averageRating del archivo title.ratings.tsv/data.tsv del dataset de Kaggle https://www.kaggle.com/datasets/ashirwadsangwan/imdb-dataset.
+    private static final Random random = new Random ();
+    private static final double RANDOMAVG = 6.91973762512207;
+    private static final double RANDOMSTDEV = 1.38597026838328;
+
+    public static final Duration DEFAULT_DURACION = Duration.ofMinutes (90);
+
     protected UUID id;
     protected String nombre;
     protected String rutaImagen;
@@ -30,7 +39,15 @@ public class Pelicula {
     }
 
     public Pelicula (String nombre, List <Genero.Nombre> generos) {
-        this (nombre, "", Double.NaN, "", Duration.ZERO, EdadRecomendada.TODOS, generos);
+        this (nombre, Double.NaN, EdadRecomendada.TODOS, generos);
+    }
+
+    public Pelicula (String nombre, double valoracion, EdadRecomendada edad, Genero.Nombre [] generos) {
+        this (nombre, valoracion, edad, new ArrayList <Genero.Nombre> (generos == null ? Collections.emptyList () : Arrays.asList (generos)));
+    }
+
+    public Pelicula (String nombre, double valoracion, EdadRecomendada edad, List <Genero.Nombre> generos) {
+        this (nombre, "", valoracion, "", DEFAULT_DURACION, edad, generos);
     }
 
     public Pelicula (String nombre, String rutaImagen, double valoracion, String director, Duration duracion,
@@ -97,7 +114,7 @@ public class Pelicula {
 
     public void setValoracion (double valoracion) {
         this.valoracion = ((Double) valoracion).isNaN () || valoracion < 1
-                || valoracion > 10 ? Double.NaN : valoracion;
+                || valoracion > 10 ? Double.NaN : Math.floor (valoracion * 10) / 10;
     }
 
     public String getDirector () {
@@ -140,6 +157,21 @@ public class Pelicula {
     }
 
     public static Pelicula random () {
-        return new Pelicula ("", Genero.randomGeneros ());
+        return Pelicula.random ("");
+    }
+    
+    public static Pelicula random (String nombre) {
+        return new Pelicula (nombre, Pelicula.random.nextGaussian (Pelicula.RANDOMAVG, Pelicula.RANDOMSTDEV),
+                EdadRecomendada.random (), Genero.randomGeneros ());
+    }
+
+    public static List <String> getNombres (List <Pelicula> peliculas) {
+        ArrayList <String> nombres = new ArrayList <String> ();
+
+        for (int i = 0; i < peliculas.size (); i++) {
+            nombres.add (peliculas.get (i).getNombre ());
+        }
+
+        return nombres;
     }
 }

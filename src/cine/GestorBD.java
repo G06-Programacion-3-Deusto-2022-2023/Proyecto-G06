@@ -94,7 +94,7 @@ public class GestorBD {
 			//Se recorren los clientes y se insertan uno a uno
 			for (Pelicula p : peliculas) {
 				int Valoracion = (int) (p.getValoracion() * 10);
-				if (1 == stmt.executeUpdate(String.format(sql, p.getId().toString(), p.getNombre(),(int)Valoracion, p.getDirector(),(int) p.getDuracion().toMinutes(), p.getEdad(), Genero.toValor(p.getGeneros())))) {					
+				if (1 == stmt.executeUpdate(String.format(sql, p.getId().toString(), p.getNombre(),(int)Valoracion, p.getDirector(),(int) p.getDuracion().toMinutes(), p.getEdad(), Genero.Nombre.toValor(p.getGeneros())))) {					
 					System.out.println(String.format(" - Pelicula insertada: %s", p.toString()));
 				} else {
 					System.out.println(String.format(" - No se ha insertado la pelicula: %s", p.toString()));
@@ -151,7 +151,7 @@ public class GestorBD {
                 pelicula.setDirector (rs.getString ("DIRECTOR"));
                 pelicula.setDuracion (Duration.ofMinutes (rs.getInt ("DURACION")));
                 pelicula.setEdad (EdadRecomendada.valueOf (rs.getString ("EDAD_RECOMENDADA")));
-                pelicula.setGeneros (Genero.toGeneros((short) rs.getInt("GENEROS")));
+                pelicula.setGeneros (Genero.Nombre.toGeneros((short) rs.getInt("GENEROS")));
                 
                 peliculas.add(pelicula);
 				
