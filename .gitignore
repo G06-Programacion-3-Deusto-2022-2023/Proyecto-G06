@@ -1,6 +1,9 @@
 # Binaries
 bin/
 
+# Data
+data/
+
 # Compiled class file
 *.class
 

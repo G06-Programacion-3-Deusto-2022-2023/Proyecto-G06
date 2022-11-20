@@ -2,34 +2,39 @@ package cine;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 public interface Genero {
     short getValue ();
 
     public enum Nombre implements Genero {
-        NADA ((short) 0),
-        ACCION ((short) 1),
-        CIENCIA_FICCION ((short) (1 << 1)),
-        COMEDIA ((short) (1 << 2)),
-        DRAMA ((short) (1 << 3)),
-        FANTASIA ((short) (1 << 4)),
-        MELODRAMA ((short) (1 << 5)),
-        MUSICAL ((short) (1 << 6)),
-        ROMANCE ((short) (1 << 7)),
-        SUSPENSE ((short) (1 << 8)),
-        TERROR ((short) (1 << 9)),
-        DOCUMENTAL ((short) (1 << 10));
+        NADA ((short) 0, "-"),
+        ACCION ((short) 1, "Acción"),
+        CIENCIA_FICCION ((short) (1 << 1), "Ciencia ficción"),
+        COMEDIA ((short) (1 << 2), "Comedia"),
+        DRAMA ((short) (1 << 3), "Drama"),
+        FANTASIA ((short) (1 << 4), "Fantasía"),
+        MELODRAMA ((short) (1 << 5), "Melodrama"),
+        MUSICAL ((short) (1 << 6), "Musical"),
+        ROMANCE ((short) (1 << 7), "Romance"),
+        SUSPENSE ((short) (1 << 8), "Suspense"),
+        TERROR ((short) (1 << 9), "Terror"),
+        DOCUMENTAL ((short) (1 << 10), "Documental");
 
-        private final short value;
         protected static Random random = new Random ();
+        private final short value;
+        private final String label;
 
-        private Nombre (short value) {
+        private Nombre (short value, String label) {
             this.value = value;
+            this.label = label;
         }
 
         @Override
@@ -37,24 +42,33 @@ public interface Genero {
             return this.value;
         }
 
-        public static short toValor (List <Genero.Nombre> generos) {
-            short ret = Genero.Nombre.NADA.getValue ();
+        @Override
+        public String toString () {
+            return this.label;
+        }
 
-            if (generos != null)
-                for (int i = 0; i < generos.size (); ret |= generos.get (i++).getValue ())
-                    ;
+        public static short toValor (Collection <Genero.Nombre> generos) {
+            if (generos == null || generos.size () == 0)
+                return Genero.Nombre.NADA.getValue ();
+
+            Genero.Nombre array [] = generos.toArray (new Genero.Nombre [0]);
+
+            short ret = 0;
+            for (int i = 0; i < generos.size (); ret |= array [i++].getValue ())
+                ;
 
             return ret;
         }
 
-        public static List <Genero.Nombre> toGeneros (short generos) {
-            ArrayList <Genero.Nombre> lista = new ArrayList <Genero.Nombre> ();
+        public static Set <Genero.Nombre> toGeneros (short generos) {
+            // Me niego a hacer un for-each o usar un iterator
+            Set <Genero.Nombre> set = new TreeSet <Genero.Nombre> ();
 
             for (int i = 0; i < Genero.Nombre.values ().length; i++)
                 if ((generos & Genero.Nombre.values () [i].getValue ()) != 0)
-                    lista.add (Genero.Nombre.values () [i]);
+                    set.add (Genero.Nombre.values () [i]);
 
-            return lista;
+            return set;
         }
     }
 
@@ -75,16 +89,13 @@ public interface Genero {
         }
     }
 
-    static List <Genero.Nombre> randomGeneros () {
-        ArrayList <Genero.Nombre> generos = new ArrayList <Genero.Nombre> (Arrays.asList (Genero.Nombre.values ()));
+    static Set <Genero.Nombre> randomGeneros () {
+        List <Genero.Nombre> generos = new ArrayList <Genero.Nombre> (Arrays.asList (Genero.Nombre.values ()));
         generos.remove (Genero.Nombre.NADA);
         Collections.shuffle (generos);
+        generos = generos.subList (0, (int) Genero.Nombre.random.nextGaussian (3D, 1.5D) % generos.size ());
 
-        for (int i = 0, n = Genero.Nombre.random.nextInt (generos.size ()); i < n && i < generos.size (); generos
-                .remove (generos.size () - (i++ + 1)))
-            ;
-
-        return generos;
+        return new TreeSet <Genero.Nombre> (generos.isEmpty () ? Collections.singletonList (Genero.Nombre.NADA) : generos);
     }
 
     static Map <Genero.Nombre, Genero.Preferencia> randomPrefs () {

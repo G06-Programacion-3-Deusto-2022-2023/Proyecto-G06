@@ -13,14 +13,13 @@ public class Sala {
 
     protected Pelicula pelicula;
     protected Vector <Butaca> butacas;
-    private EmptyArrayCreator emptyArrayCreator;
 
     public Sala () {
         super ();
 
         this.setPelicula (null);
-        this.butacas = new Vector <Butaca> (Arrays.asList ((emptyArrayCreator = () -> {
-            Butaca array[] = new Butaca [Sala.NBUTACAS];
+        this.butacas = new Vector <Butaca> (Arrays.asList (((EmptyArrayCreator) () -> {
+            Butaca array [] = new Butaca [Sala.NBUTACAS];
             for (int i = 0; i < Sala.NBUTACAS; array [i++] = new Butaca ())
                 ;
             return array;
@@ -42,6 +41,7 @@ public class Sala {
     public void clearSala () {
         this.pelicula = null;
 
-        for (int i = 0; i < butacas.size (); butacas.get (i++).setEspectador (null));
+        for (int i = 0; i < butacas.size (); butacas.get (i++).setEspectador (null))
+            ;
     }
 }

@@ -69,7 +69,8 @@ public class Espectador extends Usuario {
     }
 
     public void setPreferencias (Map <Genero.Nombre, Genero.Preferencia> preferencias) {
-        this.preferencias = new TreeMap <Genero.Nombre, Genero.Preferencia> (preferencias == null ? Collections.emptyMap () : preferencias);
+        this.preferencias = new TreeMap <Genero.Nombre, Genero.Preferencia> (
+                preferencias == null ? Collections.emptyMap () : preferencias);
 
         for (int i = 0; i < Genero.Nombre.values ().length; i++)
             if (!this.preferencias.containsKey (Genero.Nombre.values () [i]))
@@ -94,9 +95,11 @@ public class Espectador extends Usuario {
     }
 
     public byte fromPreferencias (Pelicula pelicula) {
+        Genero.Nombre values [] = pelicula.getGeneros ().toArray (new Genero.Nombre [0]);
+
         byte ret = 0;
-        for (int i = 0; i < pelicula.getGeneros ().size (); i++)
-            ret += this.preferencias.get (pelicula.getGeneros ().get (i)).getValue ();
+        for (int i = 0; i < values.length; ret += this.preferencias.get (values [i++]).getValue ())
+            ;
 
         return ret;
     }
