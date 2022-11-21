@@ -281,51 +281,85 @@ public class Pelicula implements Comparable <Pelicula> {
                                     Genero.Nombre.DRAMA, Genero.Nombre.FANTASIA,
                                     Genero.Nombre.ROMANCE),
                             new Pelicula (new UUID (0L, 24L), "Desde París con amor",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (24), 6.4, Year.of (2010),
+                                    DEFAULT_MOVIE_IMAGE_FILES.get (24), 6.4,
+                                    Year.of (2010),
                                     "Pierre Morel",
-                                    Duration.ofMinutes (92), EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
+                                    Duration.ofMinutes (92),
+                                    EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
                                     Genero.Nombre.SUSPENSE),
                             new Pelicula (new UUID (0L, 25L), "De amor y monstruos",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (25), 6.9, Year.of (2020),
+                                    DEFAULT_MOVIE_IMAGE_FILES.get (25), 6.9,
+                                    Year.of (2020),
                                     "Michael Matthews",
-                                    Duration.ofMinutes (109), EdadRecomendada.DOCE, Genero.Nombre.ACCION,
-                                    Genero.Nombre.COMEDIA, Genero.Nombre.FANTASIA, Genero.Nombre.CIENCIA_FICCION),
+                                    Duration.ofMinutes (109), EdadRecomendada.DOCE,
+                                    Genero.Nombre.ACCION,
+                                    Genero.Nombre.COMEDIA, Genero.Nombre.FANTASIA,
+                                    Genero.Nombre.CIENCIA_FICCION),
                             new Pelicula (new UUID (0L, 26L), "El Renacido",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (26), 8, Year.of (2015),
+                                    DEFAULT_MOVIE_IMAGE_FILES.get (26), 8,
+                                    Year.of (2015),
                                     "Alejandro G. Iñárritu",
-                                    Duration.ofMinutes (156), EdadRecomendada.DIECISEIS, Genero.Nombre.ACCION, Genero.Nombre.DRAMA),
+                                    Duration.ofMinutes (156),
+                                    EdadRecomendada.DIECISEIS, Genero.Nombre.ACCION,
+                                    Genero.Nombre.DRAMA),
                             new Pelicula (new UUID (0L, 27L), "El Libro de Eli",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (27), 6.8, Year.of (2013),
+                                    DEFAULT_MOVIE_IMAGE_FILES.get (27), 6.8,
+                                    Year.of (2013),
                                     "Albert Hughes, Allen Hughes",
-                                    Duration.ofMinutes (118), EdadRecomendada.DOCE, Genero.Nombre.ACCION, Genero.Nombre.DRAMA, Genero.Nombre.SUSPENSE),
+                                    Duration.ofMinutes (118), EdadRecomendada.DOCE,
+                                    Genero.Nombre.ACCION, Genero.Nombre.DRAMA,
+                                    Genero.Nombre.SUSPENSE),
                             new Pelicula (new UUID (0L, 28L), "The Equalizer",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (28), 7.2, Year.of (2014),
+                                    DEFAULT_MOVIE_IMAGE_FILES.get (28), 7.2,
+                                    Year.of (2014),
                                     "Antoine Fuqua",
-                                    Duration.ofMinutes (132), EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION, Genero.Nombre.SUSPENSE),
+                                    Duration.ofMinutes (132),
+                                    EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
+                                    Genero.Nombre.SUSPENSE),
                             new Pelicula (new UUID (0L, 29L), "Soy Leyenda",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (29), 7.2, Year.of (2007),
+                                    DEFAULT_MOVIE_IMAGE_FILES.get (29), 7.2,
+                                    Year.of (2007),
                                     "Francis Lawrence",
-                                    Duration.ofMinutes (101), EdadRecomendada.DOCE, Genero.Nombre.ACCION, Genero.Nombre.DRAMA, Genero.Nombre.CIENCIA_FICCION, Genero.Nombre.SUSPENSE),
+                                    Duration.ofMinutes (101), EdadRecomendada.DOCE,
+                                    Genero.Nombre.ACCION, Genero.Nombre.DRAMA,
+                                    Genero.Nombre.CIENCIA_FICCION,
+                                    Genero.Nombre.SUSPENSE),
                             new Pelicula (new UUID (0L, 30L), "Frozen: El reino del hielo",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (30), 7.4, Year.of (2013),
+                                    DEFAULT_MOVIE_IMAGE_FILES.get (30), 7.4,
+                                    Year.of (2013),
                                     "Chris Buck, Jennifer Lee",
-                                    Duration.ofMinutes (102), EdadRecomendada.TODOS, Genero.Nombre.COMEDIA, Genero.Nombre.FANTASIA, Genero.Nombre.MUSICAL),
+                                    Duration.ofMinutes (102), EdadRecomendada.TODOS,
+                                    Genero.Nombre.COMEDIA, Genero.Nombre.FANTASIA,
+                                    Genero.Nombre.MUSICAL),
                             new Pelicula (new UUID (0L, 31L), "Cars",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (31), 7.2, Year.of (2006),
+                                    DEFAULT_MOVIE_IMAGE_FILES.get (31), 7.2,
+                                    Year.of (2006),
                                     "John Lasseter, Joe Ranft",
-                                    Duration.ofMinutes(117), EdadRecomendada.TODOS, Genero.Nombre.COMEDIA),
+                                    Duration.ofMinutes (117), EdadRecomendada.TODOS,
+                                    Genero.Nombre.COMEDIA),
                             new Pelicula (new UUID (0L, 32L), "Tenet",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (32), 7.3, Year.of (2003),
+                                    DEFAULT_MOVIE_IMAGE_FILES.get (32), 7.3,
+                                    Year.of (2003),
                                     "Christopher Nolan",
-                                    Duration.ofMinutes(150), EdadRecomendada.DOCE, Genero.Nombre.ACCION, Genero.Nombre.CIENCIA_FICCION, Genero.Nombre.SUSPENSE),
+                                    Duration.ofMinutes (150), EdadRecomendada.DOCE,
+                                    Genero.Nombre.ACCION,
+                                    Genero.Nombre.CIENCIA_FICCION,
+                                    Genero.Nombre.SUSPENSE),
                             new Pelicula (new UUID (0L, 33L), "Blade Runner",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (32), 8.1, Year.of (1982),
+                                    DEFAULT_MOVIE_IMAGE_FILES.get (32), 8.1,
+                                    Year.of (1982),
                                     "Ridley Scott",
-                                    Duration.ofMinutes (117), EdadRecomendada.DOCE, Genero.Nombre.ACCION, Genero.Nombre.DRAMA, Genero.Nombre.CIENCIA_FICCION, Genero.Nombre.SUSPENSE),
+                                    Duration.ofMinutes (117), EdadRecomendada.DOCE,
+                                    Genero.Nombre.ACCION, Genero.Nombre.DRAMA,
+                                    Genero.Nombre.CIENCIA_FICCION,
+                                    Genero.Nombre.SUSPENSE),
                             new Pelicula (new UUID (0L, 34L), "A todo gas: Tokyo Race",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (33), 6, Year.of (2006),
+                                    DEFAULT_MOVIE_IMAGE_FILES.get (33), 6,
+                                    Year.of (2006),
                                     "Justin Lin",
-                                    Duration.ofMinutes (104), EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION, Genero.Nombre.SUSPENSE)
+                                    Duration.ofMinutes (104),
+                                    EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
+                                    Genero.Nombre.SUSPENSE)
                     }));
 
     protected UUID id;
@@ -413,29 +447,31 @@ public class Pelicula implements Comparable <Pelicula> {
 
     @Override
     public void finalize () throws Throwable {
-        if (this.id.getMostSignificantBits () == 0
-                && this.id.getLeastSignificantBits () < DEFAULT_PELICULAS.size ()) {
-            if (new File (DEFAULT_MOVIE_IMAGE_FILES
-                    .get ((int) this.id.getLeastSignificantBits ()))
-                            .delete ())
+        if (this.id.getMostSignificantBits () != 0
+                || this.id.getLeastSignificantBits () >= DEFAULT_PELICULAS.size ())
+            return;
+
+        if (new File (DEFAULT_MOVIE_IMAGE_FILES
+                .get ((int) this.id.getLeastSignificantBits ()))
+                        .delete ())
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.INFO,
+                    String.format ("Eliminado el archivo %s.", DEFAULT_MOVIE_IMAGE_FILES
+                            .get ((int) this.id.getLeastSignificantBits ())));
+
+        else
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    String.format ("No se pudo eliminar el archivo %s.",
+                            DEFAULT_MOVIE_IMAGE_FILES
+                                    .get ((int) this.id
+                                            .getLeastSignificantBits ())));
+
+        File f;
+        if ((f = new File (DEFAULT_MOVIE_IMAGE_PATH)).list () == null && f.delete ())
                 Logger.getLogger (Pelicula.class.getName ()).log (Level.INFO,
-                        String.format ("Eliminado el archivo %s.", DEFAULT_MOVIE_IMAGE_FILES
-                                .get ((int) this.id.getLeastSignificantBits ())));
+                        String.format ("Eliminadada la carpeta %s.",
+                                DEFAULT_MOVIE_IMAGE_PATH));
 
-            else
-                Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
-                        String.format ("No se pudo eliminar el archivo %s.",
-                                DEFAULT_MOVIE_IMAGE_FILES
-                                        .get ((int) this.id
-                                                .getLeastSignificantBits ())));
-
-            File f;
-            if ((f = new File (DEFAULT_MOVIE_IMAGE_PATH)).list () == null)
-                if (f.delete ())
-                    Logger.getLogger (Pelicula.class.getName ()).log (Level.INFO,
-                            String.format ("Eliminadada la carpeta %s.",
-                                    DEFAULT_MOVIE_IMAGE_PATH));
-        }
+        Pelicula.DEFAULT_IMAGES_DOWNLOADED = false;
 
         super.finalize ();
     }
@@ -569,7 +605,8 @@ public class Pelicula implements Comparable <Pelicula> {
         }
 
         return "Película (hash: " + this.hashCode () + ") {\n\tID: " + this.id
-                + (this.id.compareTo (new UUID (0L, 35L)) < 0 ? " (película por defecto)" : "") + "\n\tNombre: "
+                + (this.id.compareTo (new UUID (0L, 35L)) < 0 ? " (película por defecto)" : "")
+                + "\n\tNombre: "
                 + this.nombre + "\n\tRuta de la imagen: "
                 + this.rutaImagen + "\n\tValoración: " + (((Double) this.valoracion).isNaN ()
                         ? "-"
