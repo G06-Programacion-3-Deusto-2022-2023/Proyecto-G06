@@ -12,7 +12,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class SetPeliculas {
+public class SetPeliculas implements Comparable <SetPeliculas> {
     private static final Random random = new Random ();
     public static final int MIN_SIZE = 7;
     public static final int MAX_SIZE = 35;
@@ -91,10 +91,10 @@ public class SetPeliculas {
             return;
         }
 
+        SetPeliculas array [] = this.administrador.getSetsPeliculas ().toArray (new SetPeliculas [0]);
+
         int nuevas = 0;
-        for (int i = 0; i < this.administrador.getSetsPeliculas ()
-                .size (); nuevas += this.administrador.getSetsPeliculas ()
-                        .get (i++).getNombre ().contains ("Nuevo set") ? 1 : 0)
+        for (int i = 0; i < array.length; nuevas += array [i++].getNombre ().contains ("Nuevo set") ? 1 : 0)
             ;
 
         this.nombre = String.format ("Nuevo set%s", nuevas == 0 ? "" : String.format (" #%d", nuevas + 1));
@@ -113,12 +113,76 @@ public class SetPeliculas {
     }
 
     @Override
+    public boolean equals (Object o) {
+        return o instanceof SetPeliculas && this.id.equals (((SetPeliculas) o).id);
+    }
+
+    @Override
+    public int compareTo (SetPeliculas set) {
+        if (set == null)
+            return 1;
+
+        if (this.nombre.equals (this.id.toString ()) && !set.nombre.equals (set.id.toString ()))
+            return 1;
+
+        if (!this.nombre.equals (this.id.toString ()) && set.nombre.equals (set.id.toString ()))
+            return -1;
+
+        if (this.nombre.equals (this.id.toString ()) && set.nombre.equals (set.id.toString ()))
+            return this.id.compareTo (set.id);
+
+        int comp;
+        if ((comp = this.nombre.compareTo (set.nombre)) != 0)
+            return comp;
+
+        return this.id.compareTo (set.id);
+    }
+
+    @Override
     public String toString () {
-        return "SetPeliculas [id=" + id.toString () + ", peliculas=" + peliculas.toString () + "]";
+        return "SetPeliculas [id=" + this.id.toString () + ", peliculas=" + this.peliculas.toString () + "]";
     }
 
     public int size () {
         return this.peliculas.size ();
+    }
+
+    public boolean add (Pelicula pelicula) {
+        if (pelicula == null)
+            return false;
+
+        if (this.peliculas.add (pelicula)) {
+            if (!pelicula.addSet (this)) {
+                this.remove (pelicula);
+
+                return false;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean remove (Pelicula pelicula) {
+        if (!this.contains (pelicula))
+            return false;
+
+        if (this.peliculas.remove (pelicula)) {
+            if (!pelicula.removeSet (this)) {
+                this.add (pelicula);
+
+                return false;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean contains (Pelicula pelicula) {
+        return pelicula != null && this.peliculas.contains (pelicula);
     }
 
     public static SetPeliculas random () {

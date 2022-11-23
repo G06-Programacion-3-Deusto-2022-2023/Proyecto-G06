@@ -1,20 +1,24 @@
 package cine;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
+import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 
 public class Espectador extends Usuario {
     private static final Random random = new Random ();
-    public static final byte EDAD_DEFAULT = 18;
+
+    public static final byte DEFAULT_EDAD = 18;
+    public static final byte MAX_EDAD = 100;
 
     protected byte edad;
-    protected TreeMap <Genero.Nombre, Genero.Preferencia> preferencias;
-    protected ArrayList <Entrada> historial;
+    protected SortedMap <Genero.Nombre, Genero.Preferencia> preferencias;
+    protected SortedSet <Entrada> historial;
 
     public Espectador () {
         this ("");
@@ -25,7 +29,7 @@ public class Espectador extends Usuario {
     }
 
     public Espectador (String nombre, String contrasena) {
-        this (nombre, contrasena, Espectador.EDAD_DEFAULT);
+        this (nombre, contrasena, Espectador.DEFAULT_EDAD);
     }
 
     public Espectador (String nombre, String contrasena, byte edad) {
@@ -38,12 +42,12 @@ public class Espectador extends Usuario {
     }
 
     public Espectador (String nombre, String contrasena, byte edad,
-            Map <Genero.Nombre, Genero.Preferencia> preferencias, List <Entrada> historial) {
+            Map <Genero.Nombre, Genero.Preferencia> preferencias, Collection <Entrada> historial) {
         this (UUID.randomUUID (), nombre, contrasena, edad, preferencias, historial);
     }
 
     public Espectador (UUID id, String nombre, String contrasena, byte edad,
-            Map <Genero.Nombre, Genero.Preferencia> preferencias, List <Entrada> historial) {
+            Map <Genero.Nombre, Genero.Preferencia> preferencias, Collection <Entrada> historial) {
         super (id, nombre, contrasena);
 
         this.setEdad (edad);
@@ -61,7 +65,7 @@ public class Espectador extends Usuario {
     }
 
     public void setEdad (byte edad) {
-        this.edad = edad < 0 ? Espectador.EDAD_DEFAULT : edad;
+        this.edad = edad < 0 ? Espectador.DEFAULT_EDAD : edad;
     }
 
     public Map <Genero.Nombre, Genero.Preferencia> getPreferencias () {
@@ -77,21 +81,21 @@ public class Espectador extends Usuario {
                 this.preferencias.put (Genero.Nombre.values () [i], Genero.Preferencia.NADA);
     }
 
-    public List <Entrada> getHistorial () {
+    public SortedSet <Entrada> getHistorial () {
         return this.historial;
     }
 
-    public void setHistorial (List <Entrada> historial) {
-        this.historial = new ArrayList <Entrada> (historial == null ? Collections.emptyList () : historial);
+    public void setHistorial (Collection <Entrada> historial) {
+        this.historial = new TreeSet <Entrada> (historial == null ? Collections.emptySet () : historial);
     }
 
     @Override
     public String toString () {
-        return "Usuario " + super.toString () + ", preferencias = " + preferencias.toString ();
+        return super.toString () + ", preferencias = " + preferencias.toString ();
     }
 
     public static Espectador random () {
-        return new Espectador ("", "", (byte) Espectador.random.nextInt (100), Genero.randomPrefs ());
+        return new Espectador ("", "", (byte) Espectador.random.nextInt (Espectador.MAX_EDAD), Genero.randomPrefs ());
     }
 
     public byte fromPreferencias (Pelicula pelicula) {

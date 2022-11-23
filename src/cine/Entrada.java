@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class Entrada {
+public class Entrada implements Comparable <Entrada> {
     public static final BigDecimal PRECIOESTANDAR = BigDecimal.valueOf (7.9);
     public static final int DESCUENTOESPECTADOR = 30;
 
@@ -122,6 +122,36 @@ public class Entrada {
 
     public BigDecimal getPrecio () {
         return this.precio;
+    }
+
+    @Override
+    public boolean equals (Object o) {
+        return o instanceof Entrada && this.id.equals (((Entrada) o).id);
+    }
+
+    @Override
+    public int compareTo (Entrada entrada) {
+        if (entrada == null)
+            return 1;
+
+        if (this.equals (entrada))
+            return 0;
+
+        int comp;
+        if ((comp = this.fecha.compareTo (entrada.fecha)) != 0)
+            return comp;
+
+        if (this.pelicula == null) {
+            if (entrada.pelicula == null)
+                return 0;
+
+            return -1;
+        }
+
+        if ((comp = this.pelicula.compareTo (entrada.pelicula)) != 0)
+            return comp;
+
+        return this.id.compareTo (entrada.id);
     }
 
     @Override

@@ -51,19 +51,18 @@ public abstract class Usuario {
 
     public void setContrasena (String contrasena) {
         this.contrasena = contrasena == null || contrasena.equals ("")
-            ? new PasswordGenerator ().generatePassword (
-                Usuario.RPASSLEN,
-                new CharacterRule (EnglishCharacterData.Special),
-                new CharacterRule (EnglishCharacterData.LowerCase),
-                new CharacterRule (EnglishCharacterData.UpperCase),
-                new CharacterRule (EnglishCharacterData.Digit)
-            )
-            : contrasena
-        ;
+                ? new PasswordGenerator ().generatePassword (
+                        Usuario.RPASSLEN,
+                        new CharacterRule (EnglishCharacterData.Special),
+                        new CharacterRule (EnglishCharacterData.LowerCase),
+                        new CharacterRule (EnglishCharacterData.UpperCase),
+                        new CharacterRule (EnglishCharacterData.Digit))
+                : contrasena;
     }
 
     @Override
     public String toString () {
-        return "[nombre=" + this.nombre + ", contraseña=" + this.contrasena + ", id=" + this.id + "]";
+        return this.getClass ().toString () + " " + "[nombre=" + this.nombre + ", contraseña=" + this.contrasena
+                + ", id=" + this.id + "]";
     }
 }

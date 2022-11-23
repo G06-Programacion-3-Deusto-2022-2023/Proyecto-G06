@@ -3,6 +3,7 @@ package cine;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -26,8 +27,7 @@ import java.time.ZoneId;
 
 public class Pelicula implements Comparable <Pelicula> {
     // Media y desviación estándar de la distribución de las valoraciones de
-    // las
-    // películas sacadas de los primeros 2²⁰ elementos
+    // las películas sacadas de los primeros 2²⁰ elementos
     // de la columna averageRating del archivo title.ratings.tsv/data.tsv
     // del
     // dataset de Kaggle
@@ -49,7 +49,7 @@ public class Pelicula implements Comparable <Pelicula> {
     public static final Duration DEFAULT_DURACION = Duration.ofMinutes (90);
 
     // URLs de las imágenes de las películas por defecto
-    public static List <URL> DEFAULT_MOVIE_IMAGE_URLS = new ArrayList <URL> (
+    public static final List <URL> DEFAULT_MOVIE_IMAGE_URLS = new ArrayList <URL> (
             Arrays.asList (
                     new String [] {
                             "https://pics.filmaffinity.com/torrente_el_brazo_tonto_de_la_ley-769153589-large.jpg",
@@ -105,9 +105,9 @@ public class Pelicula implements Comparable <Pelicula> {
                     }).collect (Collectors.toList ()));
 
     // Ruta de las imágenes de las películas por defecto
-    public static String DEFAULT_MOVIE_IMAGE_PATH = "data/default/img";
+    public static final String DEFAULT_MOVIE_IMAGE_PATH = "data/default/img";
 
-    public static List <String> DEFAULT_MOVIE_IMAGE_FILES = new ArrayList <String> (
+    public static final List <String> DEFAULT_MOVIE_IMAGE_FILES = new ArrayList <String> (
             DEFAULT_MOVIE_IMAGE_URLS.stream ().map (e -> {
                 return e == null ? ""
                         : String.format ("%s%c%s", DEFAULT_MOVIE_IMAGE_PATH, File.separatorChar,
@@ -120,6 +120,7 @@ public class Pelicula implements Comparable <Pelicula> {
 
     // Las películas por defecto (soy consciente de que esto es una guarrada
     // pero vamos a dejarlo así por el momento)
+    protected static final int NDEFAULT_PELICULAS = 35;
     public static final SortedSet <Pelicula> DEFAULT_PELICULAS = new TreeSet <Pelicula> (
             Arrays.asList (
                     new Pelicula [] {
@@ -371,6 +372,7 @@ public class Pelicula implements Comparable <Pelicula> {
     protected Duration duracion;
     protected EdadRecomendada edad;
     protected Set <Genero.Nombre> generos;
+    protected SortedSet <SetPeliculas> sets;
 
     public Pelicula () {
         this ("");
@@ -422,12 +424,27 @@ public class Pelicula implements Comparable <Pelicula> {
     public Pelicula (UUID id, String nombre, String rutaImagen, double valoracion, Year fecha, String director,
             Duration duracion,
             EdadRecomendada edad, Collection <Genero.Nombre> generos) {
+        this (id, nombre, rutaImagen, valoracion, fecha, director, duracion, edad,
+                generos, null);
+    }
+
+    public Pelicula (UUID id, String nombre, String rutaImagen, double valoracion, Year fecha, String director,
+            Duration duracion,
+            EdadRecomendada edad, Collection <Genero.Nombre> generos, Collection <SetPeliculas> sets) {
         super ();
 
-        if (!Pelicula.DEFAULT_IMAGES_DOWNLOADED && id.getLeastSignificantBits () < 35)
-            Pelicula.DEFAULT_IMAGES_DOWNLOADED = Pelicula.downloadDefaultImages ();
+        interface GetPreviousClassName {
+            String show (StackTraceElement stackTrace[]);
+        }
 
-        this.id = id;
+        this.id = id != null && ((id.getMostSignificantBits () == 0
+                && id.getLeastSignificantBits () < 35
+                && ((GetPreviousClassName) (st -> {
+                    return String.format ("%s", st [1].getClassName ());
+                })).show (Thread.currentThread ().getStackTrace ()).equals ("Pelicula"))
+                || id.getMostSignificantBits () != 0 || id.getLeastSignificantBits () != Pelicula.NDEFAULT_PELICULAS)
+                        ? id
+                        : UUID.randomUUID ();
         this.setNombre (nombre);
         this.setRutaImagen (rutaImagen);
         this.setValoracion (valoracion);
@@ -436,19 +453,22 @@ public class Pelicula implements Comparable <Pelicula> {
         this.setDuracion (duracion);
         this.setEdad (edad);
         this.setGeneros (generos);
+        this.setSets (sets);
+
+        if (this.isDefault () && !Pelicula.DEFAULT_IMAGES_DOWNLOADED)
+            Pelicula.DEFAULT_IMAGES_DOWNLOADED = Pelicula.downloadDefaultImages ();
     }
 
-    public Pelicula (Pelicula pelicula) {
+    public Pelicula (Pelicula pelicula) throws NullPointerException {
         this (pelicula.id, pelicula.nombre, pelicula.rutaImagen, pelicula.valoracion, pelicula.fecha,
                 pelicula.director,
                 pelicula.duracion,
-                pelicula.edad, pelicula.generos);
+                pelicula.edad, pelicula.generos, pelicula.sets);
     }
 
     @Override
     public void finalize () throws Throwable {
-        if (this.id.getMostSignificantBits () != 0
-                || this.id.getLeastSignificantBits () >= DEFAULT_PELICULAS.size ())
+        if (!this.isDefault ())
             return;
 
         if (new File (DEFAULT_MOVIE_IMAGE_FILES
@@ -467,11 +487,13 @@ public class Pelicula implements Comparable <Pelicula> {
 
         File f;
         if ((f = new File (DEFAULT_MOVIE_IMAGE_PATH)).list () == null && f.delete ())
-                Logger.getLogger (Pelicula.class.getName ()).log (Level.INFO,
-                        String.format ("Eliminadada la carpeta %s.",
-                                DEFAULT_MOVIE_IMAGE_PATH));
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.INFO,
+                    String.format ("Eliminadada la carpeta %s.",
+                            DEFAULT_MOVIE_IMAGE_PATH));
 
         Pelicula.DEFAULT_IMAGES_DOWNLOADED = false;
+
+        this.removeFromSets ();
 
         super.finalize ();
     }
@@ -532,17 +554,16 @@ public class Pelicula implements Comparable <Pelicula> {
     }
 
     public void setDuracion (Duration duracion) {
-
         // En estos momentos echo de menos la extensión backtrace () de
         // GNU para
         // C
-        interface getPreviousMethodName {
+        interface GetPreviousMethodName {
             String show (StackTraceElement stackTrace[]);
         }
 
         this.duracion = duracion == null || duracion.isNegative () || duracion.isZero ()
                 ? (this.duracion == null ? Pelicula.DEFAULT_DURACION : this.duracion)
-                : ((getPreviousMethodName) (st ->
+                : ((GetPreviousMethodName) (st ->
 
                 {
                     return String.format ("%s.%s", st [1].getClassName (), st [1].getMethodName ());
@@ -565,8 +586,74 @@ public class Pelicula implements Comparable <Pelicula> {
 
     public void setGeneros (Collection <Genero.Nombre> generos) {
         this.generos = generos == null || generos.contains (Genero.Nombre.NADA)
-                ? Collections.singleton (Genero.Nombre.NADA)
+                ? new TreeSet <Genero.Nombre> (Collections.singleton (Genero.Nombre.NADA))
                 : new TreeSet <Genero.Nombre> (generos);
+    }
+
+    public Set <SetPeliculas> getSets () {
+        return this.sets;
+    }
+
+    public void setSets (Collection <SetPeliculas> sets) {
+        this.sets = new TreeSet <SetPeliculas> ((Comparator <SetPeliculas>) ( (a, b) -> {
+            return a.getId ().compareTo (b.getId ());
+        }));
+
+        if (sets != null)
+            this.sets.addAll (sets);
+    }
+
+    public boolean isInSet (SetPeliculas set) {
+        return set.contains (this);
+    }
+
+    public boolean addSet (SetPeliculas set) {
+        if (this.sets == null || set == null)
+            return false;
+
+        return this.sets.add (set);
+    }
+
+    public boolean addSets (Collection <SetPeliculas> sets) {
+        if (this.sets == null || sets == null)
+            return false;
+
+        SetPeliculas array[] = sets.toArray (new SetPeliculas [0]);
+
+        boolean all = true;
+        for (int i = 0; i < array.length; all = all && this.addSet (array [i++]))
+            ;
+
+        return all;
+    }
+
+    public boolean removeSet (SetPeliculas set) {
+        if (this.sets == null || set == null || !this.isInSet (set))
+            return false;
+
+        return this.sets.remove (set);
+    }
+
+    public boolean removeSets (Collection <SetPeliculas> sets) {
+        if (this.sets == null || sets == null)
+            return false;
+
+        SetPeliculas array[] = sets.toArray (new SetPeliculas [0]);
+
+        boolean all = true;
+        for (int i = 0; i < array.length; all = all && this.removeSet (array [i++]))
+            ;
+
+        return all;
+    }
+
+    public void removeFromSets () {
+        if (this.sets == null)
+            return;
+
+        SetPeliculas array[] = this.sets.toArray (new SetPeliculas [0]);
+        for (int i = 0; i < array.length; array [i++].remove (this))
+            ;
     }
 
     @Override
@@ -581,6 +668,9 @@ public class Pelicula implements Comparable <Pelicula> {
 
     @Override
     public int compareTo (Pelicula pelicula) {
+        if (pelicula == null)
+            return 1;
+
         if (this.nombre.equals (this.id.toString ()) && !pelicula.nombre.equals (pelicula.id.toString ()))
             return 1;
 
@@ -599,13 +689,16 @@ public class Pelicula implements Comparable <Pelicula> {
 
     @Override
     public String toString () {
-
         interface GenerosToString {
             String str (List <Genero.Nombre> generos);
         }
 
+        interface IDSets {
+            String str (List <SetPeliculas> sets);
+        }
+
         return "Película (hash: " + this.hashCode () + ") {\n\tID: " + this.id
-                + (this.id.compareTo (new UUID (0L, 35L)) < 0 ? " (película por defecto)" : "")
+                + (this.isDefault () ? " (película por defecto)" : "")
                 + "\n\tNombre: "
                 + this.nombre + "\n\tRuta de la imagen: "
                 + this.rutaImagen + "\n\tValoración: " + (((Double) this.valoracion).isNaN ()
@@ -615,19 +708,27 @@ public class Pelicula implements Comparable <Pelicula> {
                 + "\n\tDirector: "
                 + this.director + "\n\tDuración: "
                 + this.duracionToString () + "\n\tEdad: " + this.edad
-                + "\n\tGéneros: " + ((GenerosToString) (g ->
-
-                {
+                + "\n\tGéneros: " + ((GenerosToString) (g -> {
                     StringBuilder str = new StringBuilder ();
                     for (int i = 0; i < g.size (); i++)
                         str.append (String.format ("%s%s",
                                 g.get (i).toString (),
-                                i != generos.size () - 1
+                                i != g.size () - 1
                                         ? " · "
                                         : ""));
                     return str.toString ();
                 })).str (this.generos.stream ()
                         .collect (Collectors.toList ()))
+                + "\n\tSets: " + (this.sets.isEmpty () ? "-" : ((IDSets) (s -> {
+                    StringBuilder str = new StringBuilder ();
+                    for (int i = 0; i < s.size (); i++)
+                        str.append (String.format ("%s%s",
+                                s.get (i).getId ().toString (),
+                                i != s.size () - 1
+                                        ? " · "
+                                        : ""));
+                    return str.toString ();
+                })).str (this.sets.stream ().collect (Collectors.toList ())))
                 + "\n}";
     }
 
@@ -642,6 +743,11 @@ public class Pelicula implements Comparable <Pelicula> {
                                 this.duracion.toMinutes () % 60,
                                 this.duracion.toMinutes () % 60 > 1 ? "s" : "")
                         : "");
+    }
+
+    public boolean isDefault () {
+        return this.id != null && this.id.getMostSignificantBits () == 0
+                && this.id.getLeastSignificantBits () < Pelicula.NDEFAULT_PELICULAS;
     }
 
     protected static boolean downloadDefaultImages () {
@@ -707,12 +813,12 @@ public class Pelicula implements Comparable <Pelicula> {
                 EdadRecomendada.random (), Genero.randomGeneros ());
     }
 
-    public static List <String> getNombres (List <Pelicula> peliculas) {
+    public static List <String> getNombres (Collection <Pelicula> peliculas) {
         ArrayList <String> nombres = new ArrayList <String> ();
 
-        for (int i = 0; i < peliculas.size (); i++) {
-            nombres.add (peliculas.get (i).getNombre ());
-        }
+        List <Pelicula> list = peliculas.stream ().collect (Collectors.toList ());
+        for (int i = 0; i < list.size (); nombres.add (list.get (i++).getNombre ()))
+            ;
 
         return nombres;
     }
