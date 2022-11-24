@@ -867,9 +867,4 @@ public class Pelicula implements Comparable <Pelicula> {
 
         return nombres;
     }
-
-    public static void main (String args[]) {
-        System.out.println (Pelicula.DEFAULT_PELICULAS);
-        System.out.println ("\n\n" + Pelicula.getDefault ());
-    }
 }
