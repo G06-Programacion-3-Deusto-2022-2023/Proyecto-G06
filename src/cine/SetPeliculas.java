@@ -14,11 +14,12 @@ import java.util.stream.Collectors;
 
 public class SetPeliculas implements Comparable <SetPeliculas> {
     private static final Random random = new Random ();
-    public static final int MIN_SIZE = 7;
-    public static final int MAX_SIZE = 35;
+    private static final int MIN_SIZE = 7;
+    private static final int MAX_SIZE = 35;
 
-    public static final SetPeliculas DEFAULT = new SetPeliculas (new UUID (0L, 0L), null, "Set por defecto",
-            Pelicula.DEFAULT_PELICULAS);
+    private static boolean DEFAULT_SET = false;
+    private static final SetPeliculas DEFAULT = new SetPeliculas (new UUID (0L, 0L), null, "Set por defecto",
+            Pelicula.getDefault ());
 
     protected UUID id;
     protected Administrador administrador;
@@ -48,10 +49,23 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
     public SetPeliculas (UUID id, Administrador administrador, String nombre, Collection <Pelicula> peliculas) {
         super ();
 
-        this.id = id;
+        interface GetPreviousClassName {
+            String show (StackTraceElement stackTrace[]);
+        }
+
+        this.id = id != null && ((id.getMostSignificantBits () == 0
+                && id.getLeastSignificantBits () == 0
+                && ((GetPreviousClassName) (st -> String.format ("%s", st [1].getClassName ())))
+                        .show (Thread.currentThread ().getStackTrace ()).equals ("cine.SetPeliculas"))
+                || id.getMostSignificantBits () != 0 || id.getLeastSignificantBits () != 0)
+                        ? id
+                        : UUID.randomUUID ();
         this.setAdministrador (administrador);
         this.setNombre (nombre);
         this.setPeliculas (peliculas);
+
+        if (this.isDefault ())
+            SetPeliculas.DEFAULT_SET = true;
     }
 
     public SetPeliculas (SetPeliculas setPeliculas) {
@@ -71,6 +85,9 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
     }
 
     public void setAdministrador (Administrador administrador) {
+        if (this.isDefault () && SetPeliculas.DEFAULT_SET)
+            return;
+
         this.administrador = administrador;
     }
 
@@ -79,6 +96,9 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
     }
 
     public void setNombre (String nombre) {
+        if (this.isDefault () && SetPeliculas.DEFAULT_SET)
+            return;
+
         if (nombre != null && !nombre.equals ("")) {
             this.nombre = nombre;
 
@@ -91,7 +111,7 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
             return;
         }
 
-        SetPeliculas array [] = this.administrador.getSetsPeliculas ().toArray (new SetPeliculas [0]);
+        SetPeliculas array[] = this.administrador.getSetsPeliculas ().toArray (new SetPeliculas [0]);
 
         int nuevas = 0;
         for (int i = 0; i < array.length; nuevas += array [i++].getNombre ().contains ("Nuevo set") ? 1 : 0)
@@ -148,6 +168,9 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
     }
 
     public boolean add (Pelicula pelicula) {
+        if (this.isDefault () && SetPeliculas.DEFAULT_SET)
+            return false;
+
         if (pelicula == null)
             return false;
 
@@ -165,6 +188,9 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
     }
 
     public boolean remove (Pelicula pelicula) {
+        if (this.isDefault () && SetPeliculas.DEFAULT_SET)
+            return false;
+
         if (!this.contains (pelicula))
             return false;
 
@@ -185,8 +211,16 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
         return pelicula != null && this.peliculas.contains (pelicula);
     }
 
+    public boolean isDefault () {
+        return this.id.equals (new UUID (0L, 0L));
+    }
+
+    public static SetPeliculas getDefault () {
+        return SetPeliculas.DEFAULT;
+    }
+
     public static SetPeliculas random () {
-        return SetPeliculas.random (Pelicula.DEFAULT_PELICULAS);
+        return SetPeliculas.random (Pelicula.getDefault ());
     }
 
     public static SetPeliculas random (Collection <Pelicula> peliculas) {

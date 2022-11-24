@@ -60,13 +60,13 @@ public class PeliculaTest {
 
     @Test
     public void defaultPeliculaTest () throws Throwable {
-        pelicula = Pelicula.DEFAULT_PELICULAS.stream ().collect (Collectors.toMap (e -> e.getNombre (), e -> e))
+        pelicula = Pelicula.getDefault ().stream ().collect (Collectors.toMap (e -> e.getNombre (), e -> e))
                 .get ("Torrente, el brazo tonto de la ley");
 
-        assertTrue (new File (Pelicula.DEFAULT_MOVIE_IMAGE_FILES.get (0)).exists ());
+        assertTrue (new File (pelicula.getRutaImagen ()).exists ());
         assertEquals (new UUID (0L, 0L), pelicula.getId ());
-        assertEquals (Pelicula.DEFAULT_MOVIE_IMAGE_FILES.get (0), pelicula.getRutaImagen ());
+        assertEquals (pelicula.getRutaImagen (), pelicula.getRutaImagen ());
         pelicula.finalize ();
-        assertFalse (new File (Pelicula.DEFAULT_MOVIE_IMAGE_FILES.get (0)).exists ());
+        assertFalse (new File (pelicula.getRutaImagen ()).exists ());
     }
 }
