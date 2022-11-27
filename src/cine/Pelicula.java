@@ -131,7 +131,9 @@ public class Pelicula implements Comparable <Pelicula> {
     // Flag que especifica si se han descargado o no las imágenes de las
     // películas por defecto
     private static boolean DEFAULT_IMAGES_DOWNLOADED = false;
-    private static boolean DEFAULT_IMAGES_THREAD_CALLED = false;
+
+    // Flag que especifica si se ha llamado ya al hilo que se encarga de descargar las imágenes de las películas por defecto.
+    private static boolean DEFAULT_IMAGES_THREAD_RUNNING = false;
 
     // Las películas por defecto (soy consciente de que esto es una guarrada
     // pero vamos a dejarlo así por el momento)
@@ -468,13 +470,17 @@ public class Pelicula implements Comparable <Pelicula> {
         if (this.isDefault ()) {
             Pelicula.SET_DEFAULT_PELICULAS |= 1L << this.id.getLeastSignificantBits ();
 
-            if (!Pelicula.DEFAULT_IMAGES_DOWNLOADED && !Pelicula.DEFAULT_IMAGES_THREAD_CALLED) {
-                Pelicula.DEFAULT_IMAGES_THREAD_CALLED = true;
+            if (!Pelicula.DEFAULT_IMAGES_DOWNLOADED && !Pelicula.DEFAULT_IMAGES_THREAD_RUNNING) {
+                Pelicula.DEFAULT_IMAGES_THREAD_RUNNING = true;
 
                 new Thread () {
                     @Override
                     public void run () {
                         Pelicula.downloadDefaultImages ();
+
+                        for (; !Pelicula.DEFAULT_IMAGES_DOWNLOADED;)
+                            ;
+                        Pelicula.DEFAULT_IMAGES_THREAD_RUNNING = false;
                     }
                 }.start ();
             }
