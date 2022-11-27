@@ -19,7 +19,7 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
 
     private static boolean DEFAULT_SET = false;
     private static final SetPeliculas DEFAULT = new SetPeliculas (new UUID (0L, 0L), null, "Set por defecto",
-            Pelicula.getDefault ());
+            null);
 
     protected UUID id;
     protected Administrador administrador;
@@ -49,14 +49,9 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
     public SetPeliculas (UUID id, Administrador administrador, String nombre, Collection <Pelicula> peliculas) {
         super ();
 
-        interface GetPreviousClassName {
-            String show (StackTraceElement stackTrace[]);
-        }
-
         this.id = id != null && ((id.getMostSignificantBits () == 0
                 && id.getLeastSignificantBits () == 0
-                && ((GetPreviousClassName) (st -> String.format ("%s", st [1].getClassName ())))
-                        .show (Thread.currentThread ().getStackTrace ()).equals ("cine.SetPeliculas"))
+                && Pelicula.isAmongstCallers ("cine.SetPeliculas"))
                 || id.getMostSignificantBits () != 0 || id.getLeastSignificantBits () != 0)
                         ? id
                         : UUID.randomUUID ();
@@ -125,11 +120,28 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
     }
 
     public void setPeliculas (Collection <Pelicula> peliculas) {
+        if (this.isDefault () && SetPeliculas.DEFAULT_SET
+                && !(Pelicula.isAmongstCallers ("cine.Pelicula") || Pelicula.isAmongstCallers ("cine.SetPeliculas")))
+            return;
+
         this.peliculas = new TreeSet <Pelicula> (
                 peliculas == null || peliculas.size () < SetPeliculas.MIN_SIZE
                         || peliculas.size () > SetPeliculas.MAX_SIZE
                                 ? Collections.emptySet ()
                                 : peliculas);
+
+        if (peliculas == null)
+            return;
+
+        Pelicula array[] = peliculas.toArray (new Pelicula [0]);
+
+        for (int i = 0; i < array.length; array [i++].addSet (this))
+            ;
+    }
+
+    @Override
+    public int hashCode () {
+        return super.hashCode ();
     }
 
     @Override
@@ -160,7 +172,16 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
 
     @Override
     public String toString () {
-        return "SetPeliculas [id=" + this.id.toString () + ", peliculas=" + this.peliculas.toString () + "]";
+        return "Set de películas (hash: " + this.hashCode () + ") " + "{\n\tID: " + this.id.toString ()
+                + (this.isDefault () ? " (set predeterminado)" : "") + "\n\tNombre: " + "\n\tTamaño: "
+                + this.size ()
+                + "\n\tAdministrador: "
+                + (this.administrador == null ? ""
+                        : String.format ("%s (ID: %s)", this.administrador.getNombre (),
+                                this.administrador.getId ().toString ()))
+                + "\n\tPelículas: "
+                + this.peliculas.toString ().replace ("\n", "\n\t\t").replace ("[", "{\n\t\t").replace ("]", "\n\t\t}")
+                + "\n}";
     }
 
     public int size () {
@@ -168,59 +189,93 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
     }
 
     public boolean add (Pelicula pelicula) {
-        if (this.isDefault () && SetPeliculas.DEFAULT_SET)
+        if (this.isDefault () && SetPeliculas.DEFAULT_SET
+                && !(Pelicula.isAmongstCallers ("cine.Pelicula") || Pelicula.isAmongstCallers ("cine.SetPeliculas")))
             return false;
 
         if (pelicula == null)
             return false;
 
-        if (this.peliculas.add (pelicula)) {
-            if (!pelicula.addSet (this)) {
-                this.remove (pelicula);
-
-                return false;
-            }
-
+        if (this.peliculas.contains (pelicula))
             return true;
-        }
 
-        return false;
+        this.peliculas.add (pelicula);
+        return pelicula.addSet (this);
+    }
+
+    public boolean add (Collection <Pelicula> peliculas) {
+        if (this.peliculas == null || peliculas == null)
+            return false;
+
+        Pelicula array[] = peliculas.toArray (new Pelicula [0]);
+
+        boolean all = true;
+        for (int i = 0; i < array.length; all = all && this.add (array [i++]))
+            ;
+
+        return all;
     }
 
     public boolean remove (Pelicula pelicula) {
-        if (this.isDefault () && SetPeliculas.DEFAULT_SET)
+        if (this.isDefault () && SetPeliculas.DEFAULT_SET
+                && !(Pelicula.isAmongstCallers ("cine.Pelicula") || Pelicula.isAmongstCallers ("cine.SetPeliculas")))
             return false;
 
         if (!this.contains (pelicula))
+            return true;
+
+        this.peliculas.remove (pelicula);
+        return pelicula.removeSet (this);
+    }
+
+    public boolean remove (Collection <Pelicula> peliculas) {
+        if (this.peliculas == null || peliculas == null)
             return false;
 
-        if (this.peliculas.remove (pelicula)) {
-            if (!pelicula.removeSet (this)) {
-                this.add (pelicula);
+        Pelicula array[] = peliculas.toArray (new Pelicula [0]);
 
-                return false;
-            }
+        boolean all = true;
+        for (int i = 0; i < array.length; all = all && this.remove (array [i++]))
+            ;
 
-            return true;
-        }
-
-        return false;
+        return all;
     }
 
     public boolean contains (Pelicula pelicula) {
         return pelicula != null && this.peliculas.contains (pelicula);
     }
 
+    public boolean contains (Collection <Pelicula> peliculas) {
+        Pelicula array[] = peliculas.toArray (new Pelicula [0]);
+
+        for (int i = 0; i < array.length;)
+            if (!this.contains (array [i++]))
+                return false;
+
+        return true;
+    }
+
     public boolean isDefault () {
         return this.id.equals (new UUID (0L, 0L));
     }
 
+    protected static boolean isDefaultSet () {
+        return SetPeliculas.DEFAULT_SET;
+    }
+
     public static SetPeliculas getDefault () {
+        if (!SetPeliculas.DEFAULT.contains (Pelicula.getDefault ()))
+            SetPeliculas.DEFAULT.add (Pelicula.getDefault ());
+
         return SetPeliculas.DEFAULT;
     }
 
-    public static SetPeliculas random () {
+    public static SetPeliculas random () throws InterruptedException {
         return SetPeliculas.random (Pelicula.getDefault ());
+    }
+
+    public static SetPeliculas random (int n) {
+        return SetPeliculas.random (Pelicula.getDefault (), n);
     }
 
     public static SetPeliculas random (Collection <Pelicula> peliculas) {
@@ -245,5 +300,9 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
 
     public List <String> getNombresPeliculas () {
         return Pelicula.getNombres (Arrays.asList (this.peliculas.toArray (new Pelicula [0])));
+    }
+
+    public static void main (String args[]) {
+        System.out.println (SetPeliculas.getDefault ());
     }
 }

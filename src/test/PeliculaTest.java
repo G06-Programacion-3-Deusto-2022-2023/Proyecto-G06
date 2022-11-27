@@ -6,6 +6,7 @@ import java.io.File;
 import java.time.Duration;
 import java.time.Year;
 import java.util.UUID;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
@@ -13,6 +14,7 @@ import org.junit.Test;
 import cine.EdadRecomendada;
 import cine.Genero;
 import cine.Pelicula;
+import cine.SetPeliculas;
 
 public class PeliculaTest {
     Pelicula pelicula;
@@ -59,14 +61,48 @@ public class PeliculaTest {
     }
 
     @Test
-    public void defaultPeliculaTest () throws Throwable {
-        pelicula = Pelicula.getDefault ().stream ().collect (Collectors.toMap (e -> e.getNombre (), e -> e))
+    public void defaultPeliculaTest () {
+        assertTrue (((BooleanSupplier) ( () -> {
+            Pelicula array[] = Pelicula.getDefault ().toArray (new Pelicula [0]);
+
+            for (; !Pelicula.defaultImagesDownloaded();)
+                ;
+
+            for (int i = 0; i < array.length;)
+                if (!new File (array [i++].getRutaImagen ()).exists ())
+                    return false;
+
+            return true;
+        })).getAsBoolean ());
+    }
+
+    @Test
+    public void defaultPeliculaTest2 () throws Throwable {
+        pelicula = Pelicula.getDefault ().stream ().collect (Collectors.toMap (Pelicula::getNombre, e -> e))
                 .get ("Torrente, el brazo tonto de la ley");
+        assertTrue (Pelicula.getDefault ().contains (pelicula));
+
+        String nombre = new String (pelicula.getNombre ());
+        pelicula.setNombre ("Luis Padrique");
+        assertEquals (nombre, pelicula.getNombre ());
 
         assertTrue (new File (pelicula.getRutaImagen ()).exists ());
         assertEquals (new UUID (0L, 0L), pelicula.getId ());
         assertEquals (pelicula.getRutaImagen (), pelicula.getRutaImagen ());
         pelicula.finalize ();
         assertFalse (new File (pelicula.getRutaImagen ()).exists ());
+    }
+
+    @Test
+    public void defaultPeliculaTest3 () {
+        pelicula = Pelicula.getDefault ().stream ().collect (Collectors.toMap (Pelicula::getNombre, e -> e))
+                .get ("A todo gas: Tokyo Race");
+        assertTrue (Pelicula.getDefault ().contains (pelicula));
+
+        SetPeliculas set;
+        pelicula.addSet (set = SetPeliculas.random (0));
+        assertTrue (set.contains (pelicula));
+        set.remove (pelicula);
+        assertFalse (pelicula.isInSet (set));
     }
 }

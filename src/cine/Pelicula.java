@@ -12,6 +12,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -26,6 +27,21 @@ import java.time.Year;
 import java.time.ZoneId;
 
 public class Pelicula implements Comparable <Pelicula> {
+    // A ser usada por el método isAmongstCallers para mirar en el stack.
+    private static int STACK_DEPTH = 50;
+
+    protected static boolean isAmongstCallers (String str) {
+        return isAmongstCallers (str, Thread.currentThread ().getStackTrace ());
+    }
+
+    private static boolean isAmongstCallers (String str, StackTraceElement stt[]) {
+        for (int i = 1; i <= STACK_DEPTH && i < stt.length;)
+            if (stt [i++].getClassName ().equals (str))
+                return true;
+
+        return false;
+    }
+
     // Media y desviación estándar de la distribución de las valoraciones de
     // las películas sacadas de los primeros 2²⁰ elementos
     // de la columna averageRating del archivo title.ratings.tsv/data.tsv
@@ -115,252 +131,252 @@ public class Pelicula implements Comparable <Pelicula> {
     // Flag que especifica si se han descargado o no las imágenes de las
     // películas por defecto
     private static boolean DEFAULT_IMAGES_DOWNLOADED = false;
+    private static boolean DEFAULT_IMAGES_THREAD_CALLED = false;
 
     // Las películas por defecto (soy consciente de que esto es una guarrada
     // pero vamos a dejarlo así por el momento)
     private static final int NDEFAULT_PELICULAS = 35;
     private static long SET_DEFAULT_PELICULAS = 0;
-    private static final SortedSet <Pelicula> DEFAULT_PELICULAS = new TreeSet <Pelicula> (
-            Arrays.asList (
-                    new Pelicula [] {
-                            new Pelicula (new UUID (0L, 0L),
-                                    "Torrente, el brazo tonto de la ley",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (0), 6.8,
-                                    Year.of (1998),
-                                    "Santiago Segura",
-                                    Duration.ofMinutes (97),
-                                    EdadRecomendada.DIECIOCHO,
-                                    Genero.Nombre.COMEDIA),
-                            new Pelicula (new UUID (0L, 1L), "Ali G anda suelto",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (1),
-                                    6.2, Year.of (2002), "Mark Mylod",
-                                    Duration.ofMinutes (85),
-                                    EdadRecomendada.DIECIOCHO,
-                                    Genero.Nombre.COMEDIA),
-                            new Pelicula (new UUID (0L, 2L), "Los minions",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (2), 6.4,
-                                    Year.of (2015),
-                                    "Kyle Balda, Pierre Coffin",
-                                    Duration.ofMinutes (91),
-                                    EdadRecomendada.TODOS, Genero.Nombre.COMEDIA,
-                                    Genero.Nombre.CIENCIA_FICCION),
-                            new Pelicula (new UUID (0L, 3L), "American Psycho",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (3), 7.6,
-                                    Year.of (2000), "Mary Harron",
-                                    Duration.ofMinutes (102),
-                                    EdadRecomendada.DIECIOCHO, Genero.Nombre.DRAMA,
-                                    Genero.Nombre.TERROR),
-                            new Pelicula (new UUID (0L, 4L), "Malditos Bastardos",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (4),
-                                    8.3, Year.of (2009),
-                                    "Quentin Tarantino",
-                                    Duration.ofMinutes (153),
-                                    EdadRecomendada.DIECIOCHO, Genero.Nombre.DRAMA),
-                            new Pelicula (new UUID (0L, 5L), "El club de la lucha",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (5),
-                                    8.8, Year.of (1999),
-                                    "David Fincher",
-                                    Duration.ofMinutes (139),
-                                    EdadRecomendada.DIECIOCHO, Genero.Nombre.DRAMA),
-                            new Pelicula (new UUID (0L, 6L), "American History X",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (6),
-                                    8.5, Year.of (1998), "Tony Kaye",
-                                    Duration.ofMinutes (119),
-                                    EdadRecomendada.DIECISEIS, Genero.Nombre.DRAMA),
-                            new Pelicula (new UUID (0L, 7L), "Karate Kid",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (7), 7.3,
-                                    Year.of (1984), "John G. Avildsen",
-                                    Duration.ofMinutes (126),
-                                    EdadRecomendada.TODOS, Genero.Nombre.ACCION,
-                                    Genero.Nombre.DRAMA),
-                            new Pelicula (new UUID (0L, 8L), "Angry Birds",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (8), 6.3,
-                                    Year.of (2016),
-                                    "Clay Kaytis, Fergal Reilly",
-                                    Duration.ofMinutes (97), EdadRecomendada.TODOS,
-                                    Genero.Nombre.ACCION, Genero.Nombre.COMEDIA),
-                            new Pelicula (new UUID (0L, 9L), "Bob Esponja",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (9), 7.1,
-                                    Year.of (2004),
-                                    "Stephen Hillenburg, Mark Osborne",
-                                    Duration.ofMinutes (87), EdadRecomendada.TODOS,
-                                    Genero.Nombre.COMEDIA),
-                            new Pelicula (new UUID (0L, 10L), "Lluvia de Albóndigas",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (10), 6.9,
-                                    Year.of (2009),
-                                    "Phil Lord, Christopher Miller",
-                                    Duration.ofMinutes (90), EdadRecomendada.TODOS,
-                                    Genero.Nombre.COMEDIA,
-                                    Genero.Nombre.CIENCIA_FICCION),
-                            new Pelicula (new UUID (0L, 11L), "La Torre Oscura",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (11),
-                                    5.6, Year.of (2017),
-                                    "Nikolaj Arcel", Duration.ofMinutes (95),
-                                    EdadRecomendada.DOCE,
-                                    Genero.Nombre.ACCION,
-                                    Genero.Nombre.CIENCIA_FICCION,
-                                    Genero.Nombre.FANTASIA),
-                            new Pelicula (new UUID (0L, 12L), "Dioses de Egipto",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (12),
-                                    5.4, Year.of (2016),
-                                    "Alex Proyas", Duration.ofMinutes (127),
-                                    EdadRecomendada.SIETE,
-                                    Genero.Nombre.ACCION, Genero.Nombre.FANTASIA),
-                            new Pelicula (new UUID (0L, 13L), "Shrek 2",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (13), 7.3,
-                                    Year.of (2004),
-                                    "Andrew Adamson, Kelly Asbury, Conrad Vernon",
-                                    Duration.ofMinutes (93),
-                                    EdadRecomendada.TODOS, Genero.Nombre.COMEDIA,
-                                    Genero.Nombre.ROMANCE,
-                                    Genero.Nombre.FANTASIA),
-                            new Pelicula (new UUID (0L, 14L), "Spider-Man: No Way Home",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (14), 8.3,
-                                    Year.of (2021),
-                                    "Jon Watts", Duration.ofMinutes (148),
-                                    EdadRecomendada.SIETE, Genero.Nombre.ACCION,
-                                    Genero.Nombre.FANTASIA,
-                                    Genero.Nombre.CIENCIA_FICCION),
-                            new Pelicula (new UUID (0L, 15L), "Logan",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (15), 8.1,
-                                    Year.of (2017), "James Mangold",
-                                    Duration.ofMinutes (137),
-                                    EdadRecomendada.DIECISEIS, Genero.Nombre.ACCION,
-                                    Genero.Nombre.DRAMA,
-                                    Genero.Nombre.CIENCIA_FICCION,
-                                    Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 16L), "Dos buenos tipos",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (16),
-                                    7.3, Year.of (2016), "Shane Black",
-                                    Duration.ofMinutes (116),
-                                    EdadRecomendada.DIECISEIS, Genero.Nombre.ACCION,
-                                    Genero.Nombre.COMEDIA, Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 17L), "Origen",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (17), 8.8,
-                                    Year.of (2010), "James Mangold",
-                                    Duration.ofMinutes (248), EdadRecomendada.DOCE,
-                                    Genero.Nombre.ACCION,
-                                    Genero.Nombre.CIENCIA_FICCION,
-                                    Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 18L), "Bullet Train",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (18), 7.3,
-                                    Year.of (2022), "David Leitch",
-                                    Duration.ofMinutes (127),
-                                    EdadRecomendada.DIECISEIS,
-                                    Genero.Nombre.ACCION, Genero.Nombre.COMEDIA,
-                                    Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 19L), "Nadie",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (19), 7.4,
-                                    Year.of (2021), "Ilya Naishuller",
-                                    Duration.ofMinutes (152),
-                                    EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
-                                    Genero.Nombre.DRAMA,
-                                    Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 20L), "Interstellar",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (20), 8.6,
-                                    Year.of (2014), "Christopher Nolan",
-                                    Duration.ofMinutes (169), EdadRecomendada.DOCE,
-                                    Genero.Nombre.DRAMA,
-                                    Genero.Nombre.CIENCIA_FICCION),
-                            new Pelicula (new UUID (0L, 21L), "Sin Límites",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (21), 7.4,
-                                    Year.of (2011), "Neil Burger",
-                                    Duration.ofMinutes (105), EdadRecomendada.DOCE,
-                                    Genero.Nombre.CIENCIA_FICCION,
-                                    Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 22L), "El Bar Coyote",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (22), 5.7,
-                                    Year.of (2000), "David McNally",
-                                    Duration.ofMinutes (100), EdadRecomendada.DOCE,
-                                    Genero.Nombre.COMEDIA, Genero.Nombre.DRAMA,
-                                    Genero.Nombre.ROMANCE),
-                            new Pelicula (new UUID (0L, 23L), "Your Name.",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (23), 8.4,
-                                    Year.of (2016), "Makoto Shinkai",
-                                    Duration.ofMinutes (106), EdadRecomendada.TODOS,
-                                    Genero.Nombre.DRAMA, Genero.Nombre.FANTASIA,
-                                    Genero.Nombre.ROMANCE),
-                            new Pelicula (new UUID (0L, 24L), "Desde París con amor",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (24), 6.4,
-                                    Year.of (2010),
-                                    "Pierre Morel",
-                                    Duration.ofMinutes (92),
-                                    EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
-                                    Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 25L), "De amor y monstruos",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (25), 6.9,
-                                    Year.of (2020),
-                                    "Michael Matthews",
-                                    Duration.ofMinutes (109), EdadRecomendada.DOCE,
-                                    Genero.Nombre.ACCION,
-                                    Genero.Nombre.COMEDIA, Genero.Nombre.FANTASIA,
-                                    Genero.Nombre.CIENCIA_FICCION),
-                            new Pelicula (new UUID (0L, 26L), "El Renacido",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (26), 8,
-                                    Year.of (2015),
-                                    "Alejandro G. Iñárritu",
-                                    Duration.ofMinutes (156),
-                                    EdadRecomendada.DIECISEIS, Genero.Nombre.ACCION,
-                                    Genero.Nombre.DRAMA),
-                            new Pelicula (new UUID (0L, 27L), "El Libro de Eli",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (27), 6.8,
-                                    Year.of (2013),
-                                    "Albert Hughes, Allen Hughes",
-                                    Duration.ofMinutes (118), EdadRecomendada.DOCE,
-                                    Genero.Nombre.ACCION, Genero.Nombre.DRAMA,
-                                    Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 28L), "The Equalizer",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (28), 7.2,
-                                    Year.of (2014),
-                                    "Antoine Fuqua",
-                                    Duration.ofMinutes (132),
-                                    EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
-                                    Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 29L), "Soy Leyenda",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (29), 7.2,
-                                    Year.of (2007),
-                                    "Francis Lawrence",
-                                    Duration.ofMinutes (101), EdadRecomendada.DOCE,
-                                    Genero.Nombre.ACCION, Genero.Nombre.DRAMA,
-                                    Genero.Nombre.CIENCIA_FICCION,
-                                    Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 30L), "Frozen: El reino del hielo",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (30), 7.4,
-                                    Year.of (2013),
-                                    "Chris Buck, Jennifer Lee",
-                                    Duration.ofMinutes (102), EdadRecomendada.TODOS,
-                                    Genero.Nombre.COMEDIA, Genero.Nombre.FANTASIA,
-                                    Genero.Nombre.MUSICAL),
-                            new Pelicula (new UUID (0L, 31L), "Cars",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (31), 7.2,
-                                    Year.of (2006),
-                                    "John Lasseter, Joe Ranft",
-                                    Duration.ofMinutes (117), EdadRecomendada.TODOS,
-                                    Genero.Nombre.COMEDIA),
-                            new Pelicula (new UUID (0L, 32L), "Tenet",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (32), 7.3,
-                                    Year.of (2003),
-                                    "Christopher Nolan",
-                                    Duration.ofMinutes (150), EdadRecomendada.DOCE,
-                                    Genero.Nombre.ACCION,
-                                    Genero.Nombre.CIENCIA_FICCION,
-                                    Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 33L), "Blade Runner",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (32), 8.1,
-                                    Year.of (1982),
-                                    "Ridley Scott",
-                                    Duration.ofMinutes (117), EdadRecomendada.DOCE,
-                                    Genero.Nombre.ACCION, Genero.Nombre.DRAMA,
-                                    Genero.Nombre.CIENCIA_FICCION,
-                                    Genero.Nombre.SUSPENSE),
-                            new Pelicula (new UUID (0L, 34L), "A todo gas: Tokyo Race",
-                                    DEFAULT_MOVIE_IMAGE_FILES.get (33), 6,
-                                    Year.of (2006),
-                                    "Justin Lin",
-                                    Duration.ofMinutes (104),
-                                    EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
-                                    Genero.Nombre.SUSPENSE)
-                    }));
+    private static final SortedSet <Pelicula> DEFAULT_PELICULAS = Arrays.asList (
+            new Pelicula [] {
+                    new Pelicula (new UUID (0L, 0L),
+                            "Torrente, el brazo tonto de la ley",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (0), 6.8,
+                            Year.of (1998),
+                            "Santiago Segura",
+                            Duration.ofMinutes (97),
+                            EdadRecomendada.DIECIOCHO,
+                            Genero.Nombre.COMEDIA),
+                    new Pelicula (new UUID (0L, 1L), "Ali G anda suelto",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (1),
+                            6.2, Year.of (2002), "Mark Mylod",
+                            Duration.ofMinutes (85),
+                            EdadRecomendada.DIECIOCHO,
+                            Genero.Nombre.COMEDIA),
+                    new Pelicula (new UUID (0L, 2L), "Los minions",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (2), 6.4,
+                            Year.of (2015),
+                            "Kyle Balda, Pierre Coffin",
+                            Duration.ofMinutes (91),
+                            EdadRecomendada.TODOS, Genero.Nombre.COMEDIA,
+                            Genero.Nombre.CIENCIA_FICCION),
+                    new Pelicula (new UUID (0L, 3L), "American Psycho",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (3), 7.6,
+                            Year.of (2000), "Mary Harron",
+                            Duration.ofMinutes (102),
+                            EdadRecomendada.DIECIOCHO, Genero.Nombre.DRAMA,
+                            Genero.Nombre.TERROR),
+                    new Pelicula (new UUID (0L, 4L), "Malditos Bastardos",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (4),
+                            8.3, Year.of (2009),
+                            "Quentin Tarantino",
+                            Duration.ofMinutes (153),
+                            EdadRecomendada.DIECIOCHO, Genero.Nombre.DRAMA),
+                    new Pelicula (new UUID (0L, 5L), "El club de la lucha",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (5),
+                            8.8, Year.of (1999),
+                            "David Fincher",
+                            Duration.ofMinutes (139),
+                            EdadRecomendada.DIECIOCHO, Genero.Nombre.DRAMA),
+                    new Pelicula (new UUID (0L, 6L), "American History X",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (6),
+                            8.5, Year.of (1998), "Tony Kaye",
+                            Duration.ofMinutes (119),
+                            EdadRecomendada.DIECISEIS, Genero.Nombre.DRAMA),
+                    new Pelicula (new UUID (0L, 7L), "Karate Kid",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (7), 7.3,
+                            Year.of (1984), "John G. Avildsen",
+                            Duration.ofMinutes (126),
+                            EdadRecomendada.TODOS, Genero.Nombre.ACCION,
+                            Genero.Nombre.DRAMA),
+                    new Pelicula (new UUID (0L, 8L), "Angry Birds",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (8), 6.3,
+                            Year.of (2016),
+                            "Clay Kaytis, Fergal Reilly",
+                            Duration.ofMinutes (97), EdadRecomendada.TODOS,
+                            Genero.Nombre.ACCION, Genero.Nombre.COMEDIA),
+                    new Pelicula (new UUID (0L, 9L), "Bob Esponja",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (9), 7.1,
+                            Year.of (2004),
+                            "Stephen Hillenburg, Mark Osborne",
+                            Duration.ofMinutes (87), EdadRecomendada.TODOS,
+                            Genero.Nombre.COMEDIA),
+                    new Pelicula (new UUID (0L, 10L), "Lluvia de Albóndigas",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (10), 6.9,
+                            Year.of (2009),
+                            "Phil Lord, Christopher Miller",
+                            Duration.ofMinutes (90), EdadRecomendada.TODOS,
+                            Genero.Nombre.COMEDIA,
+                            Genero.Nombre.CIENCIA_FICCION),
+                    new Pelicula (new UUID (0L, 11L), "La Torre Oscura",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (11),
+                            5.6, Year.of (2017),
+                            "Nikolaj Arcel", Duration.ofMinutes (95),
+                            EdadRecomendada.DOCE,
+                            Genero.Nombre.ACCION,
+                            Genero.Nombre.CIENCIA_FICCION,
+                            Genero.Nombre.FANTASIA),
+                    new Pelicula (new UUID (0L, 12L), "Dioses de Egipto",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (12),
+                            5.4, Year.of (2016),
+                            "Alex Proyas", Duration.ofMinutes (127),
+                            EdadRecomendada.SIETE,
+                            Genero.Nombre.ACCION, Genero.Nombre.FANTASIA),
+                    new Pelicula (new UUID (0L, 13L), "Shrek 2",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (13), 7.3,
+                            Year.of (2004),
+                            "Andrew Adamson, Kelly Asbury, Conrad Vernon",
+                            Duration.ofMinutes (93),
+                            EdadRecomendada.TODOS, Genero.Nombre.COMEDIA,
+                            Genero.Nombre.ROMANCE,
+                            Genero.Nombre.FANTASIA),
+                    new Pelicula (new UUID (0L, 14L), "Spider-Man: No Way Home",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (14), 8.3,
+                            Year.of (2021),
+                            "Jon Watts", Duration.ofMinutes (148),
+                            EdadRecomendada.SIETE, Genero.Nombre.ACCION,
+                            Genero.Nombre.FANTASIA,
+                            Genero.Nombre.CIENCIA_FICCION),
+                    new Pelicula (new UUID (0L, 15L), "Logan",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (15), 8.1,
+                            Year.of (2017), "James Mangold",
+                            Duration.ofMinutes (137),
+                            EdadRecomendada.DIECISEIS, Genero.Nombre.ACCION,
+                            Genero.Nombre.DRAMA,
+                            Genero.Nombre.CIENCIA_FICCION,
+                            Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 16L), "Dos buenos tipos",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (16),
+                            7.3, Year.of (2016), "Shane Black",
+                            Duration.ofMinutes (116),
+                            EdadRecomendada.DIECISEIS, Genero.Nombre.ACCION,
+                            Genero.Nombre.COMEDIA, Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 17L), "Origen",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (17), 8.8,
+                            Year.of (2010), "James Mangold",
+                            Duration.ofMinutes (248), EdadRecomendada.DOCE,
+                            Genero.Nombre.ACCION,
+                            Genero.Nombre.CIENCIA_FICCION,
+                            Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 18L), "Bullet Train",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (18), 7.3,
+                            Year.of (2022), "David Leitch",
+                            Duration.ofMinutes (127),
+                            EdadRecomendada.DIECISEIS,
+                            Genero.Nombre.ACCION, Genero.Nombre.COMEDIA,
+                            Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 19L), "Nadie",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (19), 7.4,
+                            Year.of (2021), "Ilya Naishuller",
+                            Duration.ofMinutes (152),
+                            EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
+                            Genero.Nombre.DRAMA,
+                            Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 20L), "Interstellar",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (20), 8.6,
+                            Year.of (2014), "Christopher Nolan",
+                            Duration.ofMinutes (169), EdadRecomendada.DOCE,
+                            Genero.Nombre.DRAMA,
+                            Genero.Nombre.CIENCIA_FICCION),
+                    new Pelicula (new UUID (0L, 21L), "Sin Límites",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (21), 7.4,
+                            Year.of (2011), "Neil Burger",
+                            Duration.ofMinutes (105), EdadRecomendada.DOCE,
+                            Genero.Nombre.CIENCIA_FICCION,
+                            Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 22L), "El Bar Coyote",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (22), 5.7,
+                            Year.of (2000), "David McNally",
+                            Duration.ofMinutes (100), EdadRecomendada.DOCE,
+                            Genero.Nombre.COMEDIA, Genero.Nombre.DRAMA,
+                            Genero.Nombre.ROMANCE),
+                    new Pelicula (new UUID (0L, 23L), "Your Name.",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (23), 8.4,
+                            Year.of (2016), "Makoto Shinkai",
+                            Duration.ofMinutes (106), EdadRecomendada.TODOS,
+                            Genero.Nombre.DRAMA, Genero.Nombre.FANTASIA,
+                            Genero.Nombre.ROMANCE),
+                    new Pelicula (new UUID (0L, 24L), "Desde París con amor",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (24), 6.4,
+                            Year.of (2010),
+                            "Pierre Morel",
+                            Duration.ofMinutes (92),
+                            EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
+                            Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 25L), "De amor y monstruos",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (25), 6.9,
+                            Year.of (2020),
+                            "Michael Matthews",
+                            Duration.ofMinutes (109), EdadRecomendada.DOCE,
+                            Genero.Nombre.ACCION,
+                            Genero.Nombre.COMEDIA, Genero.Nombre.FANTASIA,
+                            Genero.Nombre.CIENCIA_FICCION),
+                    new Pelicula (new UUID (0L, 26L), "El Renacido",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (26), 8,
+                            Year.of (2015),
+                            "Alejandro G. Iñárritu",
+                            Duration.ofMinutes (156),
+                            EdadRecomendada.DIECISEIS, Genero.Nombre.ACCION,
+                            Genero.Nombre.DRAMA),
+                    new Pelicula (new UUID (0L, 27L), "El Libro de Eli",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (27), 6.8,
+                            Year.of (2013),
+                            "Albert Hughes, Allen Hughes",
+                            Duration.ofMinutes (118), EdadRecomendada.DOCE,
+                            Genero.Nombre.ACCION, Genero.Nombre.DRAMA,
+                            Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 28L), "The Equalizer",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (28), 7.2,
+                            Year.of (2014),
+                            "Antoine Fuqua",
+                            Duration.ofMinutes (132),
+                            EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
+                            Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 29L), "Soy Leyenda",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (29), 7.2,
+                            Year.of (2007),
+                            "Francis Lawrence",
+                            Duration.ofMinutes (101), EdadRecomendada.DOCE,
+                            Genero.Nombre.ACCION, Genero.Nombre.DRAMA,
+                            Genero.Nombre.CIENCIA_FICCION,
+                            Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 30L), "Frozen: El reino del hielo",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (30), 7.4,
+                            Year.of (2013),
+                            "Chris Buck, Jennifer Lee",
+                            Duration.ofMinutes (102), EdadRecomendada.TODOS,
+                            Genero.Nombre.COMEDIA, Genero.Nombre.FANTASIA,
+                            Genero.Nombre.MUSICAL),
+                    new Pelicula (new UUID (0L, 31L), "Cars",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (31), 7.2,
+                            Year.of (2006),
+                            "John Lasseter, Joe Ranft",
+                            Duration.ofMinutes (117), EdadRecomendada.TODOS,
+                            Genero.Nombre.COMEDIA),
+                    new Pelicula (new UUID (0L, 32L), "Tenet",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (32), 7.3,
+                            Year.of (2003),
+                            "Christopher Nolan",
+                            Duration.ofMinutes (150), EdadRecomendada.DOCE,
+                            Genero.Nombre.ACCION,
+                            Genero.Nombre.CIENCIA_FICCION,
+                            Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 33L), "Blade Runner",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (33), 8.1,
+                            Year.of (1982),
+                            "Ridley Scott",
+                            Duration.ofMinutes (117), EdadRecomendada.DOCE,
+                            Genero.Nombre.ACCION, Genero.Nombre.DRAMA,
+                            Genero.Nombre.CIENCIA_FICCION,
+                            Genero.Nombre.SUSPENSE),
+                    new Pelicula (new UUID (0L, 34L), "A todo gas: Tokyo Race",
+                            DEFAULT_MOVIE_IMAGE_FILES.get (34), 6,
+                            Year.of (2006),
+                            "Justin Lin",
+                            Duration.ofMinutes (104),
+                            EdadRecomendada.DIECIOCHO, Genero.Nombre.ACCION,
+                            Genero.Nombre.SUSPENSE)
+            }).stream ().collect (Collectors.toCollection (TreeSet <Pelicula>::new));
 
     protected UUID id;
     protected String nombre;
@@ -432,16 +448,11 @@ public class Pelicula implements Comparable <Pelicula> {
             EdadRecomendada edad, Collection <Genero.Nombre> generos, Collection <SetPeliculas> sets) {
         super ();
 
-        interface GetPreviousClassName {
-            String show (StackTraceElement stackTrace[]);
-        }
-
-        this.id = id != null && ((id.getMostSignificantBits () == 0
+        this.id = id != null && ((id.getMostSignificantBits () == 0 && id.getLeastSignificantBits () >= 0
                 && id.getLeastSignificantBits () < Pelicula.NDEFAULT_PELICULAS
-                && ((GetPreviousClassName) (st -> {
-                    return String.format ("%s", st [1].getClassName ());
-                })).show (Thread.currentThread ().getStackTrace ()).equals ("cine.Pelicula"))
-                || id.getMostSignificantBits () != 0 || id.getLeastSignificantBits () >= Pelicula.NDEFAULT_PELICULAS)
+                && Pelicula.isAmongstCallers ("cine.Pelicula"))
+                || id.getMostSignificantBits () != 0 || id.getLeastSignificantBits () < 0
+                || id.getLeastSignificantBits () >= Pelicula.NDEFAULT_PELICULAS)
                         ? id
                         : UUID.randomUUID ();
         this.setNombre (nombre);
@@ -457,11 +468,17 @@ public class Pelicula implements Comparable <Pelicula> {
         if (this.isDefault ()) {
             Pelicula.SET_DEFAULT_PELICULAS |= 1L << this.id.getLeastSignificantBits ();
 
-            if (!Pelicula.DEFAULT_IMAGES_DOWNLOADED)
-                Pelicula.DEFAULT_IMAGES_DOWNLOADED = Pelicula.downloadDefaultImages ();
-        }
+            if (!Pelicula.DEFAULT_IMAGES_DOWNLOADED && !Pelicula.DEFAULT_IMAGES_THREAD_CALLED) {
+                Pelicula.DEFAULT_IMAGES_THREAD_CALLED = true;
 
-        System.out.println (Pelicula.SET_DEFAULT_PELICULAS);
+                new Thread () {
+                    @Override
+                    public void run () {
+                        Pelicula.downloadDefaultImages ();
+                    }
+                }.start ();
+            }
+        }
     }
 
     public Pelicula (Pelicula pelicula) throws NullPointerException {
@@ -501,7 +518,7 @@ public class Pelicula implements Comparable <Pelicula> {
                             DEFAULT_MOVIE_IMAGE_PATH));
 
         Pelicula.DEFAULT_IMAGES_DOWNLOADED = false;
-        Pelicula.SET_DEFAULT_PELICULAS &= ~(1 << this.id.getLeastSignificantBits ());
+        Pelicula.SET_DEFAULT_PELICULAS &= ~(1L << this.id.getLeastSignificantBits ());
 
         super.finalize ();
     }
@@ -579,22 +596,22 @@ public class Pelicula implements Comparable <Pelicula> {
     public void setDuracion (Duration duracion) {
         // En estos momentos echo de menos la extensión backtrace () de GNU para
         // C
-        interface GetPreviousMethodName {
-            String show (StackTraceElement stackTrace[]);
-        }
 
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ()))
             return;
 
         this.duracion = duracion == null || duracion.isNegative () || duracion.isZero ()
                 ? (this.duracion == null ? Pelicula.DEFAULT_DURACION : this.duracion)
-                : ((GetPreviousMethodName) (st ->
+                : (((BooleanSupplier) ( () -> {
+                    StackTraceElement st[] = Thread.currentThread ().getStackTrace ();
+                    for (int i = 1; i <= STACK_DEPTH && i < st.length;)
+                        if (st [i++].getMethodName ().equals ("cine.Pelicula.Pelicula"))
+                            return true;
 
-                {
-                    return String.format ("%s.%s", st [1].getClassName (), st [1].getMethodName ());
-                })).show (Thread.currentThread ().getStackTrace ()).equals ("Pelicula")
+                    return false;
+                })).getAsBoolean ()
                         ? Pelicula.DEFAULT_DURACION
-                        : Duration.ofMinutes (duracion.toMinutes ());
+                        : Duration.ofMinutes (duracion.toMinutes ()));
     }
 
     public EdadRecomendada getEdad () {
@@ -626,7 +643,8 @@ public class Pelicula implements Comparable <Pelicula> {
     }
 
     public void setSets (Collection <SetPeliculas> sets) {
-        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ()))
+        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                && !Pelicula.isAmongstCallers ("cine.SetPeliculas"))
             return;
 
         this.sets = new TreeSet <SetPeliculas> ((Comparator <SetPeliculas>) ( (a, b) -> {
@@ -642,10 +660,13 @@ public class Pelicula implements Comparable <Pelicula> {
     }
 
     public boolean addSet (SetPeliculas set) {
-        if (this.sets == null || set == null)
+        if (set == null)
             return false;
 
-        return this.sets.add (set);
+        if (this.sets == null)
+            this.setSets (null);
+
+        return this.sets.contains (set) || (this.sets.add (set) && set.add (this));
     }
 
     public boolean addSets (Collection <SetPeliculas> sets) {
@@ -662,10 +683,12 @@ public class Pelicula implements Comparable <Pelicula> {
     }
 
     public boolean removeSet (SetPeliculas set) {
-        if (this.sets == null || set == null || !this.isInSet (set))
+        if (this.sets == null || set == null
+                || (this.isDefault () && set.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                        && !Pelicula.isAmongstCallers ("cine.SetPeliculas")))
             return false;
 
-        return this.sets.remove (set);
+        return !this.sets.contains (set) || (this.sets.remove (set) && set.remove (this));
     }
 
     public boolean removeSets (Collection <SetPeliculas> sets) {
@@ -682,7 +705,7 @@ public class Pelicula implements Comparable <Pelicula> {
     }
 
     public void removeFromSets () {
-        if (this.sets == null)
+        if (this.sets == null && (this.isDefault () && !Pelicula.isAmongstCallers ("cine.Pelicula")))
             return;
 
         SetPeliculas array[] = this.sets.toArray (new SetPeliculas [0]);
@@ -692,7 +715,7 @@ public class Pelicula implements Comparable <Pelicula> {
 
     @Override
     public int hashCode () {
-        return Objects.hash (fecha, director, duracion, edad, generos, id, nombre, rutaImagen, valoracion);
+        return Objects.hash (director, duracion, edad, fecha, generos, id, nombre, rutaImagen, sets, valoracion);
     }
 
     @Override
@@ -732,7 +755,7 @@ public class Pelicula implements Comparable <Pelicula> {
         }
 
         return "Película (hash: " + this.hashCode () + ") {\n\tID: " + this.id
-                + (this.isDefault () ? " (película por defecto)" : "")
+                + (this.isDefault () ? " (película predeterminada)" : "")
                 + "\n\tNombre: "
                 + this.nombre + "\n\tRuta de la imagen: "
                 + this.rutaImagen + "\n\tValoración: " + (((Double) this.valoracion).isNaN ()
@@ -756,8 +779,9 @@ public class Pelicula implements Comparable <Pelicula> {
                 + "\n\tSets: " + (this.sets.isEmpty () ? "-" : ((IDSets) (s -> {
                     StringBuilder str = new StringBuilder ();
                     for (int i = 0; i < s.size (); i++)
-                        str.append (String.format ("%s%s",
+                        str.append (String.format ("%s%s%s",
                                 s.get (i).getId ().toString (),
+                                s.get (i).isDefault () ? " (set predeterminado)" : "",
                                 i != s.size () - 1
                                         ? " · "
                                         : ""));
@@ -781,6 +805,7 @@ public class Pelicula implements Comparable <Pelicula> {
 
     public boolean isDefault () {
         return this.id != null && this.id.getMostSignificantBits () == 0
+                && id.getLeastSignificantBits () >= 0
                 && this.id.getLeastSignificantBits () < Pelicula.NDEFAULT_PELICULAS;
     }
 
@@ -788,17 +813,34 @@ public class Pelicula implements Comparable <Pelicula> {
         return new TreeSet <Pelicula> (Pelicula.DEFAULT_PELICULAS);
     }
 
+    public static SortedSet <Pelicula> getDefault (Integer... ids) {
+        return getDefault (Arrays.asList (ids).stream ().map (Integer::longValue).collect (Collectors.toList ()));
+    }
+
+    public static SortedSet <Pelicula> getDefault (Long... ids) {
+        return getDefault (Arrays.asList (ids));
+    }
+
+    public static SortedSet <Pelicula> getDefault (Collection <Long> ids) {
+        return Pelicula.DEFAULT_PELICULAS.stream ().filter (p -> ids.contains (p.id.getLeastSignificantBits ()))
+                .collect (Collectors.toCollection (TreeSet::new));
+    }
+
+    public static boolean defaultImagesDownloaded () {
+        return Pelicula.DEFAULT_IMAGES_DOWNLOADED;
+    }
+
     protected static boolean downloadDefaultImages () {
         File fp = new File (DEFAULT_MOVIE_IMAGE_PATH);
 
-        if (fp.exists () && Arrays.asList (fp.list ())
-                .containsAll (DEFAULT_MOVIE_IMAGE_FILES.stream ().map (e -> {
-                    return e.replace (DEFAULT_MOVIE_IMAGE_PATH + File.separator, "");
-                }).collect (Collectors.toList ()))) {
+        if (fp.exists () && fp.isDirectory () && Arrays.asList (fp.list ())
+                .containsAll (DEFAULT_MOVIE_IMAGE_FILES.stream ()
+                        .map (e -> e.replace (DEFAULT_MOVIE_IMAGE_PATH + File.separator, ""))
+                        .collect (Collectors.toList ()))) {
             Logger.getLogger (Pelicula.class.getName ()).log (Level.INFO,
                     "Todas las imágenes de las películas por defecto estaban ya descargadas.");
 
-            return true;
+            return Pelicula.DEFAULT_IMAGES_DOWNLOADED = true;
         }
 
         fp.mkdirs ();
@@ -825,17 +867,17 @@ public class Pelicula implements Comparable <Pelicula> {
         }
 
         Logger.getLogger (Pelicula.class.getName ()).log (
-                errors.isEmpty () ? Level.FINE : Level.WARNING,
+                errors.isEmpty () ? Level.INFO : Level.WARNING,
                 String.format ("%sas mágenes de las películas por defecto fueron descargadas.%s",
                         errors.isEmpty () ? "L" : "No todas l",
                         errors.isEmpty () ? ""
                                 : String.format ("\nFaltaron: %s",
                                         errors.toString ())));
 
-        return !errors.isEmpty ();
+        return Pelicula.DEFAULT_IMAGES_DOWNLOADED = !errors.isEmpty ();
     }
 
-    public static void deleteDefaultPeliculasData () throws Throwable {
+    protected static void deleteDefaultPeliculasData () throws Throwable {
         Pelicula [] peliculas = DEFAULT_PELICULAS.toArray (new Pelicula [0]);
 
         for (int i = 0; i < peliculas.length; peliculas [i++].finalize ())
@@ -861,7 +903,8 @@ public class Pelicula implements Comparable <Pelicula> {
     public static List <String> getNombres (Collection <Pelicula> peliculas) {
         ArrayList <String> nombres = new ArrayList <String> ();
 
-        List <Pelicula> list = peliculas.stream ().collect (Collectors.toList ());
+        List <Pelicula> list = (peliculas.stream ().collect (Collectors.toCollection (TreeSet <Pelicula>::new)))
+                .stream ().collect (Collectors.toList ());
         for (int i = 0; i < list.size (); nombres.add (list.get (i++).getNombre ()))
             ;
 
