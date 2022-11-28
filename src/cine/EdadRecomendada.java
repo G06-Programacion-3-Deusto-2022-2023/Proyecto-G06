@@ -22,7 +22,7 @@ public enum EdadRecomendada {
         return this.value;
     }
 
-    public EdadRecomendada fromValue (byte value) {
+    public static EdadRecomendada fromValue (byte value) {
         if (value < 0 || value > 4)
             return null;
 

@@ -14,20 +14,13 @@ public class Main {
 
 		// INSERT: Insertar datos en la BBDD
 		List <Pelicula> peliculas = initPeliculas ();
+		printPeliculas (peliculas);
 		gestorBD.insertarDatosPelicula (peliculas.toArray (new Pelicula [peliculas.size ()]));
 
 		// SELECT: Se obtienen datos de la BBDD
-		peliculas = gestorBD.obtenerDatos ();
-		printClientes (peliculas);
-
-		// UPDATE: Se actualiza la password de un cliente
-		int newValoracion = 5;
-		gestorBD.actualizarValoracion (peliculas.get (0), newValoracion);
-
-		// SELECT: Se obtienen datos de la BBDD
-		peliculas = gestorBD.obtenerDatos ();
-		printClientes (peliculas);
-
+		peliculas = gestorBD.obtenerDatosPeliculas ();
+		printPeliculas (peliculas);
+		
 		// DELETE: Se borran datos de la BBDD
 		gestorBD.borrarDatos ();
 
@@ -35,7 +28,7 @@ public class Main {
 		gestorBD.borrarBBDD ();
 	}
 
-	private static void printClientes (List <Pelicula> peliculas) {
+	private static void printPeliculas (List <Pelicula> peliculas) {
 		if (!peliculas.isEmpty ()) {
 			for (Pelicula pelicula : peliculas) {
 				System.out.println (String.format (" - %s", pelicula.toString ()));
