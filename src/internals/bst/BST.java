@@ -6,18 +6,17 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import cine.Pelicula;
-
-public class BST <T extends Comparable <T>> {
+public class BST <T extends Comparable <T> & Treeable <T>> {
     private T value;
     private Comparator <T> comp;
     private Filter <T> filter;
     private BST <T> left;
     private BST <T> right;
 
-    private BST (T value, Comparator <T> comp, Filter <T> filter) {
+    protected BST (T value, Comparator <T> comp, Filter <T> filter) {
         super ();
 
         this.setFilter (filter);
@@ -37,8 +36,8 @@ public class BST <T extends Comparable <T>> {
         return this.comp;
     }
 
-    private void setComp (Comparator <T> comp) throws UnsupportedOperationException {
-        this.comp = comp == null ? (Comparator <T>) ( (T a, T b) -> (a.compareTo (b))) : comp;
+    private void setComp (Comparator <T> comp) {
+        this.comp = comp == null ? T::compareTo : comp;
     }
 
     private boolean setValue (T value) {
@@ -54,7 +53,7 @@ public class BST <T extends Comparable <T>> {
         return this.value == null && this.left == null && this.right == null;
     }
 
-    private boolean insert (T value) {
+    protected boolean insert (T value) {
         if (this.value == null)
             return this.setValue (value);
 
@@ -87,33 +86,6 @@ public class BST <T extends Comparable <T>> {
             this.right.inorder (list);
     }
 
-    public static BST <Pelicula> fromValues (Collection <Pelicula> values) {
-        return fromValues (values, null, null);
-    }
-
-    public static BST <Pelicula> fromValues (Collection <Pelicula> values, Comparator <Pelicula> comp) {
-        return fromValues (values, comp, null);
-    }
-
-    public static BST <Pelicula> fromValues (Collection <Pelicula> values, Filter <Pelicula> filter) {
-        return BST.fromValues (values, null, filter);
-    }
-
-    public static BST <Pelicula> fromValues (Collection <Pelicula> values, Comparator <Pelicula> comp,
-            Filter <Pelicula> filter)
-            throws NullPointerException {
-        if (values == null)
-            throw new NullPointerException ("Cannot build a binary search tree from a null collection of values.");
-
-        BST <Pelicula> bst = new BST <Pelicula> (null, comp, filter);
-
-        List <Pelicula> list = values.stream ().collect (Collectors.toList ());
-        for (int i = 0; i < values.size (); bst.insert (list.get (i++)))
-            ;
-
-        return bst;
-    }
-
     public List <T> getValues () {
         return this.getValuesList ();
     }
@@ -132,10 +104,7 @@ public class BST <T extends Comparable <T>> {
         return list;
     }
 
-    public Collection <T> getValuesAs (Collection <T> collection) {
-        collection.clear ();
-        collection.addAll (this.getValuesList ());
-
-        return collection;
+    public Collection <T> getValuesAs (Supplier <Collection <T>> supplier) {
+        return this.getValues ().stream ().collect (Collectors.toCollection (supplier));
     }
 }

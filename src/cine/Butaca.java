@@ -1,7 +1,7 @@
 package cine;
 
 public class Butaca {
-    protected Espectador espectador;
+    private Espectador espectador;
 
     public Butaca () {
         this (null, null);

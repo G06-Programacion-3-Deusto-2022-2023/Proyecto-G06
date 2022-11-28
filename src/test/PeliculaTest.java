@@ -5,7 +5,10 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.time.Duration;
 import java.time.Year;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.UUID;
+import java.util.Vector;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
@@ -15,6 +18,7 @@ import cine.EdadRecomendada;
 import cine.Genero;
 import cine.Pelicula;
 import cine.SetPeliculas;
+import internals.bst.Filter;
 
 public class PeliculaTest {
     Pelicula pelicula;
@@ -101,5 +105,45 @@ public class PeliculaTest {
         assertTrue (set.contains (pelicula));
         set.remove (pelicula);
         assertFalse (pelicula.isInSet (set));
+    }
+
+    @Test
+    public void treeCompFilterTest () {
+        assertEquals (
+                Pelicula.getDefault ().stream ().filter (p -> (Genero.Nombre.toValor (p.getGeneros ())
+                        & Genero.Nombre.toValor (Arrays.asList (
+                                new Genero.Nombre [] { Genero.Nombre.ACCION,
+                                        Genero.Nombre.COMEDIA }))) != 0)
+                        .sorted ((Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> ((Double) a.getValoracion ())
+                                .compareTo ((Double) b.getValoracion ())))
+                        .collect (Collectors.toCollection (Vector::new)),
+                Pelicula
+                        .tree (Pelicula.getDefault (),
+                                (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> ((Double) a.getValoracion ())
+                                        .compareTo ((Double) b.getValoracion ())),
+                                (Filter <Pelicula>) (p -> (Genero.Nombre.toValor (p.getGeneros ())
+                                        & Genero.Nombre.toValor (Arrays.asList (
+                                                new Genero.Nombre [] { Genero.Nombre.ACCION,
+                                                        Genero.Nombre.COMEDIA }))) != 0))
+                        .getValuesAs (Vector::new));
+    }
+
+    @Test
+    public void treeCompFilter2 () {
+        assertEquals (Pelicula.getDefault ().stream ().filter (p -> (Genero.Nombre.toValor (p.getGeneros ())
+                & Genero.Nombre.toValor (Arrays.asList (
+                        new Genero.Nombre [] { Genero.Nombre.ACCION,
+                                Genero.Nombre.COMEDIA }))) != 0)
+                .sorted ((Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> ((Double) a.getValoracion ())
+                        .compareTo ((Double) b.getValoracion ())))
+                .collect (Collectors.toList ()),
+                Pelicula.orderBy (
+                        Pelicula.filterBy (Pelicula.getDefault (),
+                                (Filter <Pelicula>) p -> (Genero.Nombre.toValor (p.getGeneros ())
+                                        & Genero.Nombre.toValor (Arrays.asList (
+                                                new Genero.Nombre [] { Genero.Nombre.ACCION,
+                                                        Genero.Nombre.COMEDIA }))) != 0),
+                        (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> ((Double) a.getValoracion ())
+                                .compareTo ((Double) b.getValoracion ()))));
     }
 }

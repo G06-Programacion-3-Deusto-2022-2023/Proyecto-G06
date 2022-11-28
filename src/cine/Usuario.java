@@ -6,7 +6,9 @@ import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.PasswordGenerator;
 
-public abstract class Usuario {
+import internals.bst.Treeable;
+
+public abstract class Usuario implements Treeable <Usuario>, Comparable <Usuario> {
     private static final int RPASSLEN = 14;
 
     protected UUID id;
@@ -58,6 +60,37 @@ public abstract class Usuario {
                         new CharacterRule (EnglishCharacterData.UpperCase),
                         new CharacterRule (EnglishCharacterData.Digit))
                 : contrasena;
+    }
+
+    @Override
+    public int compareTo (Usuario usuario) {
+        if (usuario == null)
+            return 1;
+
+        if (this.nombre.equals (this.id.toString ()) && !usuario.nombre.equals (usuario.id.toString ()))
+            return 1;
+
+        if (!this.nombre.equals (this.id.toString ()) && usuario.nombre.equals (usuario.id.toString ()))
+            return -1;
+
+        if (this.nombre.equals (this.id.toString ()) && usuario.nombre.equals (usuario.id.toString ()))
+            return this.id.compareTo (usuario.id);
+
+        int comp;
+        if ((comp = this.nombre.compareTo (usuario.nombre)) != 0)
+            return comp;
+
+        return this.id.compareTo (usuario.id);
+    }
+
+    @Override
+    public int hashCode () {
+        return super.hashCode ();
+    }
+
+    @Override
+    public boolean equals (Object o) {
+        return this.getClass ().isInstance (o) && this.id.equals ((this.getClass ().cast (o)).id);
     }
 
     @Override

@@ -13,12 +13,12 @@ import java.util.UUID;
 public class Espectador extends Usuario {
     private static final Random random = new Random ();
 
-    public static final byte DEFAULT_EDAD = 18;
-    public static final byte MAX_EDAD = 100;
+    private static final byte DEFAULT_EDAD = 18;
+    private static final byte MAX_EDAD = 100;
 
-    protected byte edad;
-    protected SortedMap <Genero.Nombre, Genero.Preferencia> preferencias;
-    protected SortedSet <Entrada> historial;
+    private byte edad;
+    private SortedMap <Genero.Nombre, Genero.Preferencia> preferencias;
+    private SortedSet <Entrada> historial;
 
     public Espectador () {
         this ("");
@@ -62,6 +62,14 @@ public class Espectador extends Usuario {
 
     public byte getEdad () {
         return this.edad;
+    }
+
+    public static byte getDefaultEdad () {
+        return Espectador.DEFAULT_EDAD;
+    }
+
+    public static byte getMaxEdad () {
+        return Espectador.MAX_EDAD;
     }
 
     public void setEdad (byte edad) {

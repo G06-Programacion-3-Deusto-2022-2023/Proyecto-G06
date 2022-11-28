@@ -51,7 +51,7 @@ public interface Genero {
             if (generos == null || generos.size () == 0)
                 return Genero.Nombre.NADA.getValue ();
 
-            Genero.Nombre array [] = generos.toArray (new Genero.Nombre [0]);
+            Genero.Nombre array[] = generos.toArray (new Genero.Nombre [0]);
 
             short ret = 0;
             for (int i = 0; i < generos.size (); ret |= array [i++].getValue ())
@@ -95,7 +95,8 @@ public interface Genero {
         Collections.shuffle (generos);
         generos = generos.subList (0, (int) Math.abs (Genero.Nombre.random.nextGaussian (3D, 1.5D)) % generos.size ());
 
-        return new TreeSet <Genero.Nombre> (generos.isEmpty () ? Collections.singletonList (Genero.Nombre.NADA) : generos);
+        return new TreeSet <Genero.Nombre> (
+                generos.isEmpty () ? Collections.singletonList (Genero.Nombre.NADA) : generos);
     }
 
     static Map <Genero.Nombre, Genero.Preferencia> randomPrefs () {

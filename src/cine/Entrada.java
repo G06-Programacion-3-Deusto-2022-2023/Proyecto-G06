@@ -3,22 +3,28 @@ package cine;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class Entrada implements Comparable <Entrada> {
-    public static final BigDecimal PRECIOESTANDAR = BigDecimal.valueOf (7.9);
-    public static final int DESCUENTOESPECTADOR = 30;
+import internals.bst.BST;
+import internals.bst.Filter;
+import internals.bst.Treeable;
 
-    protected UUID id;
-    protected Espectador espectador;
-    protected Pelicula pelicula;
-    protected Calendar fecha;
-    protected Sala sala;
-    protected int butaca;
-    protected HashMap <Complemento, Integer> complementos;
-    protected BigDecimal precio;
+public class Entrada implements Comparable <Entrada>, Treeable <Entrada> {
+    private static final BigDecimal DEFAULT_PRECIO = BigDecimal.valueOf (7.9);
+    private static final int DESCUENTO_ESPECTADOR = 30;
+
+    private UUID id;
+    private Espectador espectador;
+    private Pelicula pelicula;
+    private Calendar fecha;
+    private Sala sala;
+    private int butaca;
+    private Map <Complemento, Integer> complementos;
+    private BigDecimal precio;
 
     public Entrada () {
         this (new Espectador ());
@@ -42,12 +48,12 @@ public class Entrada implements Comparable <Entrada> {
     }
 
     public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, int butaca,
-            HashMap <Complemento, Integer> complementos) {
+            Map <Complemento, Integer> complementos) {
         this (UUID.randomUUID (), espectador, pelicula, fecha, sala, butaca, complementos);
     }
 
     public Entrada (UUID id, Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, int butaca,
-            HashMap <Complemento, Integer> complementos) {
+            Map <Complemento, Integer> complementos) {
         super ();
 
         this.id = id;
@@ -105,7 +111,7 @@ public class Entrada implements Comparable <Entrada> {
     }
 
     public void setButaca (int butaca) {
-        this.butaca = butaca < 0 || butaca >= Sala.NBUTACAS ? this.butaca : butaca;
+        this.butaca = butaca < 0 || butaca >= Sala.size () ? this.butaca : butaca;
     }
 
     public Map <Complemento, Integer> getComplementos () {
@@ -116,7 +122,7 @@ public class Entrada implements Comparable <Entrada> {
         if (complementos == null || complementos.equals (this.complementos))
             return;
 
-        this.complementos = (HashMap <Complemento, Integer>) complementos;
+        this.complementos = complementos;
         this.calcularPrecio ();
     }
 
@@ -124,9 +130,12 @@ public class Entrada implements Comparable <Entrada> {
         return this.precio;
     }
 
-    @Override
-    public boolean equals (Object o) {
-        return o instanceof Entrada && this.id.equals (((Entrada) o).id);
+    public static BigDecimal getDefaultPrecio () {
+        return new BigDecimal (Entrada.DEFAULT_PRECIO.toString ());
+    }
+
+    public static int getDescuentoEspectador () {
+        return Entrada.DESCUENTO_ESPECTADOR;
     }
 
     @Override
@@ -155,6 +164,16 @@ public class Entrada implements Comparable <Entrada> {
     }
 
     @Override
+    public int hashCode () {
+        return super.hashCode ();
+    }
+
+    @Override
+    public boolean equals (Object o) {
+        return o instanceof Entrada && this.id.equals (((Entrada) o).id);
+    }
+
+    @Override
     public String toString () {
         return "Entrada [id=" + id + ", espectador=" + espectador + ", pelicula=" + pelicula + ", fecha=" + fecha
                 + ", sala=" + sala + ", butaca=" + butaca + ", complementos=" + complementos + ", precio=" + precio
@@ -162,8 +181,8 @@ public class Entrada implements Comparable <Entrada> {
     }
 
     private void calcularPrecio () {
-        this.precio = Entrada.PRECIOESTANDAR
-                .subtract (new BigDecimal (Entrada.DESCUENTOESPECTADOR).scaleByPowerOfTen (-2)
+        this.precio = Entrada.DEFAULT_PRECIO
+                .subtract (new BigDecimal (Entrada.DESCUENTO_ESPECTADOR).scaleByPowerOfTen (-2)
                         .multiply (false ? BigDecimal.ONE : BigDecimal.ZERO));
 
         ArrayList <Map.Entry <Complemento, Integer>> keyValueArray = new ArrayList <Map.Entry <Complemento, Integer>> (
@@ -171,5 +190,21 @@ public class Entrada implements Comparable <Entrada> {
         for (int i = 0; i < complementos.size (); i++)
             this.precio = this.precio.add (keyValueArray.get (i).getKey ().getPrecio ()
                     .multiply (new BigDecimal (keyValueArray.get (i).getValue ())));
+    }
+
+    public static BST <Entrada> tree (Collection <Entrada> values) {
+        return Entrada.tree (values, null, null);
+    }
+
+    public static BST <Entrada> tree (Collection <Entrada> values, Comparator <Entrada> comp) {
+        return Entrada.tree (values, comp, null);
+    }
+
+    public static BST <Entrada> tree (Collection <Entrada> values, Filter <Entrada> filter) {
+        return Entrada.tree (values, null, filter);
+    }
+
+    public static BST <Entrada> tree (Collection <Entrada> values, Comparator <Entrada> comp, Filter <Entrada> filter) {
+        return new Entrada ().bst (values, comp, filter);
     }
 }

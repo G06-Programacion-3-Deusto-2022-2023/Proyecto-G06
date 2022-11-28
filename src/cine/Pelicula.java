@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 import internals.bst.BST;
 import internals.bst.Filter;
+import internals.bst.Treeable;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,7 +30,7 @@ import java.time.Duration;
 import java.time.Year;
 import java.time.ZoneId;
 
-public class Pelicula implements Comparable <Pelicula> {
+public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     // A ser usada por el método isAmongstCallers para mirar en el stack.
     private static int STACK_DEPTH = 50;
 
@@ -934,14 +935,34 @@ public class Pelicula implements Comparable <Pelicula> {
         return nombres;
     }
 
+    public static BST <Pelicula> tree (Collection <Pelicula> values) {
+        return Pelicula.tree (values, null, null);
+    }
+
+    public static BST <Pelicula> tree (Collection <Pelicula> values, Comparator <Pelicula> comp) {
+        return Pelicula.tree (values, comp, null);
+    }
+
+    public static BST <Pelicula> tree (Collection <Pelicula> values, Filter <Pelicula> filter) {
+        return Pelicula.tree (values, null, filter);
+    }
+
+    public static BST <Pelicula> tree (Collection <Pelicula> values, Comparator <Pelicula> comp,
+            Filter <Pelicula> filter) {
+        return new Pelicula ().bst (values, comp, filter);
+    }
+
+    public static List <Pelicula> orderBy (Collection <Pelicula> peliculas, Comparator <Pelicula> comp) {
+        return Pelicula.orderBy (peliculas, comp, false);
+    }
+
     public static List <Pelicula> orderBy (Collection <Pelicula> peliculas, Comparator <Pelicula> comp, boolean asc) {
-        return BST
-                .fromValues (peliculas,
-                        asc ? (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> comp.compare (b, a)) : comp)
+        return Pelicula.tree (peliculas,
+                asc ? (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> comp.compare (b, a)) : comp)
                 .getValues ();
     }
 
     public static List <Pelicula> filterBy (Collection <Pelicula> peliculas, Filter <Pelicula> filter) {
-        return BST.fromValues (peliculas, filter).getValues ();
+        return Pelicula.tree (peliculas, filter).getValues ();
     }
 }

@@ -1,29 +1,26 @@
 package cine;
 
-import java.util.Arrays;
+import java.util.function.Supplier;
 import java.util.List;
 import java.util.Vector;
 
 public class Sala {
-    private interface EmptyArrayCreator {
-        Butaca [] butacasVacias ();
-    }
+    private static final int NBUTACAS = 40;
 
-    public static final int NBUTACAS = 40;
-
-    protected Pelicula pelicula;
-    protected Vector <Butaca> butacas;
+    private Pelicula pelicula;
+    private Vector <Butaca> butacas;
 
     public Sala () {
         super ();
 
         this.setPelicula (null);
-        this.butacas = new Vector <Butaca> (Arrays.asList (((EmptyArrayCreator) () -> {
-            Butaca array [] = new Butaca [Sala.NBUTACAS];
-            for (int i = 0; i < Sala.NBUTACAS; array [i++] = new Butaca ())
-                ;
-            return array;
-        }).butacasVacias ()));
+        this.butacas = ((Supplier <Vector <Butaca>>) ( () -> {
+            Vector <Butaca> v = new Vector <Butaca> ();
+            for (int i = 0; i < Sala.NBUTACAS; i++)
+                v.add (new Butaca ());
+
+            return v;
+        })).get ();
     }
 
     public Pelicula getPelicula () {
@@ -36,6 +33,10 @@ public class Sala {
 
     public List <Butaca> getButacas () {
         return this.butacas;
+    }
+
+    public static int size () {
+        return Sala.NBUTACAS;
     }
 
     public void clearSala () {

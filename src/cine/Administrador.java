@@ -7,7 +7,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 public class Administrador extends Usuario {
-    protected SortedSet <SetPeliculas> setsPeliculas;
+    private SortedSet <SetPeliculas> setsPeliculas;
 
     public Administrador () {
         this ("");

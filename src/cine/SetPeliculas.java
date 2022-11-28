@@ -2,6 +2,7 @@ package cine;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,7 +13,11 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class SetPeliculas implements Comparable <SetPeliculas> {
+import internals.bst.BST;
+import internals.bst.Filter;
+import internals.bst.Treeable;
+
+public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPeliculas> {
     private static final Random random = new Random ();
     private static final int MIN_SIZE = 7;
     private static final int MAX_SIZE = 35;
@@ -300,5 +305,21 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
 
     public List <String> getNombresPeliculas () {
         return Pelicula.getNombres (Arrays.asList (this.peliculas.toArray (new Pelicula [0])));
+    }
+
+    public static BST <SetPeliculas> tree (Collection <SetPeliculas> values) {
+        return SetPeliculas.tree (values, null, null);
+    }
+
+    public static BST <SetPeliculas> tree (Collection <SetPeliculas> values, Comparator <SetPeliculas> comp) {
+        return SetPeliculas.tree (values, comp, null);
+    }
+
+    public static BST <SetPeliculas> tree (Collection <SetPeliculas> values, Filter <SetPeliculas> filter) {
+        return SetPeliculas.tree (values, null, filter);
+    }
+
+    public static BST <SetPeliculas> tree (Collection <SetPeliculas> values, Comparator <SetPeliculas> comp, Filter <SetPeliculas> filter) {
+        return new SetPeliculas ().bst (values, comp, filter);
     }
 }
