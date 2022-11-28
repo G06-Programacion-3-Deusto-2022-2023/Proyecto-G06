@@ -3,9 +3,9 @@ package cine;
 import java.util.Random;
 
 public enum EdadRecomendada {
-    TODOS     ((byte) 0, "Todas las edades"),
-    SIETE     ((byte) 1, "+7"),
-    DOCE      ((byte) 2, "+12"),
+    TODOS ((byte) 0, "Todas las edades"),
+    SIETE ((byte) 1, "+7"),
+    DOCE ((byte) 2, "+12"),
     DIECISEIS ((byte) 3, "+16"),
     DIECIOCHO ((byte) 4, "+18");
 
@@ -20,6 +20,14 @@ public enum EdadRecomendada {
 
     public byte getValue () {
         return this.value;
+    }
+
+    public EdadRecomendada fromValue (byte value) {
+        if (value < 0 || value > 4)
+            return null;
+
+        return new EdadRecomendada [] { EdadRecomendada.TODOS, EdadRecomendada.SIETE, EdadRecomendada.DOCE,
+                EdadRecomendada.DIECISEIS, EdadRecomendada.DIECIOCHO } [value];
     }
 
     @Override
