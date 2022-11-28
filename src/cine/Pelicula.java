@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.ArrayList;
@@ -16,6 +15,10 @@ import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import internals.bst.BST;
+import internals.bst.Filter;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.MalformedURLException;
@@ -132,14 +135,15 @@ public class Pelicula implements Comparable <Pelicula> {
     // películas por defecto
     private static boolean DEFAULT_IMAGES_DOWNLOADED = false;
 
-    // Flag que especifica si se ha llamado ya al hilo que se encarga de descargar las imágenes de las películas por defecto.
+    // Flag que especifica si se ha llamado ya al hilo que se encarga de
+    // descargar las imágenes de las películas por defecto.
     private static boolean DEFAULT_IMAGES_THREAD_RUNNING = false;
 
     // Las películas por defecto (soy consciente de que esto es una guarrada
     // pero vamos a dejarlo así por el momento)
     private static final int NDEFAULT_PELICULAS = 35;
     private static long SET_DEFAULT_PELICULAS = 0;
-    private static final SortedSet <Pelicula> DEFAULT_PELICULAS = Arrays.asList (
+    protected static final SortedSet <Pelicula> DEFAULT_PELICULAS = Arrays.asList (
             new Pelicula [] {
                     new Pelicula (new UUID (0L, 0L),
                             "Torrente, el brazo tonto de la ley",
@@ -380,16 +384,16 @@ public class Pelicula implements Comparable <Pelicula> {
                             Genero.Nombre.SUSPENSE)
             }).stream ().collect (Collectors.toCollection (TreeSet <Pelicula>::new));
 
-    protected UUID id;
-    protected String nombre;
-    protected String rutaImagen;
-    protected double valoracion;
-    protected Year fecha;
-    protected String director;
-    protected Duration duracion;
-    protected EdadRecomendada edad;
-    protected Set <Genero.Nombre> generos;
-    protected SortedSet <SetPeliculas> sets;
+    private UUID id;
+    private String nombre;
+    private String rutaImagen;
+    private double valoracion;
+    private Year fecha;
+    private String director;
+    private Duration duracion;
+    private EdadRecomendada edad;
+    private SortedSet <Genero.Nombre> generos;
+    private SortedSet <SetPeliculas> sets;
 
     public Pelicula () {
         this ("");
@@ -476,10 +480,22 @@ public class Pelicula implements Comparable <Pelicula> {
                 new Thread () {
                     @Override
                     public void run () {
-                        Pelicula.downloadDefaultImages ();
+                        Thread t;
+                        (t = new Thread () {
+                            @Override
+                            public void run () {
+                                Pelicula.downloadDefaultImages ();
+                            }
+                        }).start ();
 
-                        for (; !Pelicula.DEFAULT_IMAGES_DOWNLOADED;)
-                            ;
+                        try {
+                            t.join ();
+                        }
+
+                        catch (InterruptedException e) {
+                            e.printStackTrace ();
+                        }
+
                         Pelicula.DEFAULT_IMAGES_THREAD_RUNNING = false;
                     }
                 }.start ();
@@ -500,6 +516,7 @@ public class Pelicula implements Comparable <Pelicula> {
 
         if (!this.isDefault ()) {
             super.finalize ();
+
             return;
         }
 
@@ -631,7 +648,7 @@ public class Pelicula implements Comparable <Pelicula> {
         this.edad = edad == null ? EdadRecomendada.TODOS : edad;
     }
 
-    public Set <Genero.Nombre> getGeneros () {
+    public SortedSet <Genero.Nombre> getGeneros () {
         return this.generos;
     }
 
@@ -644,13 +661,13 @@ public class Pelicula implements Comparable <Pelicula> {
                 : new TreeSet <Genero.Nombre> (generos);
     }
 
-    public Set <SetPeliculas> getSets () {
+    public SortedSet <SetPeliculas> getSets () {
         return this.sets;
     }
 
     public void setSets (Collection <SetPeliculas> sets) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Pelicula.isAmongstCallers ("cine.SetPeliculas"))
+                && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas"))
             return;
 
         this.sets = new TreeSet <SetPeliculas> ((Comparator <SetPeliculas>) ( (a, b) -> {
@@ -691,6 +708,7 @@ public class Pelicula implements Comparable <Pelicula> {
     public boolean removeSet (SetPeliculas set) {
         if (this.sets == null || set == null
                 || (this.isDefault () && set.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                        && !Pelicula.isAmongstCallers ("cine.Pelicula")
                         && !Pelicula.isAmongstCallers ("cine.SetPeliculas")))
             return false;
 
@@ -711,12 +729,11 @@ public class Pelicula implements Comparable <Pelicula> {
     }
 
     public void removeFromSets () {
-        if (this.sets == null && (this.isDefault () && !Pelicula.isAmongstCallers ("cine.Pelicula")))
+        if (this.sets == null && (this.isDefault () && !Pelicula.isAmongstCallers ("cine.Pelicula")
+                && !Pelicula.isAmongstCallers ("cine.SetPeliculas")))
             return;
 
-        SetPeliculas array[] = this.sets.toArray (new SetPeliculas [0]);
-        for (int i = 0; i < array.length; array [i++].remove (this))
-            ;
+        this.removeSets (this.sets);
     }
 
     @Override
@@ -816,7 +833,7 @@ public class Pelicula implements Comparable <Pelicula> {
     }
 
     public static SortedSet <Pelicula> getDefault () {
-        return new TreeSet <Pelicula> (Pelicula.DEFAULT_PELICULAS);
+        return new TreeSet <Pelicula> (SetPeliculas.getDefault ().getPeliculas ());
     }
 
     public static SortedSet <Pelicula> getDefault (Integer... ids) {
@@ -886,8 +903,8 @@ public class Pelicula implements Comparable <Pelicula> {
     protected static void deleteDefaultPeliculasData () throws Throwable {
         Pelicula [] peliculas = DEFAULT_PELICULAS.toArray (new Pelicula [0]);
 
-        for (int i = 0; i < peliculas.length; peliculas [i++].finalize ())
-            ;
+        for (int i = 0; i < peliculas.length; Pelicula.DEFAULT_IMAGES_DOWNLOADED = true)
+            peliculas [i++].finalize ();
     }
 
     protected static boolean isDefaultSet (long n) throws UnsupportedOperationException {
@@ -915,5 +932,16 @@ public class Pelicula implements Comparable <Pelicula> {
             ;
 
         return nombres;
+    }
+
+    public static List <Pelicula> orderBy (Collection <Pelicula> peliculas, Comparator <Pelicula> comp, boolean asc) {
+        return BST
+                .fromValues (peliculas,
+                        asc ? (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> comp.compare (b, a)) : comp)
+                .getValues ();
+    }
+
+    public static List <Pelicula> filterBy (Collection <Pelicula> peliculas, Filter <Pelicula> filter) {
+        return BST.fromValues (peliculas, filter).getValues ();
     }
 }

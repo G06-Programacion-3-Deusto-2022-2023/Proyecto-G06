@@ -93,7 +93,7 @@ public interface Genero {
         List <Genero.Nombre> generos = new ArrayList <Genero.Nombre> (Arrays.asList (Genero.Nombre.values ()));
         generos.remove (Genero.Nombre.NADA);
         Collections.shuffle (generos);
-        generos = generos.subList (0, (int) Genero.Nombre.random.nextGaussian (3D, 1.5D) % generos.size ());
+        generos = generos.subList (0, (int) Math.abs (Genero.Nombre.random.nextGaussian (3D, 1.5D)) % generos.size ());
 
         return new TreeSet <Genero.Nombre> (generos.isEmpty () ? Collections.singletonList (Genero.Nombre.NADA) : generos);
     }

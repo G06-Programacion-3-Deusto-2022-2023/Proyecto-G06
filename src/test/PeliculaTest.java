@@ -65,9 +65,6 @@ public class PeliculaTest {
         assertTrue (((BooleanSupplier) ( () -> {
             Pelicula array[] = Pelicula.getDefault ().toArray (new Pelicula [0]);
 
-            for (; !Pelicula.defaultImagesDownloaded();)
-                ;
-
             for (int i = 0; i < array.length;)
                 if (!new File (array [i++].getRutaImagen ()).exists ())
                     return false;

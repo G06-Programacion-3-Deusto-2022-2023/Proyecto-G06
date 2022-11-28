@@ -69,9 +69,4 @@ public class SetPeliculasTest {
                         .collect (Collectors.toList ())),
                 set.getNombresPeliculas ());
     }
-
-    @Test
-    public void test4 () {
-
-    }
 }

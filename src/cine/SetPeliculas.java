@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -21,10 +21,10 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
     private static final SetPeliculas DEFAULT = new SetPeliculas (new UUID (0L, 0L), null, "Set por defecto",
             null);
 
-    protected UUID id;
-    protected Administrador administrador;
-    protected String nombre;
-    protected TreeSet <Pelicula> peliculas;
+    private UUID id;
+    private Administrador administrador;
+    private String nombre;
+    private SortedSet <Pelicula> peliculas;
 
     public SetPeliculas () {
         this ("", null);
@@ -115,7 +115,7 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
         this.nombre = String.format ("Nuevo set%s", nuevas == 0 ? "" : String.format (" #%d", nuevas + 1));
     }
 
-    public Set <Pelicula> getPeliculas () {
+    public SortedSet <Pelicula> getPeliculas () {
         return this.peliculas;
     }
 
@@ -264,8 +264,8 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
     }
 
     public static SetPeliculas getDefault () {
-        if (!SetPeliculas.DEFAULT.contains (Pelicula.getDefault ()))
-            SetPeliculas.DEFAULT.add (Pelicula.getDefault ());
+        if (!SetPeliculas.DEFAULT.contains (Pelicula.DEFAULT_PELICULAS))
+            SetPeliculas.DEFAULT.add (Pelicula.DEFAULT_PELICULAS);
 
         return SetPeliculas.DEFAULT;
     }
@@ -300,9 +300,5 @@ public class SetPeliculas implements Comparable <SetPeliculas> {
 
     public List <String> getNombresPeliculas () {
         return Pelicula.getNombres (Arrays.asList (this.peliculas.toArray (new Pelicula [0])));
-    }
-
-    public static void main (String args[]) {
-        System.out.println (SetPeliculas.getDefault ());
     }
 }
