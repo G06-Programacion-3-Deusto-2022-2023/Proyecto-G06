@@ -9,8 +9,12 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.time.Year;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 
 public class GestorBD {
@@ -54,7 +58,8 @@ public class GestorBD {
 	        String sql3 = "CREATE TABLE IF NOT EXISTS ESPECTADOR (\n"
 	                   + " ID_ESPECTADOR STRING ,\n"
 	                   + " NOMBRE_ESPECTADOR STRING PRIMARY KEY NOT NULL ,\n"
-	                   + " CONTRASENA_ESPECTADOR STRING \n"
+	                   + " CONTRASENA_ESPECTADOR STRING, \n"
+	                   + " EDAD INTEGER \n"
 	                   + ");";
 	        String sql4 = "CREATE TABLE IF NOT EXISTS COMPLEMENTO (\n"
 	        		   + " ID_COMPLEMENTO STRING ,\n"
@@ -157,12 +162,12 @@ public class GestorBD {
 		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
 		     Statement stmt = con.createStatement()) {
 			//Se define la plantilla de la sentencia SQL
-			String sql = "INSERT INTO ESPECTADOR (ID_ESPECTADOR, NOMBRE_ESPECTADOR, CONTRASENA_ESPECTADOR) VALUES ('%s', '%s', %s');";
+			String sql = "INSERT INTO ESPECTADOR (ID_ESPECTADOR, NOMBRE_ESPECTADOR, CONTRASENA_ESPECTADOR, EDAD) VALUES ('%s', '%s', '%s', %d);";
 			
 			System.out.println("- Insertando usuarios...");
 			
 			for (Espectador e: espectador) {
-				if (1 == stmt.executeUpdate(String.format(sql,e.getId(),e.getNombre(),e.getContrasena()))) {					
+				if (1 == stmt.executeUpdate(String.format(sql,e.getId(),e.getNombre(),e.getContrasena(), e.getEdad()))) {					
 					System.out.println(String.format(" - Usuario insertada: %s", e.toString()));
 				} else {
 					System.out.println(String.format(" - No se ha insertado el usuario: %s", e.toString()));
@@ -300,8 +305,11 @@ public class GestorBD {
 			//Se recorre el ResultSet y se crean objetos Cliente
 			while (rs.next()) {
 				UUID id = UUID.fromString(rs.getString("ID_ESPECTADOR"));
+				Map <Genero.Nombre, Genero.Preferencia> preferencias = new TreeMap<Genero.Nombre, Genero.Preferencia>();
+				Collection <Entrada> historial = new TreeSet<Entrada>();
+				Set <Espectador> grupo = new TreeSet<Espectador>();
 				
-				espectador = new Espectador(id, rs.getString("NOMBRE_ESPECTADOR"), rs.getString("CONTRASEÑA_ESPECTADOR"), (byte) 0, null, null);
+				espectador = new Espectador(id, rs.getString("NOMBRE_ESPECTADOR"), rs.getString("CONTRASEÑA_ESPECTADOR"),(byte) rs.getInt("EDAD"), preferencias, historial, grupo);
 				
 				espectadores.add(espectador);
 			}
