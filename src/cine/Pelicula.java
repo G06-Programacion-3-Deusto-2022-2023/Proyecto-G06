@@ -32,7 +32,7 @@ import java.time.ZoneId;
 
 public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     // A ser usada por el método isAmongstCallers para mirar en el stack.
-    private static int STACK_DEPTH = 50;
+    private static int STACK_DEPTH = 5;
 
     protected static boolean isAmongstCallers (String str) {
         return isAmongstCallers (str, Thread.currentThread ().getStackTrace ());
@@ -457,7 +457,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
 
         this.id = id != null && ((id.getMostSignificantBits () == 0 && id.getLeastSignificantBits () >= 0
                 && id.getLeastSignificantBits () < Pelicula.NDEFAULT_PELICULAS
-                && Pelicula.isAmongstCallers ("cine.Pelicula"))
+                && Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isDefaultSet (id.getLeastSignificantBits()))
                 || id.getMostSignificantBits () != 0 || id.getLeastSignificantBits () < 0
                 || id.getLeastSignificantBits () >= Pelicula.NDEFAULT_PELICULAS)
                         ? id
@@ -650,7 +650,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     public SortedSet <Genero.Nombre> getGeneros () {
-        return this.generos;
+        return this.isDefault () ? new TreeSet <Genero.Nombre> (this.generos) : this.generos;
     }
 
     public void setGeneros (Collection <Genero.Nombre> generos) {
@@ -663,7 +663,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     public SortedSet <SetPeliculas> getSets () {
-        return this.sets;
+        return new TreeSet <SetPeliculas> (this.sets);
     }
 
     public void setSets (Collection <SetPeliculas> sets) {
@@ -837,8 +837,16 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         return new TreeSet <Pelicula> (SetPeliculas.getDefault ().getPeliculas ());
     }
 
+    public static Pelicula getDefault (int id) {
+        return Pelicula.getDefault ((long) id);
+    }
+
     public static SortedSet <Pelicula> getDefault (Integer... ids) {
         return getDefault (Arrays.asList (ids).stream ().map (Integer::longValue).collect (Collectors.toList ()));
+    }
+
+    public static Pelicula getDefault (long id) {
+        return Pelicula.getDefault (new Long [] { id }).first ();
     }
 
     public static SortedSet <Pelicula> getDefault (Long... ids) {
@@ -956,13 +964,29 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         return Pelicula.orderBy (peliculas, comp, false);
     }
 
-    public static List <Pelicula> orderBy (Collection <Pelicula> peliculas, Comparator <Pelicula> comp, boolean asc) {
+    public static List <Pelicula> orderBy (Collection <Pelicula> peliculas, Comparator <Pelicula> comp, boolean desc) {
         return Pelicula.tree (peliculas,
-                asc ? (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> comp.compare (b, a)) : comp)
+                desc ? (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> comp.compare (b, a)) : comp)
                 .getValues ();
     }
 
     public static List <Pelicula> filterBy (Collection <Pelicula> peliculas, Filter <Pelicula> filter) {
-        return Pelicula.tree (peliculas, filter).getValues ();
+        return Pelicula.filterBy (peliculas, filter, false);
+    }
+
+    public static List <Pelicula> filterBy (Collection <Pelicula> peliculas, Filter <Pelicula> filter, boolean neg) {
+        return Pelicula.tree (peliculas, neg ? (Filter <Pelicula>) (p -> !filter.filter (p)) : filter).getValues ();
+    }
+
+    public static List <Pelicula> orderFilterBy (Collection <Pelicula> peliculas, Comparator <Pelicula> comp,
+            Filter <Pelicula> filter) {
+        return Pelicula.orderFilterBy (peliculas, comp, filter, false, false);
+    }
+
+    public static List <Pelicula> orderFilterBy (Collection <Pelicula> peliculas, Comparator <Pelicula> comp,
+            Filter <Pelicula> filter, boolean desc, boolean neg) {
+        return Pelicula.tree (peliculas,
+                desc ? (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> comp.compare (b, a)) : comp,
+                neg ? (Filter <Pelicula>) (p -> !filter.filter (p)) : filter).getValues ();
     }
 }

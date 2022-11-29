@@ -56,7 +56,7 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
 
         this.id = id != null && ((id.getMostSignificantBits () == 0
                 && id.getLeastSignificantBits () == 0
-                && Pelicula.isAmongstCallers ("cine.SetPeliculas"))
+                && Pelicula.isAmongstCallers ("cine.SetPeliculas") && !SetPeliculas.DEFAULT_SET)
                 || id.getMostSignificantBits () != 0 || id.getLeastSignificantBits () != 0)
                         ? id
                         : UUID.randomUUID ();
@@ -121,7 +121,7 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     }
 
     public SortedSet <Pelicula> getPeliculas () {
-        return this.peliculas;
+        return new TreeSet <Pelicula> (this.peliculas);
     }
 
     public void setPeliculas (Collection <Pelicula> peliculas) {

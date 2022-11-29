@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.time.Year;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.function.BooleanSupplier;
@@ -61,20 +62,8 @@ public class PeliculaTest {
         assertEquals (2, pelicula.getEdad ().getValue ());
         assertEquals (Genero.Nombre.DRAMA.getValue () | Genero.Nombre.ROMANCE.getValue (),
                 Genero.Nombre.toValor (pelicula.getGeneros ()));
-        assertEquals (pelicula.getGeneros (), Genero.Nombre.toGeneros (Genero.Nombre.toValor (pelicula.getGeneros ())));
-    }
-
-    @Test
-    public void defaultPeliculaTest () {
-        assertTrue (((BooleanSupplier) ( () -> {
-            Pelicula array[] = Pelicula.getDefault ().toArray (new Pelicula [0]);
-
-            for (int i = 0; i < array.length;)
-                if (!new File (array [i++].getRutaImagen ()).exists ())
-                    return false;
-
-            return true;
-        })).getAsBoolean ());
+        assertEquals (pelicula.getGeneros (),
+                Genero.Nombre.toGeneros (Genero.Nombre.toValor (pelicula.getGeneros ())));
     }
 
     @Test
@@ -114,16 +103,23 @@ public class PeliculaTest {
                         & Genero.Nombre.toValor (Arrays.asList (
                                 new Genero.Nombre [] { Genero.Nombre.ACCION,
                                         Genero.Nombre.COMEDIA }))) != 0)
-                        .sorted ((Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> ((Double) a.getValoracion ())
-                                .compareTo ((Double) b.getValoracion ())))
+                        .sorted ((Comparator <Pelicula>) ( (Pelicula a,
+                                Pelicula b) -> ((Double) a.getValoracion ())
+                                        .compareTo ((Double) b
+                                                .getValoracion ())))
                         .collect (Collectors.toCollection (Vector::new)),
                 Pelicula
                         .tree (Pelicula.getDefault (),
-                                (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> ((Double) a.getValoracion ())
-                                        .compareTo ((Double) b.getValoracion ())),
-                                (Filter <Pelicula>) (p -> (Genero.Nombre.toValor (p.getGeneros ())
+                                (Comparator <Pelicula>) ( (Pelicula a,
+                                        Pelicula b) -> ((Double) a
+                                                .getValoracion ())
+                                                        .compareTo ((Double) b
+                                                                .getValoracion ())),
+                                (Filter <Pelicula>) (p -> (Genero.Nombre
+                                        .toValor (p.getGeneros ())
                                         & Genero.Nombre.toValor (Arrays.asList (
-                                                new Genero.Nombre [] { Genero.Nombre.ACCION,
+                                                new Genero.Nombre [] {
+                                                        Genero.Nombre.ACCION,
                                                         Genero.Nombre.COMEDIA }))) != 0))
                         .getValuesAs (Vector::new));
     }
@@ -134,16 +130,21 @@ public class PeliculaTest {
                 & Genero.Nombre.toValor (Arrays.asList (
                         new Genero.Nombre [] { Genero.Nombre.ACCION,
                                 Genero.Nombre.COMEDIA }))) != 0)
-                .sorted ((Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> ((Double) a.getValoracion ())
-                        .compareTo ((Double) b.getValoracion ())))
+                .sorted ((Comparator <Pelicula>) ( (Pelicula a,
+                        Pelicula b) -> ((Double) a.getValoracion ())
+                                .compareTo ((Double) b.getValoracion ())))
                 .collect (Collectors.toList ()),
                 Pelicula.orderBy (
                         Pelicula.filterBy (Pelicula.getDefault (),
-                                (Filter <Pelicula>) p -> (Genero.Nombre.toValor (p.getGeneros ())
+                                (Filter <Pelicula>) p -> (Genero.Nombre
+                                        .toValor (p.getGeneros ())
                                         & Genero.Nombre.toValor (Arrays.asList (
-                                                new Genero.Nombre [] { Genero.Nombre.ACCION,
+                                                new Genero.Nombre [] {
+                                                        Genero.Nombre.ACCION,
                                                         Genero.Nombre.COMEDIA }))) != 0),
-                        (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> ((Double) a.getValoracion ())
-                                .compareTo ((Double) b.getValoracion ()))));
+                        (Comparator <Pelicula>) ( (Pelicula a,
+                                Pelicula b) -> ((Double) a.getValoracion ())
+                                        .compareTo ((Double) b
+                                                .getValoracion ()))));
     }
 }

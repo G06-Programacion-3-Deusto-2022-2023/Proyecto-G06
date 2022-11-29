@@ -21,11 +21,8 @@ public class ButacaTest {
     @Test
     public void test2 () {
         Espectador espectador = Espectador.random ();
-        double probabilidad = Butaca.calcularProbabilidad (espectador, Pelicula.random ());
-        boolean ocupada = Math.random () < probabilidad;
+        boolean ocupada = Butaca.determinarOcupacion (espectador, Pelicula.random ());
 
-        butaca = new Butaca (espectador, ocupada);
-
-        assertEquals (butaca.getEspectador (), ocupada ? espectador : null);
+        assertEquals ((butaca = new Butaca (espectador, ocupada)).getEspectador (), ocupada ? espectador : null);
     }
 }
