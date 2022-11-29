@@ -152,7 +152,7 @@ public class Espectador extends Usuario {
                 shuffle = shuffle.subList (0, 50);
                 for (int j = 0; j < shuffle.size ()
                         && grupos.get (grupos.size () - 1).size () < Espectador.MAX_SIZE_GRUPO; j++)
-                    if (Math.random () < 1D)
+                    if (Math.random () < 0.05D)
                         grupos.get (grupos.size () - 1).add (shuffle.get (j));
             }
 

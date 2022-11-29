@@ -32,7 +32,7 @@ import java.time.ZoneId;
 
 public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     // A ser usada por el método isAmongstCallers para mirar en el stack.
-    private static int STACK_DEPTH = 5;
+    private static int STACK_DEPTH = 25;
 
     protected static boolean isAmongstCallers (String str) {
         return isAmongstCallers (str, Thread.currentThread ().getStackTrace ());
@@ -137,7 +137,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     private static boolean DEFAULT_IMAGES_DOWNLOADED = false;
 
     // Flag que especifica si se ha llamado ya al hilo que se encarga de
-    // descargar las imágenes de las películas por defecto.
+    // descargar las imágenes de las películas por defecto.DEFAULT_IMAGES_DOWNLOADED
     private static boolean DEFAULT_IMAGES_THREAD_RUNNING = false;
 
     // Las películas por defecto (soy consciente de que esto es una guarrada

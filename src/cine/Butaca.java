@@ -44,10 +44,10 @@ public class Butaca {
     protected static double calcularProbabilidad (Espectador espectador, Pelicula pelicula) {
         return espectador == null || pelicula == null || pelicula.getGeneros ().contains (Genero.Nombre.NADA)
                 || pelicula.getValoracion () == 0 || ((Double) pelicula.getValoracion ()).isNaN () ? 0
-                        : (0.3
+                        : (0.2
                                 + (pelicula.getValoracion () < 5 ? -0.075D * (5 - pelicula.getValoracion ())
                                         : (pelicula.getValoracion () - 5) / 15D)
-                                + 0.25 * espectador.fromPreferencias (pelicula) / Genero.Nombre.values ().length
+                                + 0.1 * espectador.fromPreferencias (pelicula)
                                 + 0.2 * (true ? 0 : 1)
                                 + 0.15 * (false ? 1 : 0));
     }
