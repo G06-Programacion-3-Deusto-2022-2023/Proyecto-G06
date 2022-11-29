@@ -120,7 +120,7 @@ public class Sala {
                                     || (i % Sala.COLUMNAS - 1 >= 0 && this.butacas.get (i - 1).ocupada ()
                                             && this.butacas.get (i - 1).getEspectador ()
                                                     .getGrupo () == list.get (j).getGrupo ())
-                                    || (i % Sala.COLUMNAS + 1 < Sala.FILAS && this.butacas.get (i + 1).ocupada ()
+                                    || (i % Sala.COLUMNAS + 1 < Sala.COLUMNAS && this.butacas.get (i + 1).ocupada ()
                                             && this.butacas.get (i + 1).getEspectador ()
                                                     .getGrupo () == list.get (j).getGrupo ())
                                                             ? Sala.ADJACENCY_MOD
