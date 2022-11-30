@@ -27,6 +27,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
@@ -43,7 +44,13 @@ import cine.EdadRecomendada;
 import cine.Genero;
 
 public class CrearPeliculaWindow extends JFrame {
-    public CrearPeliculaWindow (Collection <Pelicula> peliculas) {
+    public CrearPeliculaWindow (Collection <Pelicula> peliculas) throws NullPointerException {
+        super ();
+
+        if (peliculas == null)
+            throw new NullPointerException (
+                    "No se puede pasar una colección nula de películas a la ventana de creación de películas.");
+
         CrearPeliculaWindow f = this;
 
         JTextField nombre = new JTextField (50);
@@ -357,17 +364,21 @@ public class CrearPeliculaWindow extends JFrame {
             p.add (((Supplier <JButton>) ( () -> {
                 JButton b = new JButton ("Añadir");
                 b.addActionListener (e -> {
+                    long d;
+                    if ((d = ((SpinnerNumberModel) horas.getModel ()).getNumber ().longValue () * 60
+                            + ((SpinnerNumberModel) minutos.getModel ()).getNumber ().longValue ()) == 0) {
+                        JOptionPane.showMessageDialog (f, "La película no puede tener una duración de 0 minutos.");
+
+                        return;
+                    }
+
                     Pelicula np = new Pelicula (nombre.getText (), rutaImagen.getText (),
                             (Double) valoracion.getValue (),
                             Year.of (((SpinnerNumberModel) fecha.getModel ()).getNumber ().intValue ()),
                             director.getText (),
-                            Duration.ofMinutes (((SpinnerNumberModel) horas.getModel ()).getNumber ().longValue () * 60
-                                    + ((SpinnerNumberModel) minutos.getModel ()).getNumber ().longValue ()),
+                            Duration.ofMinutes (d),
                             edadValue [0],
                             generosValues);
-
-                    if (false)
-                        return;
 
                     if (np.getNombre ().equals (np.getId ().toString ())) {
                         Pelicula array[] = peliculas.toArray (new Pelicula [0]);
@@ -416,7 +427,8 @@ public class CrearPeliculaWindow extends JFrame {
 
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle ("Añadir una película");
-        this.setIconImage (((ImageIcon) UIManager.getIcon ("OptionPane.questionIcon", new Locale ("es-ES"))).getImage ());
+        this.setIconImage (
+                ((ImageIcon) UIManager.getIcon ("OptionPane.questionIcon", new Locale ("es-ES"))).getImage ());
         this.pack ();
         this.setLocationRelativeTo (null);
         this.setVisible (true);
