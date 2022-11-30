@@ -2,22 +2,20 @@ package VentanaGrafica;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.time.Year;
 import java.time.Duration;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.awt.event.ActionEvent;
 import java.awt.FlowLayout;
-import java.awt.Image;
-import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
-import javax.swing.AbstractButton;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
@@ -32,14 +30,13 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.SpinnerDateModel;
-import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
-import javax.swing.GroupLayout.Alignment;
+import javax.swing.text.Document;
 
 import cine.Pelicula;
+import internals.bst.JTextFieldLimit;
 import cine.EdadRecomendada;
 import cine.Genero;
 
@@ -53,10 +50,11 @@ public class CrearPeliculaWindow extends JFrame {
 
         CrearPeliculaWindow f = this;
 
-        JTextField nombre = new JTextField (50);
+        JTextField nombre = new JTextField (48);
+        nombre.setDocument (new JTextFieldLimit (75));
         nombre.setToolTipText ("Dejar vacío este campo implica que el nombre de la película será su ID.");
 
-        JTextField rutaImagen = new JTextField (50);
+        JTextField rutaImagen = new JTextField (25);
         rutaImagen.setToolTipText ("Deja vacío este campo para que la película use una imagen por defecto.");
 
         JSpinner valoracion = new JSpinner (new SpinnerNumberModel (5, 1, 10, 0.1));
@@ -67,7 +65,8 @@ public class CrearPeliculaWindow extends JFrame {
         fecha.setToolTipText (String.format ("El año de salida de la película (desde el %s al %s).",
                 Pelicula.minFecha (), Pelicula.maxFecha ()));
 
-        JTextField director = new JTextField (25);
+        JTextField director = new JTextField (32);
+        director.setDocument (new JTextFieldLimit (50));
         director.setToolTipText (
                 "Nombre del director de la película. Si se deja vacío se asume que la película no tiene director.");
 
@@ -372,6 +371,23 @@ public class CrearPeliculaWindow extends JFrame {
                         return;
                     }
 
+                    if (!(rutaImagen.getText () == null || rutaImagen.getText ().equals ("")) &&
+                            (!new File (rutaImagen.getText ()).exists () || ((BooleanSupplier) ( () -> {
+                                try {
+                                    return !Files.probeContentType (new File (rutaImagen.getText ()).toPath ())
+                                            .split ("/") [0].equals ("image");
+                                }
+
+                                catch (IOException e1) {
+                                    return false;
+                                }
+                            })).getAsBoolean ())) {
+                        JOptionPane.showMessageDialog (f,
+                                "La ruta especificada para la imagen de la película debe ser nula o apuntar a una imagen accesible.");
+
+                        return;
+                    }
+
                     Pelicula np = new Pelicula (nombre.getText (), rutaImagen.getText (),
                             (Double) valoracion.getValue (),
                             Year.of (((SpinnerNumberModel) fecha.getModel ()).getNumber ().intValue ()),
@@ -432,5 +448,28 @@ public class CrearPeliculaWindow extends JFrame {
         this.pack ();
         this.setLocationRelativeTo (null);
         this.setVisible (true);
+    }
+
+    public static void main (String args[]) {
+        List <Pelicula> peliculas = new ArrayList <Pelicula> ();
+        Thread t;
+        (t = new Thread () {
+            @Override
+            public void run () {
+                CrearPeliculaWindow w = new CrearPeliculaWindow (peliculas);
+                for (; w.isDisplayable ();)
+                    ;
+            }
+        }).start ();
+
+        try {
+            t.join ();
+        }
+
+        catch (InterruptedException e) {
+            e.printStackTrace ();
+        }
+
+        System.out.println (peliculas);
     }
 }
