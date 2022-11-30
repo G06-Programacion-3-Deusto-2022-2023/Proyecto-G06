@@ -19,14 +19,14 @@ public interface Genero {
         ACCION ((short) 1, "Acción"),
         CIENCIA_FICCION ((short) (1 << 1), "Ciencia ficción"),
         COMEDIA ((short) (1 << 2), "Comedia"),
-        DRAMA ((short) (1 << 3), "Drama"),
-        FANTASIA ((short) (1 << 4), "Fantasía"),
-        MELODRAMA ((short) (1 << 5), "Melodrama"),
-        MUSICAL ((short) (1 << 6), "Musical"),
-        ROMANCE ((short) (1 << 7), "Romance"),
-        SUSPENSE ((short) (1 << 8), "Suspense"),
-        TERROR ((short) (1 << 9), "Terror"),
-        DOCUMENTAL ((short) (1 << 10), "Documental");
+        DOCUMENTAL ((short) (1 << 3), "Documental"),
+        DRAMA ((short) (1 << 4), "Drama"),
+        FANTASIA ((short) (1 << 5), "Fantasía"),
+        MELODRAMA ((short) (1 << 6), "Melodrama"),
+        MUSICAL ((short) (1 << 7), "Musical"),
+        ROMANCE ((short) (1 << 8), "Romance"),
+        SUSPENSE ((short) (1 << 9), "Suspense"),
+        TERROR ((short) (1 << 10), "Terror");
 
         protected static Random random = new Random ();
         private final short value;

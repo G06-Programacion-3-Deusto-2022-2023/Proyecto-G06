@@ -114,7 +114,8 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
         SetPeliculas array[] = this.administrador.getSetsPeliculas ().toArray (new SetPeliculas [0]);
 
         int nuevas = 0;
-        for (int i = 0; i < array.length; nuevas += array [i++].getNombre ().contains ("Nuevo set") ? 1 : 0)
+        for (int i = 0; i < array.length; nuevas += array [i++].getNombre ().toLowerCase ().contains ("nuevo set") ? 1
+                : 0)
             ;
 
         this.nombre = String.format ("Nuevo set%s", nuevas == 0 ? "" : String.format (" #%d", nuevas + 1));
@@ -319,7 +320,8 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
         return SetPeliculas.tree (values, null, filter);
     }
 
-    public static BST <SetPeliculas> tree (Collection <SetPeliculas> values, Comparator <SetPeliculas> comp, Filter <SetPeliculas> filter) {
+    public static BST <SetPeliculas> tree (Collection <SetPeliculas> values, Comparator <SetPeliculas> comp,
+            Filter <SetPeliculas> filter) {
         return new SetPeliculas ().bst (values, comp, filter);
     }
 }

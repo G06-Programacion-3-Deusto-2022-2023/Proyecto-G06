@@ -137,7 +137,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     private static boolean DEFAULT_IMAGES_DOWNLOADED = false;
 
     // Flag que especifica si se ha llamado ya al hilo que se encarga de
-    // descargar las imágenes de las películas por defecto.DEFAULT_IMAGES_DOWNLOADED
+    // descargar las imágenes de las películas por
+    // defecto.DEFAULT_IMAGES_DOWNLOADED
     private static boolean DEFAULT_IMAGES_THREAD_RUNNING = false;
 
     // Las películas por defecto (soy consciente de que esto es una guarrada
@@ -457,7 +458,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
 
         this.id = id != null && ((id.getMostSignificantBits () == 0 && id.getLeastSignificantBits () >= 0
                 && id.getLeastSignificantBits () < Pelicula.NDEFAULT_PELICULAS
-                && Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isDefaultSet (id.getLeastSignificantBits()))
+                && Pelicula.isAmongstCallers ("cine.Pelicula")
+                && !Pelicula.isDefaultSet (id.getLeastSignificantBits ()))
                 || id.getMostSignificantBits () != 0 || id.getLeastSignificantBits () < 0
                 || id.getLeastSignificantBits () >= Pelicula.NDEFAULT_PELICULAS)
                         ? id
@@ -590,6 +592,18 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         return this.fecha;
     }
 
+    public static Year minFecha () {
+        return Pelicula.MIN_FECHA;
+    }
+
+    public static Year defaultFecha () {
+        return Pelicula.DEFAULT_FECHA;
+    }
+
+    public static Year maxFecha () {
+        return Pelicula.MAX_FECHA;
+    }
+
     public void setFecha (int fecha) {
         this.setFecha (Year.of (fecha));
     }
@@ -657,7 +671,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ()))
             return;
 
-        this.generos = generos == null || generos.contains (Genero.Nombre.NADA)
+        this.generos = generos == null || generos.isEmpty () || generos.contains (Genero.Nombre.NADA)
                 ? new TreeSet <Genero.Nombre> (Collections.singleton (Genero.Nombre.NADA))
                 : new TreeSet <Genero.Nombre> (generos);
     }
@@ -928,7 +942,9 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     public static Pelicula random (String nombre) {
-        return new Pelicula (nombre, Pelicula.random.nextGaussian (Pelicula.RANDOMAVG, Pelicula.RANDOMSTDEV),
+        return new Pelicula (nombre, "", Pelicula.random.nextGaussian (Pelicula.RANDOMAVG, Pelicula.RANDOMSTDEV),
+                Year.of (Pelicula.random.nextInt (Pelicula.MIN_FECHA.getValue (), Pelicula.MAX_FECHA.getValue () + 1)),
+                "", Duration.ofMinutes (Pelicula.random.nextLong (Pelicula.DEFAULT_DURACION.toMinutes (), 180)),
                 EdadRecomendada.random (), Genero.randomGeneros ());
     }
 
@@ -966,7 +982,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
 
     public static List <Pelicula> orderBy (Collection <Pelicula> peliculas, Comparator <Pelicula> comp, boolean desc) {
         return Pelicula.tree (peliculas,
-                desc ? (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> comp.compare (b, a)) : comp)
+                desc ? comp.reversed () : comp)
                 .getValues ();
     }
 
@@ -986,7 +1002,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     public static List <Pelicula> orderFilterBy (Collection <Pelicula> peliculas, Comparator <Pelicula> comp,
             Filter <Pelicula> filter, boolean desc, boolean neg) {
         return Pelicula.tree (peliculas,
-                desc ? (Comparator <Pelicula>) ( (Pelicula a, Pelicula b) -> comp.compare (b, a)) : comp,
+                desc ? comp.reversed () : comp,
                 neg ? (Filter <Pelicula>) (p -> !filter.filter (p)) : filter).getValues ();
     }
 }
