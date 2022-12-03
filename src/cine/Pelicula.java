@@ -4,28 +4,42 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Year;
 import java.time.ZoneId;
@@ -48,7 +62,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
 
     // Media y desviación estándar de la distribución de las valoraciones de
     // las películas sacadas de los primeros 2²⁰ elementos
-    // de la columna averageRating del archivo title.ratings.tsv/data.tsv
+    // de la columna averageRating fis.readdel archivo
+    // title.ratings.tsv/data.tsv
     // del dataset de Kaggle
     // https://www.kaggle.com/datasets/ashirwadsangwan/imdb-dataset.
     private static final Random random = new Random ();
@@ -784,6 +799,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
 
     @Override
     public String toString () {
+
         interface GenerosToString {
             String str (List <Genero.Nombre> generos);
         }
@@ -793,17 +809,13 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         }
 
         return "Película (hash: " + this.hashCode () + ") {\n\tID: " + this.id
-                + (this.isDefault () ? " (película predeterminada)" : "")
-                + "\n\tNombre: "
-                + this.nombre + "\n\tRuta de la imagen: "
-                + this.rutaImagen + "\n\tValoración: " + (((Double) this.valoracion).isNaN ()
-                        ? "-"
-                        : this.valoracion)
-                + "\n\tFecha: " + this.fecha
-                + "\n\tDirector: "
-                + this.director + "\n\tDuración: "
-                + this.duracionToString () + "\n\tEdad: " + this.edad
-                + "\n\tGéneros: " + ((GenerosToString) (g -> {
+                + (this.isDefault () ? " (película predeterminada)" : "") + "\n\tNombre: " + this.nombre
+                + "\n\tRuta de la imagen: " + this.rutaImagen + "\n\tValoración: "
+                + (((Double) this.valoracion).isNaN () ? "-" : this.valoracion) + "\n\tFecha: " + this.fecha
+                + "\n\tDirector: " + this.director + "\n\tDuración: " + this.duracionToString () + "\n\tEdad: "
+                + this.edad + "\n\tGéneros: " + ((GenerosToString) (g ->
+
+                {
                     StringBuilder str = new StringBuilder ();
                     for (int i = 0; i < g.size (); i++)
                         str.append (String.format ("%s%s",
@@ -812,9 +824,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
                                         ? " · "
                                         : ""));
                     return str.toString ();
-                })).str (this.generos.stream ()
-                        .collect (Collectors.toList ()))
-                + "\n\tSets: " + (this.sets.isEmpty () ? "-" : ((IDSets) (s -> {
+                })).str (this.generos.stream ().collect (Collectors.toList ())) + "\n\tSets: "
+                + (this.sets.isEmpty () ? "-" : ((IDSets) (s -> {
                     StringBuilder str = new StringBuilder ();
                     for (int i = 0; i < s.size (); i++)
                         str.append (String.format ("%s%s%s",
@@ -824,8 +835,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
                                         ? " · "
                                         : ""));
                     return str.toString ();
-                })).str (this.sets.stream ().collect (Collectors.toList ())))
-                + "\n}";
+                })).str (this.sets.stream ().collect (Collectors.toList ()))) + "\n}";
     }
 
     public String duracionToString () {
@@ -1004,5 +1014,244 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         return Pelicula.tree (peliculas,
                 desc ? comp.reversed () : comp,
                 neg ? (Filter <Pelicula>) (p -> !filter.filter (p)) : filter).getValues ();
+    }
+
+    public static List <Pelicula> fromJSON (File file) throws NullPointerException, IOException, JSONException {
+        if (file == null)
+            throw new NullPointerException (String.format ("No se puede pasar un archivo nulo al método %s.",
+                    Thread.currentThread ().getStackTrace () [0].getMethodName ()));
+
+        if (!file.exists ())
+            throw new IOException (
+                    String.format ("No se pudo encontrar el archivo especificado (%s).", file.getAbsolutePath ()));
+
+        if (!Files.probeContentType (file.toPath ()).equals ("application/json"))
+            throw new JSONException (
+                    String.format ("El archivo especificado, %s, no es un archivo JSON válido.",
+                            file.getAbsolutePath ()));
+
+        JSONArray json;
+        try {
+            json = new JSONArray (Files.readString (file.toPath ()));
+        }
+
+        catch (IOException e) {
+            throw new IOException (
+                    String.format ("No se pudo abrir el archivo %s para recoger los datos.", file.getAbsolutePath ()));
+        }
+
+        catch (JSONException e) {
+            throw new JSONException (String.format (
+                    "El archivo especificado, %s, no es un archivo JSON válido que contenga un JSON Array.",
+                    file.getAbsolutePath ()));
+        }
+
+        List <Pelicula> list = new ArrayList <Pelicula> ();
+        SortedSet <Integer> errors = new TreeSet <Integer> ();
+        for (int i = 0; i < json.length (); i++)
+            try {
+                list.add (Pelicula.fromJSONObject (json.getJSONObject (i)));
+            }
+
+            catch (JSONException e) {
+                errors.add (i);
+            }
+
+        Logger.getLogger (Pelicula.class.getName ()).log (errors.isEmpty () ? Level.INFO : Level.WARNING,
+                errors.isEmpty () ? String.format ("Se importaron todas las películas contenidas en el archivo %s.",
+                        file.getAbsolutePath ())
+                        : String.format ("Hubo errores tratando de importar %d de las películas (con índice %s).",
+                                errors.size (), ""));
+
+        return list;
+    }
+
+    private static Pelicula fromJSONObject (JSONObject o) throws NullPointerException, JSONException {
+        if (o == null)
+            throw new NullPointerException (String.format ("No se puede pasar un JSONObject nulo al método %s.",
+                    Thread.currentThread ().getStackTrace () [0].getMethodName ()));
+
+        final Set <String> fields = new HashSet <String> (
+                Arrays.asList (new String [] { "nombre", "rutaimagen", "valoracion",
+                        "fecha", "director", "duracion", "edad", "generos" }));
+
+        final Map <String, EdadRecomendada> edadMap = ((Supplier <Map <String, EdadRecomendada>>) ( () -> {
+            Map <String, EdadRecomendada> map = new HashMap <String, EdadRecomendada> ();
+
+            map.put ("Todas las edades", EdadRecomendada.TODOS);
+            map.put ("+7", EdadRecomendada.SIETE);
+            map.put ("+12", EdadRecomendada.DOCE);
+            map.put ("+16", EdadRecomendada.DIECISEIS);
+            map.put ("+18", EdadRecomendada.DIECIOCHO);
+
+            return map;
+        })).get ();
+
+        final Map <String, Genero.Nombre> generosMap = ((Supplier <Map <String, Genero.Nombre>>) ( () -> {
+            Map <String, Genero.Nombre> map = new HashMap <String, Genero.Nombre> ();
+
+            map.put ("ACCION", Genero.Nombre.ACCION);
+            map.put ("CIENCIA_FICCION", Genero.Nombre.CIENCIA_FICCION);
+            map.put ("COMEDIA", Genero.Nombre.COMEDIA);
+            map.put ("DOCUMENTAL", Genero.Nombre.DOCUMENTAL);
+            map.put ("DRAMA", Genero.Nombre.DRAMA);
+            map.put ("FANTASIA", Genero.Nombre.FANTASIA);
+            map.put ("MELODRAMA", Genero.Nombre.MELODRAMA);
+            map.put ("MUSICAL", Genero.Nombre.MUSICAL);
+            map.put ("ROMANCE", Genero.Nombre.ROMANCE);
+            map.put ("SUSPENSE", Genero.Nombre.SUSPENSE);
+            map.put ("TERROR", Genero.Nombre.TERROR);
+
+            return map;
+        })).get ();
+
+        String keys[] = o.keySet ().toArray (new String [0]);
+        for (int i = 0; i < keys.length; i++)
+            if (!fields.contains (keys [i]))
+                throw new JSONException (String.format ("JSONObject inválido: clave %s desconocida.", keys [i]));
+
+        String nombre = "";
+        String rutaImagen = "";
+        double valoracion = 0;
+        Year fecha = null;
+        String director = "";
+        Duration duracion = null;
+        EdadRecomendada edad = null;
+        Set <Genero.Nombre> generos = new HashSet <Genero.Nombre> ();
+
+        try {
+            nombre = o.getString ("nombre");
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    "No se pudo encontrar un nombre válido para la película.");
+        }
+
+        try {
+            rutaImagen = o.getString ("rutaimagen");
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    "No se pudo encontrar una ruta de imágen válida para la película.");
+        }
+
+        try {
+            valoracion = o.getDouble ("valoracion");
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    "No se pudo encontrar una valoración válida para la película.");
+        }
+
+        if (o.has ("valoracion") && (((Double) valoracion).isNaN () || valoracion < 1 || valoracion > 10))
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    String.format ("%f no es una valoración válida en el intervalo [1, 10].", valoracion));
+
+        try {
+            fecha = Year.of (o.getInt ("fecha"));
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    "No se pudo encontrar un año válido para la película.");
+        }
+
+        if (o.has ("fecha") && fecha != null && (fecha.compareTo (MIN_FECHA) < 0 || fecha.compareTo (MAX_FECHA) > 0))
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    String.format ("%d no es un año válido en el intervalo [%d, %d].", fecha.getValue (),
+                            Pelicula.MIN_FECHA.getValue (), Pelicula.MAX_FECHA.getValue ()));
+
+        try {
+            director = o.getString ("director");
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    "No se pudo encontrar un director válido para la película.");
+        }
+
+        try {
+            duracion = Duration.ofMinutes (o.getLong ("duracion"));
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    "No se pudo encontrar una duración válida para la película.");
+        }
+
+        if (o.has ("duracion") && duracion != null && duracion.toMinutes () <= 0)
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    String.format ("%d no es una duración válida para la película: tiene que ser mayor que cero.",
+                            duracion.toMinutes ()));
+
+        try {
+            edad = edadMap.get (o.getString ("edad"));
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    "No se pudo encontrar una edad recomendada válida para la película.");
+        }
+
+        if (o.has ("edad") && edad == null)
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    String.format ("%s no se puede convertir a una edad recomendada válida.", o.get ("edad")));
+
+        try {
+            JSONArray generosjson = o.getJSONArray ("generos");
+
+            Genero.Nombre genero;
+            String str;
+            for (int i = 0; i < generosjson.length ();) {
+                if ((genero = generosMap.get (str = generosjson.get (i++).toString ())) == null) {
+                    Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                            String.format ("%s no se puede convertir a un género válido.", str));
+
+                    continue;
+                }
+
+                generos.add (genero);
+            }
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    "No se pudo encontrar una lista de géneros válida para la película.");
+        }
+
+        return new Pelicula (nombre, rutaImagen, valoracion, fecha, director, duracion, edad, generos);
+    }
+
+    public String toJSON (Collection <Pelicula> peliculas) throws NullPointerException {
+        if (peliculas == null)
+            throw new NullPointerException ("No se puede convertir una coleción nula de películas a JSON.");
+
+        JSONArray json = new JSONArray ();
+
+        Pelicula array[] = new TreeSet <Pelicula> (peliculas).toArray (new Pelicula [0]);
+        for (int i = 0; i < array.length;)
+            json.put (array [i++].toJSONObject ());
+
+        StringBuilder str = new StringBuilder (json.toString ().replace ("[", "[\n    ")
+                .replace ("[\n    \"", "[\n        \"").replace ("{\"", "{\n\"").replace ("}", "\n    }")
+                .replace ("},", "},\n    ").replace ("]", "\n]").replace ("],", "        ],\n")
+                .replace (",\"", ",\n\"").replace ("\":", "\" : ").replace ("\n\"", "\n        \""));
+
+        for (int i = 0; (i = str.indexOf ("[\n        ", i)) != -1;)
+            for (; i < str.length () && str.charAt (i) != ']'; i++)
+                if (str.charAt (i) == '\n' && str.charAt (i + 9) == '"')
+                    str.insert (i + 9, "    ");
+
+        return str.toString ();
+    }
+
+    private JSONObject toJSONObject () {
+        return new JSONObject ().put ("nombre", this.nombre).put ("rutaimagen", this.rutaImagen)
+                .put ("valoracion", this.valoracion).put ("fecha", this.fecha.getValue ())
+                .put ("director", this.director).put ("duracion", this.duracion.toMinutes ())
+                .put ("edad", this.edad.toString ()).put ("generos", this.generos);
     }
 }

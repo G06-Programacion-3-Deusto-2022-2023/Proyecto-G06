@@ -1,4 +1,4 @@
-package internals.bst;
+package internals;
 
 // http://www.java2s.com/Tutorial/Java/0240__Swing/LimitJTextFieldinputtoamaximumlength.htm
 

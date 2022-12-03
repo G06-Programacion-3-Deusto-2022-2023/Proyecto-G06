@@ -33,10 +33,9 @@ import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
-import javax.swing.text.Document;
 
 import cine.Pelicula;
-import internals.bst.JTextFieldLimit;
+import internals.JTextFieldLimit;
 import cine.EdadRecomendada;
 import cine.Genero;
 
@@ -448,28 +447,5 @@ public class CrearPeliculaWindow extends JFrame {
         this.pack ();
         this.setLocationRelativeTo (null);
         this.setVisible (true);
-    }
-
-    public static void main (String args[]) {
-        List <Pelicula> peliculas = new ArrayList <Pelicula> ();
-        Thread t;
-        (t = new Thread () {
-            @Override
-            public void run () {
-                CrearPeliculaWindow w = new CrearPeliculaWindow (peliculas);
-                for (; w.isDisplayable ();)
-                    ;
-            }
-        }).start ();
-
-        try {
-            t.join ();
-        }
-
-        catch (InterruptedException e) {
-            e.printStackTrace ();
-        }
-
-        System.out.println (peliculas);
     }
 }
