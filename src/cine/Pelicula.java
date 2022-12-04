@@ -29,12 +29,9 @@ import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -1030,9 +1027,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
                     String.format ("El archivo especificado, %s, no es un archivo JSON válido.",
                             file.getAbsolutePath ()));
 
-        JSONArray json;
         try {
-            json = new JSONArray (Files.readString (file.toPath ()));
+            return Pelicula.fromJSON (Files.readString (file.toPath ()));
         }
 
         catch (IOException e) {
@@ -1044,6 +1040,22 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
             throw new JSONException (String.format (
                     "El archivo especificado, %s, no es un archivo JSON válido que contenga un JSON Array.",
                     file.getAbsolutePath ()));
+        }
+    }
+
+    public static List <Pelicula> fromJSON (String jstr) throws NullPointerException, JSONException {
+        if (jstr == null)
+            throw new NullPointerException (String.format ("No se puede pasar un string nulo al método %s.",
+                    Thread.currentThread ().getStackTrace () [0].getMethodName ()));
+
+        JSONArray json;
+        try {
+            json = new JSONArray (jstr);
+        }
+
+        catch (JSONException e) {
+            throw new JSONException (Pelicula.isAmongstCallers ("cine.SetPeliculas.fromJSON") ? ""
+                    : "No se puede extraer un JSONArray válido de esta cadena de carácteres");
         }
 
         List <Pelicula> list = new ArrayList <Pelicula> ();
@@ -1058,15 +1070,25 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
             }
 
         Logger.getLogger (Pelicula.class.getName ()).log (errors.isEmpty () ? Level.INFO : Level.WARNING,
-                errors.isEmpty () ? String.format ("Se importaron todas las películas contenidas en el archivo %s.",
-                        file.getAbsolutePath ())
-                        : String.format ("Hubo errores tratando de importar %d de las películas (con índice %s).",
-                                errors.size (), ""));
+            errors.isEmpty () ? "Se importaron todas las películas."
+                    : String.format ("Hubo errores tratando de importar %d de las películas (con índice %s).",
+                                errors.size (), ((Supplier <String>) ( () -> {
+                                    StringBuilder str = new StringBuilder ();
+
+                                    Integer errorsArray [] = errors.toArray (new Integer [0]);
+                                    for (int i = 0; i < errorsArray.length; i++) {
+                                        str.append (errorsArray [i]);
+
+                                        if (i != errorsArray.length - 1)
+                                            str.append (", ");
+                                    }
+
+                                    return str.toString ();})).get ()));
 
         return list;
     }
 
-    private static Pelicula fromJSONObject (JSONObject o) throws NullPointerException, JSONException {
+    static Pelicula fromJSONObject (JSONObject o) throws NullPointerException, JSONException {
         if (o == null)
             throw new NullPointerException (String.format ("No se puede pasar un JSONObject nulo al método %s.",
                     Thread.currentThread ().getStackTrace () [0].getMethodName ()));
@@ -1225,15 +1247,19 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         return new Pelicula (nombre, rutaImagen, valoracion, fecha, director, duracion, edad, generos);
     }
 
-    public String toJSON (Collection <Pelicula> peliculas) throws NullPointerException {
+    public static String toJSON (Pelicula pelicula) {
+        return Pelicula.toJSON (Collections.singleton (pelicula));
+    }
+
+    public static String toJSON (Collection <Pelicula> peliculas) throws NullPointerException {
         if (peliculas == null)
             throw new NullPointerException ("No se puede convertir una coleción nula de películas a JSON.");
 
         JSONArray json = new JSONArray ();
 
         Pelicula array[] = new TreeSet <Pelicula> (peliculas).toArray (new Pelicula [0]);
-        for (int i = 0; i < array.length;)
-            json.put (array [i++].toJSONObject ());
+        for (int i = 0; i < array.length; json.put (array [i++].toJSONObject ()))
+            ;
 
         StringBuilder str = new StringBuilder (json.toString ().replace ("[", "[\n    ")
                 .replace ("[\n    \"", "[\n        \"").replace ("{\"", "{\n\"").replace ("}", "\n    }")
@@ -1248,7 +1274,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         return str.toString ();
     }
 
-    private JSONObject toJSONObject () {
+    protected JSONObject toJSONObject () {
         return new JSONObject ().put ("nombre", this.nombre).put ("rutaimagen", this.rutaImagen)
                 .put ("valoracion", this.valoracion).put ("fecha", this.fecha.getValue ())
                 .put ("director", this.director).put ("duracion", this.duracion.toMinutes ())

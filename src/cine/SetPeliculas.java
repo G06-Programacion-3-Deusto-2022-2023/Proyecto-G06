@@ -4,14 +4,24 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Logger;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import internals.bst.BST;
 import internals.bst.Filter;
@@ -323,5 +333,151 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     public static BST <SetPeliculas> tree (Collection <SetPeliculas> values, Comparator <SetPeliculas> comp,
             Filter <SetPeliculas> filter) {
         return new SetPeliculas ().bst (values, comp, filter);
+    }
+
+    public static List <SetPeliculas> fromJSON (File file) throws NullPointerException, IOException, JSONException {
+        if (file == null)
+            throw new NullPointerException (String.format ("No se puede pasar un archivo nulo al método %s.",
+                    Thread.currentThread ().getStackTrace () [0].getMethodName ()));
+
+        if (!file.exists ())
+            throw new IOException (
+                    String.format ("No se pudo encontrar el archivo especificado (%s).", file.getAbsolutePath ()));
+
+        if (!Files.probeContentType (file.toPath ()).equals ("application/json"))
+            throw new JSONException (
+                    String.format ("El archivo especificado, %s, no es un archivo JSON válido.",
+                            file.getAbsolutePath ()));
+
+        try {
+            return SetPeliculas.fromJSON (Files.readString (file.toPath ()));
+        }
+
+        catch (IOException e) {
+            throw new IOException (
+                    String.format ("No se pudo abrir el archivo %s para recoger los datos.", file.getAbsolutePath ()));
+        }
+
+        catch (JSONException e) {
+            throw new JSONException (String.format (
+                    "El archivo especificado, %s, no es un archivo JSON válido que contenga un JSON Array.",
+                    file.getAbsolutePath ()));
+        }
+    }
+
+    public static List <SetPeliculas> fromJSON (String jstr) throws NullPointerException, JSONException {
+        if (jstr == null)
+            throw new NullPointerException (String.format ("No se puede pasar un string nulo al método %s.",
+                    Thread.currentThread ().getStackTrace () [0].getMethodName ()));
+
+        JSONArray json;
+        try {
+            json = new JSONArray (jstr);
+        }
+
+        catch (JSONException e) {
+            throw new JSONException (Pelicula.isAmongstCallers ("cine.SetPeliculas.fromJSON") ? ""
+                    : "No se puede extraer un JSONArray válido de esta cadena de carácteres");
+        }
+
+        List <SetPeliculas> list = new ArrayList <SetPeliculas> ();
+        SortedSet <Integer> errors = new TreeSet <Integer> ();
+        for (int i = 0; i < json.length (); i++)
+            try {
+                list.add (SetPeliculas.fromJSONObject (json.getJSONObject (i)));
+            }
+
+            catch (JSONException e) {
+                errors.add (i);
+            }
+
+        Logger.getLogger (Pelicula.class.getName ()).log (errors.isEmpty () ? Level.INFO : Level.WARNING,
+                errors.isEmpty () ? "Se importaron todos los sets de películas."
+                        : String.format (
+                                "Hubo errores tratando de importar %d de los sets de películas (con índice %s).",
+                                errors.size (), ""));
+
+        return list;
+    }
+
+    private static SetPeliculas fromJSONObject (JSONObject o) throws NullPointerException, JSONException {
+        if (o == null)
+            throw new NullPointerException (String.format ("No se puede pasar un JSONObject nulo al método %s.",
+                    Thread.currentThread ().getStackTrace () [0].getMethodName ()));
+
+        Set <String> fields = new HashSet <String> (Arrays.asList ("nombre", "peliculas"));
+
+        String keys[] = o.keySet ().toArray (new String [0]);
+        for (int i = 0; i < keys.length; i++)
+            if (!fields.contains (keys [i]))
+                throw new JSONException (String.format ("JSONObject inválido: clave %s desconocida.", keys [i]));
+
+        String nombre = "";
+        SortedSet <Pelicula> peliculas = new TreeSet <Pelicula> ();
+
+        try {
+            nombre = o.getString ("nombre");
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    "No se pudo encontrar un nombre válido para el set de películas.");
+        }
+
+        try {
+            JSONArray peliculasjson = o.getJSONArray ("peliculas");
+
+            String str;
+            for (int i = 0; i < peliculasjson.length (); i++)
+                try {
+                    peliculas.add (Pelicula.fromJSONObject (peliculasjson.getJSONObject (i)));
+                }
+
+                catch (Exception e) {
+                    String.format ("%s no se puede convertir a una película válida.", peliculasjson.get (i));
+                }
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    "No se pudo encontrar una lista de películas válida para el set de películas.");
+        }
+
+        return new SetPeliculas (nombre, peliculas);
+    }
+
+    public static String toJSON (SetPeliculas set) {
+        return SetPeliculas.toJSON (Collections.singleton (set));
+    }
+
+    public static String toJSON (Collection <SetPeliculas> sets) throws NullPointerException {
+        if (sets == null)
+            throw new NullPointerException ("No se puede convertir una coleción nula de sets de películas a JSON.");
+
+        SetPeliculas array[] = new TreeSet <SetPeliculas> (sets).toArray (new SetPeliculas [0]);
+        StringBuilder str = new StringBuilder ();
+        for (int i = 0; i < array.length; i++)
+            str.append (
+                    array [i] == null ? ""
+                            : new StringBuilder ((array [i].nombre != null && !array [i].nombre.equals (""))
+                                    || (array [i].peliculas != null && !array [i].peliculas.isEmpty ())
+                                            ? ("{\n" + (array [i].nombre != null && !array [i].nombre.equals ("")
+                                                    ? "    \"nombre\" : " + "\"" + array [i].nombre + "\""
+                                                            + (array [i].peliculas != null
+                                                                    && !array [i].peliculas.isEmpty () ? ",\n" : "")
+                                                    : "")
+                                                    + (array [i].peliculas != null && !array [i].peliculas.isEmpty ()
+                                                            ? ("    \"peliculas\" : "
+                                                                    + Pelicula.toJSON (array [i].peliculas).indent (4))
+                                                                            .replace ("\"peliculas\" :     [",
+                                                                                    "\"peliculas\" : [")
+                                                            : "")
+                                                    + "}")
+                                            : ""));
+
+        for (int i = 0; (i = str.indexOf ("}{", i)) != -1;)
+            str.insert (i + 1, ",\n    ");
+
+        return "[\n" + str.toString ().indent (4) + "]";
     }
 }
