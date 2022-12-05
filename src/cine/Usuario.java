@@ -53,12 +53,7 @@ public abstract class Usuario implements Treeable <Usuario>, Comparable <Usuario
 
     public void setContrasena (String contrasena) {
         this.contrasena = contrasena == null || contrasena.equals ("")
-                ? new PasswordGenerator ().generatePassword (
-                        Usuario.RPASSLEN,
-                        new CharacterRule (EnglishCharacterData.Special),
-                        new CharacterRule (EnglishCharacterData.LowerCase),
-                        new CharacterRule (EnglishCharacterData.UpperCase),
-                        new CharacterRule (EnglishCharacterData.Digit))
+                ? Usuario.generatePassword ()
                 : contrasena;
     }
 
@@ -97,5 +92,14 @@ public abstract class Usuario implements Treeable <Usuario>, Comparable <Usuario
     public String toString () {
         return this.getClass ().toString () + " " + "[nombre=" + this.nombre + ", contraseña=" + this.contrasena
                 + ", id=" + this.id + "]";
+    }
+
+    public static String generatePassword () {
+        return new PasswordGenerator ().generatePassword (
+                Usuario.RPASSLEN,
+                new CharacterRule (EnglishCharacterData.Special),
+                new CharacterRule (EnglishCharacterData.LowerCase),
+                new CharacterRule (EnglishCharacterData.UpperCase),
+                new CharacterRule (EnglishCharacterData.Digit));
     }
 }

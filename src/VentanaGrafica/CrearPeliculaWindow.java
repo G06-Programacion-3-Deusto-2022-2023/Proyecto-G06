@@ -53,7 +53,7 @@ public class CrearPeliculaWindow extends JFrame {
         nombre.setDocument (new JTextFieldLimit (75));
         nombre.setToolTipText ("Dejar vacío este campo implica que el nombre de la película será su ID.");
 
-        JTextField rutaImagen = new JTextField (25);
+        JTextField rutaImagen = new JTextField (100);
         rutaImagen.setToolTipText ("Deja vacío este campo para que la película use una imagen por defecto.");
 
         JSpinner valoracion = new JSpinner (new SpinnerNumberModel (5, 1, 10, 0.1));
