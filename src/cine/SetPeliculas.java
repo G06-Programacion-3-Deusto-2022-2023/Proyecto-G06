@@ -18,6 +18,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -395,25 +396,61 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
                 errors.isEmpty () ? "Se importaron todos los sets de películas."
                         : String.format (
                                 "Hubo errores tratando de importar %d de los sets de películas (con índice %s).",
-                                errors.size (), ""));
+                                errors.size (), ((Supplier <String>) ( () -> {
+                                    StringBuilder str = new StringBuilder ();
+
+                                    Integer errorsArray[] = errors.toArray (new Integer [0]);
+                                    for (int i = 0; i < errorsArray.length; i++) {
+                                        str.append (errorsArray [i]);
+
+                                        if (i != errorsArray.length - 1)
+                                            str.append (", ");
+                                    }
+
+                                    return str.toString ();
+                                })).get ()));
 
         return list;
     }
 
     private static SetPeliculas fromJSONObject (JSONObject o) throws NullPointerException, JSONException {
+        return SetPeliculas.fromJSONObject (o, null);
+    }
+
+    private static SetPeliculas fromJSONObject (JSONObject o, GestorBD bd) throws NullPointerException, JSONException {
         if (o == null)
             throw new NullPointerException (String.format ("No se puede pasar un JSONObject nulo al método %s.",
                     Thread.currentThread ().getStackTrace () [0].getMethodName ()));
 
-        Set <String> fields = new HashSet <String> (Arrays.asList ("nombre", "peliculas"));
+        Set <String> fields = new HashSet <String> (Arrays.asList ("id", "administrador", "nombre", "peliculas"));
 
         String keys[] = o.keySet ().toArray (new String [0]);
         for (int i = 0; i < keys.length; i++)
             if (!fields.contains (keys [i]))
                 throw new JSONException (String.format ("JSONObject inválido: clave %s desconocida.", keys [i]));
 
+        UUID id = UUID.randomUUID ();
+        Administrador administrador = null;
         String nombre = "";
         SortedSet <Pelicula> peliculas = new TreeSet <Pelicula> ();
+
+        try {
+            id = UUID.fromString (o.getString ("id"));
+        }
+
+        catch (JSONException | IllegalArgumentException e) {
+            Logger.getLogger ("No se pudo encontrar un ID válido para el set.");
+        }
+
+        try {
+            if (bd != null)
+                administrador = bd.obtenerDatosAdministradorPorNombre (o.getString ("administrador"));
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    "No se pudo encontrar un nombre válido para el set de películas.");
+        }
 
         try {
             nombre = o.getString ("nombre");
@@ -447,10 +484,18 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     }
 
     public static String toJSON (SetPeliculas set) {
-        return SetPeliculas.toJSON (Collections.singleton (set));
+        return SetPeliculas.toJSON (Collections.singleton (set), false);
     }
 
-    public static String toJSON (Collection <SetPeliculas> sets) throws NullPointerException {
+    public static String toJSON (SetPeliculas set, boolean extra) {
+        return SetPeliculas.toJSON (Collections.singleton (set), extra);
+    }
+
+    public static String toJSON (Collection <SetPeliculas> sets) {
+        return SetPeliculas.toJSON (sets, false);
+    }
+
+    public static String toJSON (Collection <SetPeliculas> sets, boolean extra) throws NullPointerException {
         if (sets == null)
             throw new NullPointerException ("No se puede convertir una coleción nula de sets de películas a JSON.");
 
@@ -459,13 +504,23 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
         for (int i = 0; i < array.length; i++)
             str.append (
                     array [i] == null ? ""
-                            : new StringBuilder ((array [i].nombre != null && !array [i].nombre.equals (""))
+                            : new StringBuilder ((extra && array [i].id != null)
+                                    || (extra && array [i].administrador != null)
+                                    || (array [i].nombre != null && !array [i].nombre.equals (""))
                                     || (array [i].peliculas != null && !array [i].peliculas.isEmpty ())
-                                            ? ("{\n" + (array [i].nombre != null && !array [i].nombre.equals ("")
-                                                    ? "    \"nombre\" : " + "\"" + array [i].nombre + "\""
-                                                            + (array [i].peliculas != null
-                                                                    && !array [i].peliculas.isEmpty () ? ",\n" : "")
+                                            ? ("{\n" + (extra && array [i].id != null
+                                                    ? "\"id\" : " + array [i].id.toString ()
                                                     : "")
+                                                    + (extra && array [i].administrador != null
+                                                            ? "\"administrador\" : "
+                                                                    + array [i].administrador.getNombre ().toString ()
+                                                            : "")
+                                                    + (array [i].nombre != null && !array [i].nombre.equals ("")
+                                                            ? "    \"nombre\" : " + "\"" + array [i].nombre + "\""
+                                                                    + (array [i].peliculas != null
+                                                                            && !array [i].peliculas.isEmpty () ? ",\n"
+                                                                                    : "")
+                                                            : "")
                                                     + (array [i].peliculas != null && !array [i].peliculas.isEmpty ()
                                                             ? ("    \"peliculas\" : "
                                                                     + Pelicula.toJSON (array [i].peliculas).indent (4))

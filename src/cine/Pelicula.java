@@ -1,5 +1,17 @@
 package cine;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.time.Year;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,7 +25,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.ArrayList;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -28,18 +39,6 @@ import org.json.JSONObject;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Files;
-import java.time.Duration;
-import java.time.Year;
-import java.time.ZoneId;
 
 public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     // A ser usada por el método isAmongstCallers para mirar en el stack.
@@ -1070,12 +1069,12 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
             }
 
         Logger.getLogger (Pelicula.class.getName ()).log (errors.isEmpty () ? Level.INFO : Level.WARNING,
-            errors.isEmpty () ? "Se importaron todas las películas."
-                    : String.format ("Hubo errores tratando de importar %d de las películas (con índice %s).",
+                errors.isEmpty () ? "Se importaron todas las películas."
+                        : String.format ("Hubo errores tratando de importar %d de las películas (con índice %s).",
                                 errors.size (), ((Supplier <String>) ( () -> {
                                     StringBuilder str = new StringBuilder ();
 
-                                    Integer errorsArray [] = errors.toArray (new Integer [0]);
+                                    Integer errorsArray[] = errors.toArray (new Integer [0]);
                                     for (int i = 0; i < errorsArray.length; i++) {
                                         str.append (errorsArray [i]);
 
@@ -1083,7 +1082,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
                                             str.append (", ");
                                     }
 
-                                    return str.toString ();})).get ()));
+                                    return str.toString ();
+                                })).get ()));
 
         return list;
     }
@@ -1247,18 +1247,26 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         return new Pelicula (nombre, rutaImagen, valoracion, fecha, director, duracion, edad, generos);
     }
 
-    public static String toJSON (Pelicula pelicula) {
-        return Pelicula.toJSON (Collections.singleton (pelicula));
+    public static String toJSON (Pelicula pelicula) throws NullPointerException {
+        return Pelicula.toJSON (Collections.singleton (pelicula), false);
+    }
+
+    public static String toJSON (Pelicula pelicula, boolean extra) throws NullPointerException {
+        return Pelicula.toJSON (Collections.singleton (pelicula), extra);
     }
 
     public static String toJSON (Collection <Pelicula> peliculas) throws NullPointerException {
+        return Pelicula.toJSON (peliculas, false);
+    }
+
+    public static String toJSON (Collection <Pelicula> peliculas, boolean extra) throws NullPointerException {
         if (peliculas == null)
             throw new NullPointerException ("No se puede convertir una coleción nula de películas a JSON.");
 
         JSONArray json = new JSONArray ();
 
         Pelicula array[] = new TreeSet <Pelicula> (peliculas).toArray (new Pelicula [0]);
-        for (int i = 0; i < array.length; json.put (array [i++].toJSONObject ()))
+        for (int i = 0; i < array.length; json.put (array [i++].toJSONObject (extra)))
             ;
 
         StringBuilder str = new StringBuilder (json.toString ().replace ("[", "[\n    ")
@@ -1275,9 +1283,18 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     protected JSONObject toJSONObject () {
-        return new JSONObject ().put ("nombre", this.nombre).put ("rutaimagen", this.rutaImagen)
+        return this.toJSONObject (false);
+    }
+
+    protected JSONObject toJSONObject (boolean extra) {
+        JSONObject o = new JSONObject ().put ("nombre", this.nombre).put ("rutaimagen", this.rutaImagen)
                 .put ("valoracion", this.valoracion).put ("fecha", this.fecha.getValue ())
                 .put ("director", this.director).put ("duracion", this.duracion.toMinutes ())
                 .put ("edad", this.edad.toString ()).put ("generos", this.generos);
+
+        if (extra)
+            o.put ("id", this.id.toString ());
+
+        return o;
     }
 }
