@@ -22,8 +22,9 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada> {
     private Pelicula pelicula;
     private Calendar fecha;
     private Sala sala;
-    private int butaca;
+    private Butaca butaca;
     private Map <Complemento, Integer> complementos;
+    private double valoracion;
     private BigDecimal precio;
 
     public Entrada () {
@@ -40,20 +41,25 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada> {
     }
 
     public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha) {
-        this (espectador, pelicula, fecha, null, 0);
+        this (espectador, pelicula, fecha, null, null);
     }
 
-    public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, int butaca) {
+    public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca) {
         this (espectador, pelicula, fecha, sala, butaca, new HashMap <Complemento, Integer> ());
     }
 
-    public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, int butaca,
+    public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca,
             Map <Complemento, Integer> complementos) {
-        this (UUID.randomUUID (), espectador, pelicula, fecha, sala, butaca, complementos);
+        this (espectador, pelicula, fecha, sala, butaca, complementos, Double.NaN);
     }
 
-    public Entrada (UUID id, Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, int butaca,
-            Map <Complemento, Integer> complementos) {
+    public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca,
+            Map <Complemento, Integer> complementos, double valoracion) {
+        this (UUID.randomUUID (), espectador, pelicula, fecha, sala, butaca, complementos, valoracion);
+    }
+
+    public Entrada (UUID id, Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca,
+            Map <Complemento, Integer> complementos, double valoracion) {
         super ();
 
         this.id = id;
@@ -63,11 +69,12 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada> {
         this.setSala (sala);
         this.setButaca (butaca);
         this.setComplementos (complementos);
+        this.setValoracion (valoracion);
     }
 
     public Entrada (Entrada entrada) {
         this (entrada.id, entrada.espectador, entrada.pelicula, entrada.fecha, entrada.sala, entrada.butaca,
-                entrada.complementos);
+                entrada.complementos, entrada.valoracion);
     }
 
     public UUID getId () {
@@ -106,12 +113,12 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada> {
         this.sala = sala == null ? this.sala : sala;
     }
 
-    public int getButaca () {
+    public Butaca getButaca () {
         return this.butaca;
     }
 
-    public void setButaca (int butaca) {
-        this.butaca = butaca < 0 || butaca >= Sala.size () ? this.butaca : butaca;
+    public void setButaca (Butaca butaca) {
+        this.butaca = this.sala == null || butaca == null || !this.sala.getButacas().contains (butaca) ? this.butaca : butaca;
     }
 
     public Map <Complemento, Integer> getComplementos () {
@@ -124,6 +131,14 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada> {
 
         this.complementos = complementos;
         this.calcularPrecio ();
+    }
+
+    public double getValoracion () {
+        return this.valoracion;
+    }
+
+    public void setValoracion (double valoracion) {
+        this.valoracion = Double.isNaN (valoracion) || valoracion < 1 || valoracion > 10 ? Double.NaN : valoracion;
     }
 
     public BigDecimal getPrecio () {
@@ -177,7 +192,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada> {
     public String toString () {
         return "Entrada [id=" + id + ", espectador=" + espectador + ", pelicula=" + pelicula + ", fecha=" + fecha
                 + ", sala=" + sala + ", butaca=" + butaca + ", complementos=" + complementos + ", precio=" + precio
-                + "]";
+                + ", valoracion=" + valoracion + "]";
     }
 
     private void calcularPrecio () {

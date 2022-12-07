@@ -49,11 +49,10 @@ public class CrearPeliculaWindow extends JFrame {
 
         CrearPeliculaWindow f = this;
 
-        JTextField nombre = new JTextField (48);
-        nombre.setDocument (new JTextFieldLimit (75));
+        JTextField nombre = new JTextField (new JTextFieldLimit (75), "", 48);
         nombre.setToolTipText ("Dejar vacío este campo implica que el nombre de la película será su ID.");
 
-        JTextField rutaImagen = new JTextField (100);
+        JTextField rutaImagen = new JTextField (75);
         rutaImagen.setToolTipText ("Deja vacío este campo para que la película use una imagen por defecto.");
 
         JSpinner valoracion = new JSpinner (new SpinnerNumberModel (5, 1, 10, 0.1));
@@ -64,8 +63,7 @@ public class CrearPeliculaWindow extends JFrame {
         fecha.setToolTipText (String.format ("El año de salida de la película (desde el %s al %s).",
                 Pelicula.minFecha (), Pelicula.maxFecha ()));
 
-        JTextField director = new JTextField (32);
-        director.setDocument (new JTextFieldLimit (50));
+        JTextField director = new JTextField (new JTextFieldLimit (50), "", 32);
         director.setToolTipText (
                 "Nombre del director de la película. Si se deja vacío se asume que la película no tiene director.");
 
@@ -377,8 +375,8 @@ public class CrearPeliculaWindow extends JFrame {
                                             .split ("/") [0].equals ("image");
                                 }
 
-                                catch (IOException e1) {
-                                    return false;
+                                catch (IOException | NullPointerException e1) {
+                                    return true;
                                 }
                             })).getAsBoolean ())) {
                         JOptionPane.showMessageDialog (f,
@@ -447,5 +445,28 @@ public class CrearPeliculaWindow extends JFrame {
         this.pack ();
         this.setLocationRelativeTo (null);
         this.setVisible (true);
+    }
+
+    public static void main (String args[]) {
+        List <Pelicula> peliculas = new ArrayList <Pelicula> ();
+        Thread t;
+        (t = new Thread () {
+            @Override
+            public void run () {
+                CrearPeliculaWindow w = new CrearPeliculaWindow (peliculas);
+                for (; w.isDisplayable ();)
+                    ;
+            }
+        }).start ();
+    
+        try {
+            t.join ();
+        }
+    
+        catch (InterruptedException e) {
+            e.printStackTrace ();
+        }
+    
+        System.out.println (peliculas);
     }
 }

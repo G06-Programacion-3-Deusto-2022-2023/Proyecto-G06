@@ -80,7 +80,7 @@ public class RegistroWindow extends JFrame {
                                         pass.setText (password);
                                         confirm.setText (password);
                                     });
-                        })).get ()));
+                                })).get ()));
 
                 return q;
             })).get ());
@@ -89,7 +89,8 @@ public class RegistroWindow extends JFrame {
                 JPanel q;
                 GroupLayout l = new GroupLayout (q = new JPanel ());
                 l.setHorizontalGroup (
-                        l.createSequentialGroup ().addComponent (new JLabel ("Confirmar contraseña:")).addComponent (confirm));
+                        l.createSequentialGroup ().addComponent (new JLabel ("Confirmar contraseña:"))
+                                .addComponent (confirm));
 
                 return q;
             })).get ());
@@ -125,7 +126,8 @@ public class RegistroWindow extends JFrame {
                         return;
                     }
 
-                    if (bd.obtenerDatosEspectadores ().stream ().map (Espectador::getNombre).collect (Collectors.toList ()).contains (usuario.getText ())
+                    if (bd.obtenerDatosEspectadores ().stream ().map (Espectador::getNombre)
+                            .collect (Collectors.toList ()).contains (usuario.getText ())
                             || bd.obtenerDatosAdministradorPorNombre (usuario.getText ()) != null) {
                         JOptionPane.showMessageDialog (f,
                                 "El nombre de usuario debe ser de al menos 3 carácteres.");
@@ -182,7 +184,7 @@ public class RegistroWindow extends JFrame {
                     bd.consumeKey (key);
 
                     bd.insertarDatosAdministrador (
-                        new Administrador (usuario.getText (), new String (pass.getPassword ())));
+                            new Administrador (usuario.getText (), new String (pass.getPassword ())));
 
                     f.dispose ();
                 });

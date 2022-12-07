@@ -7,6 +7,7 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
+	<classpathentry exported="true" kind="lib" path="lib/jlfgr-1_0.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/sqlite-jdbc-3.39.3.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/passay-1.6.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/json-20220924.jar"/>

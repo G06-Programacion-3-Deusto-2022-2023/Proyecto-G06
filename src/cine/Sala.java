@@ -136,4 +136,9 @@ public class Sala {
         for (int i = 0; i < butacas.size (); butacas.get (i++).setEspectador (null))
             ;
     }
+
+    public int [] getSeatIndex (Butaca butaca) {
+        int index = this.butacas.indexOf (butaca);
+        return index == -1 ? new int [] { -1, -1 } : new int [] { index / Sala.COLUMNAS, index % Sala.COLUMNAS };
+    }
 }
