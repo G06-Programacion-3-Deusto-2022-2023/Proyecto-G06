@@ -2,8 +2,10 @@ package cine;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.Duration;
@@ -40,8 +42,8 @@ public class GestorBD {
 		     Statement stmt = con.createStatement()) {
 			
 	        String sql1 = "CREATE TABLE IF NOT EXISTS PELICULA (\n"
-	                   + " ID_PELICULA STRING ,\n"
-	                   + " NOMBRE_PELICULA STRING PRIMARY KEY NOT NULL,\n"
+	                   + " ID_PELICULA STRING PRIMARY KEY NOT NULL,\n"
+	                   + " NOMBRE_PELICULA STRING,\n"
 	                   + " RUTA_IMAGEN STRING, \n"
 	                   + " VALORACION INTEGER NOT NULL,\n"
 	                   + " FECHA INTEGER, \n"
@@ -51,9 +53,10 @@ public class GestorBD {
 	                   + " GENEROS INTEGER NOT NULL\n"
 	                   + ");";
 	        String sql2 = "CREATE TABLE IF NOT EXISTS ADMINISTRADOR (\n"
-	                   + " ID_ADMINISTRADOR STRING ,\n"
-	                   + " NOMBRE_ADMINISTRADOR STRING PRIMARY KEY NOT NULL ,\n"
-	                   + " CONTRASENA_ADMINISTRADOR STRING \n"
+	                   + " ID_ADMINISTRADOR STRING PRIMARY KEY NOT NULL,\n"
+	                   + " NOMBRE_ADMINISTRADOR STRING ,\n"
+	                   + " CONTRASE袮_ADMINISTRADOR STRING \n"
+	                   + " SETS_PELICULAS ARRAY \n"
 	                   + ");";
 	        String sql3 = "CREATE TABLE IF NOT EXISTS ESPECTADOR (\n"
 	                   + " ID_ESPECTADOR STRING ,\n"
@@ -68,12 +71,16 @@ public class GestorBD {
 	        		   + " DESCUENTO INTEGER \n"
 	        		   + ");";
 	        String sql5 = "CREATE TABLE IF NOT EXISTS SET_PELICULA (\n"
-	        		   + "ID_SET_PELICULA STRING"
+	        		   + "ID_SET_PELICULA STRING PRIMARY KEY NOT NULL, "
 	        		   + "NOMBRE_ADMINISTRADOR STRING, \n"
 	        		   + "NOMBRE_SET_PELICULA STRING \n"
 	        		   + ");";
+	        String sql6 = "CREATE TABLE IF NOT EXISTS ARRAY_SETPELICULA (\n"
+	        		   + " NOMBRE_SETPELICULA STRING,\n"
+	        		   + " NOMBRE_PELICULA STRING \n"
+	        		   + ");";
 	        	        
-	        if (!stmt.execute(sql1) && !stmt.execute(sql2) && !stmt.execute(sql3) && !stmt.execute(sql4) && !stmt.execute(sql5)) {
+	        if (!stmt.execute(sql1) && !stmt.execute(sql2) && !stmt.execute(sql3) && !stmt.execute(sql4) && !stmt.execute(sql5) && !stmt.execute(sql6)) {
 	        	System.out.println("- Se ha creado la tabla pelicula, la tabla administrador, la tabla espectador, la tabla complemento y la tabla set_Pelicula");
 	        }
 	        
@@ -93,9 +100,9 @@ public class GestorBD {
 	        String sql3 = "DROP TABLE IF EXISTS ESPECTADOR";
 	        String sql4 = "DROP TABLE IF EXISTS COMPLEMENTO";
 	        String sql5 = "DROP TABLE IF EXISTS SET_PELICULA";
-			
+			String sql6 = "DROP TABLE IF EXISTS ARRAY_SET_PELICULA";
 	        //Se ejecuta la sentencia de creaci贸n de la tabla Estudiantes
-	        if (!stmt.execute(sql1) && !stmt.execute(sql2) && !stmt.execute(sql3) && !stmt.execute(sql4) && !stmt.execute(sql5)) {
+	        if (!stmt.execute(sql1) && !stmt.execute(sql2) && !stmt.execute(sql3) && !stmt.execute(sql4) && !stmt.execute(sql5) && !stmt.execute(sql6)) {
 	        	System.out.println("Se han borrado las tablas");
 	        }
 		} catch (Exception ex) {
@@ -141,7 +148,7 @@ public class GestorBD {
 		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
 		     Statement stmt = con.createStatement()) {
 			//Se define la plantilla de la sentencia SQL
-			String sql = "INSERT INTO ADMINISTRADOR (ID_ADMINISTRADOR, NOMBRE_ADMINISTRADOR, CONTRASENA_ADMINISTRADOR) VALUES ('%s', '%s', %s');";
+			String sql = "INSERT INTO ADMINISTRADOR (ID_ADMINISTRADOR, NOMBRE_ADMINISTRADOR, CONTRASE袮_ADMINISTRADOR) VALUES ('%s', '%s', '%s');";
 			
 			System.out.println("- Insertando administrador...");
 			
@@ -203,16 +210,49 @@ public class GestorBD {
 		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
 			     Statement stmt = con.createStatement()) {
 				//Se define la plantilla de la sentencia SQL
-				String sql = "INSERT INTO SET_PELICULA (ID_SET_PELICULA, NOMBRE_ADMINISTRADOR, NOMBRE_SET_PELICULA) VALUES ('%s', '%s', '%s');";
 				
 				System.out.println("- Insertando setPeliculas...");
+				this.insertarDatosArraySetPelicula(setPeliculas);
 				
 				//Se recorren los clientes y se insertan uno a uno
 				for (SetPeliculas s: setPeliculas) {
-					if (1 == stmt.executeUpdate(String.format(sql, s.getId(), s.getAdministrador().getNombre(), s.getNombre()))) {					
-						System.out.println(String.format(" - set_Peliculas insertadas: %s", s.toString()));
+					
+					String sql = "INSERT INTO SET_PELICULA (ID_SET_PELICULA, NOMBRE_ADMINISTRADOR, NOMBRE_SET_PELICULA) VALUES ('%s', '%s', '%s');";
+					if (!(s.getAdministrador() == null)) {
+						if (1 == stmt.executeUpdate(String.format(sql, s.getId(), s.getAdministrador().getNombre(), s.getNombre()))) {
+							this.insertarDatosAdministrador(s.getAdministrador());
+							System.out.println(String.format(" - set_Peliculas insertadas: %s", s.toString()));
+						} else {
+							System.out.println(String.format(" - No se ha insertado el setPeliculas: %s", s.toString()));
+						}
 					} else {
-						System.out.println(String.format(" - No se ha insertado el setPeliculas: %s", s.toString()));
+						if (1 == stmt.executeUpdate(String.format(sql, s.getId(), "", s.getNombre()))) {
+							System.out.println(String.format(" - set_Peliculas insertadas: %s", s.toString()));
+						} else {
+							System.out.println(String.format(" - No se ha insertado el setPeliculas: %s", s.toString()));
+						}
+					}
+				}			
+			} catch (Exception ex) {
+				System.err.println(String.format("* Error al insertar datos de la BBDD: %s", ex.getMessage()));
+				ex.printStackTrace();						
+			}
+	}
+	public void insertarDatosArraySetPelicula(SetPeliculas...setPeliculas) {
+		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
+			     Statement stmt = con.createStatement()) {
+				//Se define la plantilla de la sentencia SQL
+				
+				
+				//Se recorren los clientes y se insertan uno a uno
+				for (SetPeliculas s: setPeliculas) {
+					for (Pelicula p: s.getPeliculas()) {
+						String sql = "INSERT INTO ARRAY_SETPELICULA (NOMBRE_SETPELICULA, NOMBRE_PELICULA) VALUES ('%s', '%s');";
+							if (1 == stmt.executeUpdate(String.format(sql, s.getNombre(), p.getNombre()))) {
+								System.out.println(String.format(" - array_set_Peliculas insertadas: %s", s.toString()));
+							} else {
+								System.out.println(String.format(" - No se ha insertado el array_setPeliculas: %s", s.toString()));
+							}
 					}
 				}			
 			} catch (Exception ex) {
@@ -364,7 +404,7 @@ public class GestorBD {
 		//Se abre la conexi贸n y se obtiene el Statement
 		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
 		     Statement stmt = con.createStatement()) {
-			String sql = "SELECT * FROM SET_PELICULAS";
+			String sql = "SELECT * FROM SET_PELICULA";
 			
 			//Se ejecuta la sentencia y se obtiene el ResultSet con los resutlados
 			ResultSet rs = stmt.executeQuery(sql);			
@@ -373,9 +413,11 @@ public class GestorBD {
 			//Se recorre el ResultSet y se crean objetos Cliente
 			while (rs.next()) {
 				
-				UUID id = UUID.fromString("ID_SET_PELICULA");
+				UUID id = UUID.fromString(rs.getString("ID_SET_PELICULA"));
+				String nombre = rs.getString("NOMBRE_SET_PELICULA");
 				
-				setPeliculas = new SetPeliculas(id, obtenerDatosAdministradorPorNombre(rs.getString("NOMBRE_ADMINISTRADOR")), rs.getString("NOMBRE_SET_PELICULA"), null);
+				
+				setPeliculas = new SetPeliculas(id, obtenerDatosAdministradorPorNombre(rs.getString("NOMBRE_ADMINISTRADOR")), nombre, this.obtenerDatosArraySetPeliculas(nombre));
 				
 				setsPeliculas.add(setPeliculas);
 			}
@@ -391,6 +433,36 @@ public class GestorBD {
 		
 		return setsPeliculas;
 	}
+	public List<Pelicula> obtenerDatosArraySetPeliculas(String nombre) {
+		List<Pelicula> peliculas = new ArrayList<Pelicula>();
+		
+		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
+			     Statement stmt = con.createStatement()) {
+				String sql = "SELECT NOMBRE_PELICULA FROM ARRAY_SETPELICULA WHERE NOMBRE_SETPELICULA = " + nombre;
+				
+				//Se ejecuta la sentencia y se obtiene el ResultSet con los resutlados
+				ResultSet rs = stmt.executeQuery(sql);			
+				Pelicula pelicula;
+				
+				//Se recorre el ResultSet y se crean objetos Cliente
+				while (rs.next()) {
+					
+					
+					pelicula = new Pelicula(rs.getString("NOMBRE_PELICULA"));
+					peliculas.add(pelicula);
+				}
+				
+				//Se cierra el ResultSet
+				rs.close();
+				
+				System.out.println(String.format("- Se han recuperado %d array_sets_peliculas...", peliculas.size()));			
+			} catch (Exception ex) {
+				System.err.println(String.format("* Error al obtener datos de la BBDD : %s", ex.getMessage()));
+				ex.printStackTrace();						
+			}		
+		return peliculas;
+		
+	}
 	public Administrador obtenerDatosAdministradorPorNombre(String NombreAdministrador) {
 		Administrador administrador = new Administrador();
 		
@@ -405,7 +477,7 @@ public class GestorBD {
 			while (rs.next()) {
 				UUID id = UUID.fromString(rs.getString("ID_ADMINISTRADOR"));
 				
-			 administrador = new Administrador(id, rs.getString("NOMBRE_ADMINISTRADOR"), rs.getString("CONTRASE袮_ADMINISTRADOR"), null);
+				administrador = new Administrador(id, rs.getString("NOMBRE_ADMINISTRADOR"), rs.getString("CONTRASE袮_ADMINISTRADOR"), null);
 				
 
 			}
@@ -423,21 +495,6 @@ public class GestorBD {
 	}
 	
 
-	//public void actualizarValoracion(Pelicula pelicula, double newValoracion) {
-		//Se abre la conexi贸n y se obtiene el Statement
-	//	try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
-	//	     Statement stmt = con.createStatement()) {
-	//		//Se ejecuta la sentencia de borrado de datos
-	//		String sql = "UPDATE PELICULA SET VALORACION = '%f' WHERE NOMBRE = '%s' ;";
-	//		
-	//		int result = stmt.executeUpdate(String.format(sql, newValoracion, pelicula.getNombre()));
-	//		
-	//		System.out.println(String.format("- Se ha actulizado %d peliculas", result));
-	//	} catch (Exception ex) {
-	//		System.err.println(String.format("* Error actualizando datos de la BBDD: %s", ex.getMessage()));
-	//		ex.printStackTrace();						
-	//	}		
-	//	}
 	
 	public void borrarDatos() {
 		//Se abre la conexi贸n y se obtiene el Statement
