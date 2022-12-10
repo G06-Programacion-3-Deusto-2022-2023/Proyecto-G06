@@ -126,11 +126,20 @@ public class RegistroWindow extends JFrame {
                         return;
                     }
 
-                    if (bd.obtenerDatosEspectadores ().stream ().map (Espectador::getNombre)
-                            .collect (Collectors.toList ()).contains (usuario.getText ())
-                            || bd.obtenerDatosAdministradorPorNombre (usuario.getText ()) != null) {
+                    if (usuario.getText ().contains (" ")) {
+                        JOptionPane.showMessageDialog (f, "El nombre de usuario no puede contener espacios.");
+
+                        return;
+                    }
+
+                    if ((rol.getSelectedIndex () == 0
+                            && bd.obtenerDatosEspectadores ().stream ().map (Espectador::getNombre)
+                                    .collect (Collectors.toList ()).contains (usuario.getText ()))
+                            || (rol.getSelectedIndex () == 1
+                                    && bd.obtenerDatosAdministradores ().stream ().map (Administrador::getNombre)
+                                            .collect (Collectors.toList ()).contains (usuario.getText ()))) {
                         JOptionPane.showMessageDialog (f,
-                                "El nombre de usuario debe ser de al menos 3 carácteres.");
+                                "El nombre de usuario no está disponible.");
 
                         return;
                     }

@@ -3,6 +3,7 @@ package cine;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,11 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class Espectador extends Usuario {
+import internals.bst.BST;
+import internals.bst.Filter;
+import internals.bst.Treeable;
+
+public class Espectador extends Usuario implements Treeable <Espectador>, Comparable <Espectador> {
     private static final Random random = new Random ();
 
     private static final int MAX_GRUPOS = 25;
@@ -122,6 +127,10 @@ public class Espectador extends Usuario {
         this.grupo = grupo;
     }
 
+    public int compareTo (Espectador o) {
+        return super.compareTo (o);
+    }
+
     @Override
     public String toString () {
         return super.toString () + ", preferencias = " + preferencias.toString ();
@@ -167,5 +176,22 @@ public class Espectador extends Usuario {
             ;
 
         return ret;
+    }
+
+    public static BST <Espectador> tree (Collection <Espectador> values) {
+        return Espectador.tree (values, null, null);
+    }
+
+    public static BST <Espectador> tree (Collection <Espectador> values, Comparator <Espectador> comp) {
+        return Espectador.tree (values, comp, null);
+    }
+
+    public static BST <Espectador> tree (Collection <Espectador> values, Filter <Espectador> filter) {
+        return Espectador.tree (values, null, filter);
+    }
+
+    public static BST <Espectador> tree (Collection <Espectador> values, Comparator <Espectador> comp,
+            Filter <Espectador> filter) {
+        return new Espectador ().bst (values, comp, filter);
     }
 }

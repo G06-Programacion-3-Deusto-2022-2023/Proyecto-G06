@@ -795,34 +795,28 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
 
     @Override
     public String toString () {
-
-        interface GenerosToString {
-            String str (List <Genero.Nombre> generos);
-        }
-
-        interface IDSets {
-            String str (List <SetPeliculas> sets);
-        }
-
         return "Película (hash: " + this.hashCode () + ") {\n\tID: " + this.id
                 + (this.isDefault () ? " (película predeterminada)" : "") + "\n\tNombre: " + this.nombre
                 + "\n\tRuta de la imagen: " + this.rutaImagen + "\n\tValoración: "
                 + (((Double) this.valoracion).isNaN () ? "-" : this.valoracion) + "\n\tFecha: " + this.fecha
                 + "\n\tDirector: " + this.director + "\n\tDuración: " + this.duracionToString () + "\n\tEdad: "
-                + this.edad + "\n\tGéneros: " + ((GenerosToString) (g ->
-
-                {
+                + this.edad + "\n\tGéneros: " + ((Supplier <String>) ( () -> {
                     StringBuilder str = new StringBuilder ();
+
+                    List <Genero.Nombre> g = this.generos.stream ().collect (Collectors.toList ());
                     for (int i = 0; i < g.size (); i++)
                         str.append (String.format ("%s%s",
                                 g.get (i).toString (),
                                 i != g.size () - 1
                                         ? " · "
                                         : ""));
+
                     return str.toString ();
-                })).str (this.generos.stream ().collect (Collectors.toList ())) + "\n\tSets: "
-                + (this.sets.isEmpty () ? "-" : ((IDSets) (s -> {
+                })).get () + "\n\tSets: "
+                + (this.sets.isEmpty () ? "-" : ((Supplier <String>) ( () -> {
                     StringBuilder str = new StringBuilder ();
+
+                    List <SetPeliculas> s = this.sets.stream ().collect (Collectors.toList ());
                     for (int i = 0; i < s.size (); i++)
                         str.append (String.format ("%s%s%s",
                                 s.get (i).getId ().toString (),
@@ -830,8 +824,9 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
                                 i != s.size () - 1
                                         ? " · "
                                         : ""));
+
                     return str.toString ();
-                })).str (this.sets.stream ().collect (Collectors.toList ()))) + "\n}";
+                })).get ()) + "\n}";
     }
 
     public String duracionToString () {

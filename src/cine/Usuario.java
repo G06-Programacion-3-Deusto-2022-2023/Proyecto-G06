@@ -6,9 +6,7 @@ import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.PasswordGenerator;
 
-import internals.bst.Treeable;
-
-public abstract class Usuario implements Treeable <Usuario>, Comparable <Usuario> {
+public abstract class Usuario {
     private static final int RPASSLEN = 14;
 
     protected UUID id;
@@ -57,7 +55,6 @@ public abstract class Usuario implements Treeable <Usuario>, Comparable <Usuario
                 : contrasena;
     }
 
-    @Override
     public int compareTo (Usuario usuario) {
         if (usuario == null)
             return 1;
