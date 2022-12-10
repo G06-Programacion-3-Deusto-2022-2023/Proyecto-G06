@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
@@ -470,7 +471,9 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         this.id = id != null && ((id.getMostSignificantBits () == 0 && id.getLeastSignificantBits () >= 0
                 && id.getLeastSignificantBits () < Pelicula.NDEFAULT_PELICULAS
                 && Pelicula.isAmongstCallers ("cine.Pelicula")
-                && !Pelicula.isDefaultSet (id.getLeastSignificantBits ()))
+                && (!Pelicula.isDefaultSet (id.getLeastSignificantBits ())
+                        || (Pelicula.isDefaultSet (id.getLeastSignificantBits ())
+                                && Pelicula.isAmongstCallers ("cine.GestorBD"))))
                 || id.getMostSignificantBits () != 0 || id.getLeastSignificantBits () < 0
                 || id.getLeastSignificantBits () >= Pelicula.NDEFAULT_PELICULAS)
                         ? id
@@ -524,42 +527,6 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
                 pelicula.edad, pelicula.generos, pelicula.sets);
     }
 
-    @Override
-    public void finalize () throws Throwable {
-        this.removeFromSets ();
-
-        if (!this.isDefault ()) {
-            super.finalize ();
-
-            return;
-        }
-
-        if (new File (DEFAULT_MOVIE_IMAGE_FILES
-                .get ((int) this.id.getLeastSignificantBits ()))
-                        .delete ())
-            Logger.getLogger (Pelicula.class.getName ()).log (Level.INFO,
-                    String.format ("Eliminado el archivo %s.", DEFAULT_MOVIE_IMAGE_FILES
-                            .get ((int) this.id.getLeastSignificantBits ())));
-
-        else
-            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
-                    String.format ("No se pudo eliminar el archivo %s.",
-                            DEFAULT_MOVIE_IMAGE_FILES
-                                    .get ((int) this.id
-                                            .getLeastSignificantBits ())));
-
-        File f;
-        if ((f = new File (DEFAULT_MOVIE_IMAGE_PATH)).list () == null && f.delete ())
-            Logger.getLogger (Pelicula.class.getName ()).log (Level.INFO,
-                    String.format ("Eliminadada la carpeta %s.",
-                            DEFAULT_MOVIE_IMAGE_PATH));
-
-        Pelicula.DEFAULT_IMAGES_DOWNLOADED = false;
-        Pelicula.SET_DEFAULT_PELICULAS &= ~(1L << this.id.getLeastSignificantBits ());
-
-        super.finalize ();
-    }
-
     public UUID getId () {
         return this.id;
     }
@@ -569,7 +536,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     public void setNombre (String nombre) {
-        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ()))
+        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
         this.nombre = nombre == null || nombre.equals ("") ? this.id.toString ()
@@ -581,7 +549,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     public void setRutaImagen (String rutaImagen) {
-        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ()))
+        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
         this.rutaImagen = rutaImagen == null ? "" : rutaImagen;
@@ -592,7 +561,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     public void setValoracion (double valoracion) {
-        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ()))
+        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
         this.valoracion = ((Double) valoracion).isNaN () || valoracion < 1
@@ -620,7 +590,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     public void setFecha (Year fecha) {
-        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ()))
+        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
         this.fecha = fecha == null || fecha.compareTo (MIN_FECHA) < 0 || fecha.compareTo (MAX_FECHA) > 0 ? null
@@ -632,7 +603,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     public void setDirector (String director) {
-        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ()))
+        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
         this.director = director == null ? "" : director;
@@ -646,7 +618,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         // En estos momentos echo de menos la extensión backtrace () de GNU para
         // C
 
-        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ()))
+        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
         this.duracion = duracion == null || duracion.isNegative () || duracion.isZero ()
@@ -668,7 +641,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     public void setEdad (EdadRecomendada edad) {
-        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ()))
+        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
         this.edad = edad == null ? EdadRecomendada.TODOS : edad;
@@ -679,7 +653,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     public void setGeneros (Collection <Genero.Nombre> generos) {
-        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ()))
+        if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
         this.generos = generos == null || generos.isEmpty () || generos.contains (Genero.Nombre.NADA)
@@ -693,7 +668,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
 
     public void setSets (Collection <SetPeliculas> sets) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas"))
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
         this.sets = new TreeSet <SetPeliculas> ((Comparator <SetPeliculas>) ( (a, b) -> {
@@ -735,7 +710,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
         if (this.sets == null || set == null
                 || (this.isDefault () && set.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
                         && !Pelicula.isAmongstCallers ("cine.Pelicula")
-                        && !Pelicula.isAmongstCallers ("cine.SetPeliculas")))
+                        && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
+                        && !Pelicula.isAmongstCallers ("cine.GestorBD")))
             return false;
 
         return !this.sets.contains (set) || (this.sets.remove (set) && set.remove (this));
@@ -756,7 +732,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
 
     public void removeFromSets () {
         if (this.sets == null && (this.isDefault () && !Pelicula.isAmongstCallers ("cine.Pelicula")
-                && !Pelicula.isAmongstCallers ("cine.SetPeliculas")))
+                && !Pelicula.isAmongstCallers ("cine.SetPeliculas") && !Pelicula.isAmongstCallers ("cine.GestorBD")))
             return;
 
         this.removeSets (this.sets);
@@ -873,6 +849,54 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
                 .collect (Collectors.toCollection (TreeSet::new));
     }
 
+    public static void deleteDefault (int n) throws IllegalArgumentException {
+        if (n < 0 || n >= 35)
+            throw new IllegalArgumentException (String.format ("El número %d no es un número de película por defecto válido ya que no está en el intervalo [0, 35)."));
+
+        Pelicula p;
+        try {
+            p = Pelicula.DEFAULT_PELICULAS.stream ().filter (e -> e.getId ().getLeastSignificantBits() == n).findFirst().get ();
+        }
+
+        catch (NoSuchElementException e) {
+            throw new IllegalArgumentException (String.format (
+                    "La película con ID %s no se encuentra en la lista de películas por defecto", new UUID (0, n)));
+        }
+
+        if (new File (Pelicula.DEFAULT_MOVIE_IMAGE_FILES
+                .get (n))
+                        .delete ())
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.INFO,
+                    String.format ("Eliminado el archivo %s.", Pelicula.DEFAULT_MOVIE_IMAGE_FILES
+                            .get (n)));
+
+        else
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
+                    String.format ("No se pudo eliminar el archivo %s.",
+                            Pelicula.DEFAULT_MOVIE_IMAGE_FILES
+                                    .get (n)));
+
+        File f;
+        if ((f = new File (Pelicula.DEFAULT_MOVIE_IMAGE_PATH)).list () == null && f.delete ())
+            Logger.getLogger (Pelicula.class.getName ()).log (Level.INFO,
+                    String.format ("Eliminadada la carpeta %s.",
+                            Pelicula.DEFAULT_MOVIE_IMAGE_PATH));
+
+        Pelicula.DEFAULT_IMAGES_DOWNLOADED = false;
+        Pelicula.SET_DEFAULT_PELICULAS &= ~(1L << n);
+    }
+
+    public static void deleteDefault (long n) {
+        Pelicula.deleteDefault ((int) n);
+    }
+
+    public static void deleteDefault () {
+        Pelicula [] peliculas = Pelicula.DEFAULT_PELICULAS.toArray (new Pelicula [0]);
+
+        for (int i = 0; i < peliculas.length; Pelicula.DEFAULT_IMAGES_DOWNLOADED = true)
+            Pelicula.deleteDefault (i++);
+    }
+
     public static boolean defaultImagesDownloaded () {
         return Pelicula.DEFAULT_IMAGES_DOWNLOADED;
     }
@@ -922,13 +946,6 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
                                         errors.toString ())));
 
         return Pelicula.DEFAULT_IMAGES_DOWNLOADED = !errors.isEmpty ();
-    }
-
-    protected static void deleteDefaultPeliculasData () throws Throwable {
-        Pelicula [] peliculas = DEFAULT_PELICULAS.toArray (new Pelicula [0]);
-
-        for (int i = 0; i < peliculas.length; Pelicula.DEFAULT_IMAGES_DOWNLOADED = true)
-            peliculas [i++].finalize ();
     }
 
     protected static boolean isDefaultSet (long n) throws UnsupportedOperationException {

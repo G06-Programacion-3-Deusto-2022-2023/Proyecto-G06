@@ -29,6 +29,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
@@ -97,11 +98,17 @@ public class GestionarPeliculasWindow extends JFrame {
                     Image img;
 
                     try {
-                        img = new ImageIcon (ImageIO.read (new File (value.getRutaImagen ()))).getImage ()
+                        BufferedImage imgbuf;
+
+                        if ((imgbuf = ImageIO.read (new File (value.getRutaImagen ()))) == null)
+                            throw new IllegalArgumentException (String.format ("No se puede leer la imagen especificada por %s",
+                                    value.getRutaImagen ()));
+
+                        img = new ImageIcon (imgbuf).getImage ()
                                 .getScaledInstance (64, 64, 0);
                     }
 
-                    catch (IOException e) {
+                    catch (IllegalArgumentException | IOException e) {
                         Logger.getLogger (GestionarPeliculasWindow.class.getName ()).log (Level.WARNING,
                                 String.format ("No se pudo crear una imagen a partir del archivo %s",
                                         value.getRutaImagen ()));

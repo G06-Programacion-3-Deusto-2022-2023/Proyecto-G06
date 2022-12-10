@@ -7,10 +7,8 @@ import java.time.Duration;
 import java.time.Year;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 import java.util.UUID;
 import java.util.Vector;
-import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
@@ -79,7 +77,7 @@ public class PeliculaTest {
         assertTrue (new File (pelicula.getRutaImagen ()).exists ());
         assertEquals (new UUID (0L, 0L), pelicula.getId ());
         assertEquals (pelicula.getRutaImagen (), pelicula.getRutaImagen ());
-        pelicula.finalize ();
+        Pelicula.deleteDefault (pelicula.getId ().getLeastSignificantBits ());
         assertFalse (new File (pelicula.getRutaImagen ()).exists ());
     }
 
