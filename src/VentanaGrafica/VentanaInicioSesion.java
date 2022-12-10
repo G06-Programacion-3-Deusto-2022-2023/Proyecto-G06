@@ -29,16 +29,16 @@ public class VentanaInicioSesion extends JFrame{
 		ArrayList<Usuario> usuarios = new ArrayList<>();
 		
 		JLabel usuario = new JLabel("Usuario");
-		JLabel contraseña = new JLabel("Contraseña");
+		JLabel contrasena = new JLabel("Contrasena");
 		JButton iniciarSesion = new JButton("Iniciar sesion");
 		JTextField textoUsuario = new JTextField("usuario");
-		JTextField textoContraseña = new JTextField("contraseña");
+		JTextField textoContrasena = new JTextField("contrasena");
 		
 		this.getContentPane().setLayout(new GridLayout(3,2));
 		this.getContentPane().add(usuario);
 		this.getContentPane().add(textoUsuario);
-		this.getContentPane().add(contraseña);
-		this.getContentPane().add(textoContraseña);
+		this.getContentPane().add(contrasena);
+		this.getContentPane().add(textoContrasena);
 		this.getContentPane().add(iniciarSesion);
 		
 		this.setTitle("Ventana inicio sesion");		
@@ -53,7 +53,7 @@ public class VentanaInicioSesion extends JFrame{
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				for (Usuario usuario : usuarios) {
-					if (usuario.getNombre().equals(textoUsuario.getText()) && usuario.getContrasena().equals(textoContraseña.getText())) {
+					if (usuario.getNombre().equals(textoUsuario.getText()) && usuario.getContrasena().equals(textoContrasena.getText())) {
 						if (administradores.contains(usuario)) {
 							System.out.println("administrador");
 							SwingUtilities.invokeLater(() -> new VentanaAdministrador((Administrador) usuario));

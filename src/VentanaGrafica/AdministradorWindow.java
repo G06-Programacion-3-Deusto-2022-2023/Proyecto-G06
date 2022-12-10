@@ -47,12 +47,14 @@ public class AdministradorWindow extends JFrame {
         // "El administrador enviado a la ventana de modo administrador no se
         // encuentra en la base de datos.");
 
+        VentanaInicio pw[] = new VentanaInicio [] { w };
+
         AdministradorWindow f = this;
 
         this.addWindowListener (new WindowAdapter () {
             @Override
             public void windowClosed (WindowEvent e) {
-                if (w == null)
+                if (pw [0] == null)
                     return;
 
                 w.setVisible (true);
@@ -82,7 +84,9 @@ public class AdministradorWindow extends JFrame {
                         JButton b = new JButton ("Gestionar usuarios");
 
                         b.addActionListener (e -> {
+                            pw [0] = null;
                             f.dispose ();
+                            pw [0] = w;
 
                             new GestionarUsuariosWindow (db, admin, f);
                         });
@@ -94,7 +98,9 @@ public class AdministradorWindow extends JFrame {
                         JButton b = new JButton ("Gestionar películas");
 
                         b.addActionListener (e -> {
-                            f.dispose ();
+                            pw [0] = null;
+                            f.setVisible (false);
+                            pw [0] = w;
 
                             new GestionarPeliculasWindow (db, admin, f);
                         });
@@ -112,7 +118,9 @@ public class AdministradorWindow extends JFrame {
                         JButton b = new JButton ("Otras opciones");
 
                         b.addActionListener (e -> {
+                            pw [0] = null;
                             f.dispose ();
+                            pw [0] = w;
 
                             new MiscOptionsWindow (db, admin, f);
                         });

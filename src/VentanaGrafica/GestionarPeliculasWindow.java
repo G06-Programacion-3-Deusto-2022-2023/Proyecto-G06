@@ -537,7 +537,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                                 b.setEnabled (false);
                                 b.addActionListener (e -> {
-
+                                    filterButton.doClick (0);
                                 });
 
                                 return b;
@@ -712,6 +712,42 @@ public class GestionarPeliculasWindow extends JFrame {
                                         ww.add (Box.createRigidArea (new Dimension (10, 0)));
 
                                         ww.add (director);
+
+                                        return ww;
+                                    })).get ());
+                                    v.add (Box.createRigidArea (new Dimension (0, 10)));
+
+                                    v.add (((Supplier <JPanel>) ( () -> {
+                                        JPanel ww = new JPanel (new FlowLayout (FlowLayout.LEFT, 5, 0));
+
+                                        ww.add (((Supplier <JLabel>) ( () -> {
+                                            JLabel l = new JLabel ("Duración:");
+                                            l.setFont (l.getFont ().deriveFont (Font.BOLD,
+                                                    14f));
+
+                                            return l;
+                                        })).get ());
+                                        ww.add (Box.createRigidArea (new Dimension (10, 0)));
+
+                                        ww.add (((Supplier <JPanel>) ( () -> {
+                                            JPanel x = new JPanel (new FlowLayout (FlowLayout.LEFT));
+
+                                            x.add (new JLabel ("de"));
+                                            x.add (minDur);
+                                            x.add (new JLabel ("min"));
+
+                                            return x;
+                                        })).get ());
+
+                                        ww.add (((Supplier <JPanel>) ( () -> {
+                                            JPanel x = new JPanel (new FlowLayout (FlowLayout.LEFT));
+
+                                            x.add (new JLabel ("a"));
+                                            x.add (maxDur);
+                                            x.add (new JLabel ("min"));
+
+                                            return x;
+                                        })).get ());
 
                                         return ww;
                                     })).get ());
