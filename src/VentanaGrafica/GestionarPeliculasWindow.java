@@ -2,19 +2,16 @@ package VentanaGrafica;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
-import javax.imageio.ImageIO;
 import javax.swing.AbstractButton;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -25,19 +22,16 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.time.Duration;
 import java.time.Year;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.FlowLayout;
-import java.awt.Image;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,16 +43,18 @@ import java.util.Vector;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import cine.Administrador;
 import cine.EdadRecomendada;
 import cine.Genero;
 import cine.GestorBD;
 import cine.Pelicula;
-import internals.JTextFieldLimit;
+import cine.SetPeliculas;
 import internals.bst.Filter;
+import internals.swing.JTextFieldLimit;
+import internals.swing.PeliculasComboBoxRenderer;
+import internals.swing.SetsPeliculasComboBoxRenderer;
 
 public class GestionarPeliculasWindow extends JFrame {
     public GestionarPeliculasWindow (GestorBD db) {
@@ -77,60 +73,42 @@ public class GestionarPeliculasWindow extends JFrame {
             throw new NullPointerException (
                     "No se puede pasar una base de datos nula a la ventana de gestión de películas.");
 
-        final class PeliculasComboBoxRenderer extends JLabel implements ListCellRenderer <Pelicula> {
-            public PeliculasComboBoxRenderer () {
-                this.setOpaque (true);
-                this.setHorizontalAlignment (SwingConstants.CENTER);
-                this.setVerticalAlignment (SwingConstants.CENTER);
-            }
-
-            @Override
-            public Component getListCellRendererComponent (JList list, Pelicula value, int index, boolean isSelected,
-                    boolean cellHasFocus) {
-                if (value == null)
-                    return this;
-
-                this.setBackground (isSelected ? list.getSelectionBackground () : list.getBackground ());
-                this.setForeground (isSelected ? list.getSelectionForeground () : list.getForeground ());
-
-                this.setText (value.getNombre ());
-                this.setIcon (new ImageIcon (((Supplier <Image>) ( () -> {
-                    Image img;
-
-                    try {
-                        BufferedImage imgbuf;
-
-                        if ((imgbuf = ImageIO.read (new File (value.getRutaImagen ()))) == null)
-                            throw new IllegalArgumentException (String.format ("No se puede leer la imagen especificada por %s",
-                                    value.getRutaImagen ()));
-
-                        img = new ImageIcon (imgbuf).getImage ()
-                                .getScaledInstance (64, 64, 0);
-                    }
-
-                    catch (IllegalArgumentException | IOException e) {
-                        Logger.getLogger (GestionarPeliculasWindow.class.getName ()).log (Level.WARNING,
-                                String.format ("No se pudo crear una imagen a partir del archivo %s",
-                                        value.getRutaImagen ()));
-
-                        img = new ImageIcon (getClass ()
-                                .getResource ("/toolbarButtonGraphics/media/Movie24.gif")).getImage ()
-                                        .getScaledInstance (64, 64, 0);
-                    }
-
-                    return img;
-                })).get ()));
-
-                return this;
-            }
-        }
-
+        AdministradorWindow pw[] = new AdministradorWindow [] { w };
         GestionarPeliculasWindow f = this;
+
+        Pelicula pelicula[] = new Pelicula [1];
+        SetPeliculas setpeliculas[] = new SetPeliculas [1];
+        JButton filterButton[] = new JButton [2];
+
+        this.addComponentListener (new ComponentAdapter () {
+            @Override
+            public void componentShown (ComponentEvent e) {
+                if (pelicula [0] != null) {
+                    if (pelicula [0].getNombre ().equals (pelicula [0].getId ().toString ())) {
+                        Pelicula array[] = db.obtenerDatosPeliculas ().toArray (new Pelicula [0]);
+
+                        int nuevas = 0;
+                        for (int i = 0; i < array.length; nuevas += array [i++].getNombre ()
+                                .toLowerCase ()
+                                .contains ("nueva película") ? 1 : 0)
+                            ;
+
+                        pelicula [0].setNombre (String.format ("Nueva película%s",
+                                nuevas == 0 ? "" : String.format (" #%d", nuevas + 1)));
+                    }
+
+                    db.insertarDatosPelicula (pelicula);
+                    pelicula [0] = null;
+
+                    filterButton [0].doClick (0);
+                }
+            }
+        });
 
         this.addWindowListener (new WindowAdapter () {
             @Override
             public void windowClosed (WindowEvent e) {
-                if (w == null)
+                if (pw [0] == null)
                     return;
 
                 w.setVisible (true);
@@ -149,8 +127,6 @@ public class GestionarPeliculasWindow extends JFrame {
             JPanel p = new JPanel ();
             p.setLayout (new BoxLayout (p, BoxLayout.Y_AXIS));
 
-            p.add (Box.createRigidArea (new Dimension (0, 50)));
-
             p.add (((Supplier <JPanel>) ( () -> {
                 JPanel q = new JPanel ();
                 q.setLayout (new BoxLayout (q, BoxLayout.X_AXIS));
@@ -163,13 +139,9 @@ public class GestionarPeliculasWindow extends JFrame {
 
                     JComboBox <Pelicula> peliculas = new JComboBox <Pelicula> (
                             new Vector <Pelicula> (db.obtenerDatosPeliculas ()));
-                    peliculas.setRenderer (((Supplier <PeliculasComboBoxRenderer>) ( () -> {
-                        PeliculasComboBoxRenderer renderer = new PeliculasComboBoxRenderer ();
-                        renderer.setPreferredSize (new Dimension (200, 100));
-
-                        return renderer;
-                    })).get ());
+                    peliculas.setRenderer (new PeliculasComboBoxRenderer ());
                     peliculas.setMaximumRowCount (5);
+                    peliculas.setSelectedIndex (peliculas.getItemCount () > 0 ? 0 : -1);
 
                     JTextField nombre = new JTextField (new JTextFieldLimit (75), "", 48);
                     nombre.setToolTipText (
@@ -183,6 +155,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Acción");
 
+                                b.setToolTipText ("Incluir películas que tengan la acción como uno de sus géneros.");
                                 b.setSelected (true);
 
                                 return b;
@@ -190,6 +163,8 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Ciencia ficción");
 
+                                b.setToolTipText (
+                                        "Incluir películas que tengan la ciencia ficción como uno de sus géneros.");
                                 b.setSelected (true);
 
                                 return b;
@@ -197,6 +172,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Comedia");
 
+                                b.setToolTipText ("Incluir películas que tengan la comedia como uno de sus géneros.");
                                 b.setSelected (true);
 
                                 return b;
@@ -204,6 +180,8 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Documental");
 
+                                b.setToolTipText (
+                                        "Incluir películas que tengan el documental como uno de sus géneros.");
                                 b.setSelected (true);
 
                                 return b;
@@ -211,6 +189,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Drama");
 
+                                b.setToolTipText ("Incluir películas que tengan el drama como uno de sus géneros.");
                                 b.setSelected (true);
 
                                 return b;
@@ -218,6 +197,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Fantasía");
 
+                                b.setToolTipText ("Incluir películas que tengan la fantasía como uno de sus géneros.");
                                 b.setSelected (true);
 
                                 return b;
@@ -225,6 +205,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Melodrama");
 
+                                b.setToolTipText ("Incluir películas que tengan el melodrama como uno de sus géneros.");
                                 b.setSelected (true);
 
                                 return b;
@@ -232,6 +213,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Musical");
 
+                                b.setToolTipText ("Incluir películas que tengan el musical como uno de sus géneros.");
                                 b.setSelected (true);
 
                                 return b;
@@ -239,6 +221,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Romance");
 
+                                b.setToolTipText ("Incluir películas que tengan el romance como uno de sus géneros.");
                                 b.setSelected (true);
 
                                 return b;
@@ -246,13 +229,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Suspense");
 
-                                b.setSelected (true);
-
-                                return b;
-                            })).get (),
-                            ((Supplier <JCheckBox>) ( () -> {
-                                JCheckBox b = new JCheckBox ("Suspense");
-
+                                b.setToolTipText ("Incluir películas que tengan el suspense como uno de sus géneros.");
                                 b.setSelected (true);
 
                                 return b;
@@ -260,6 +237,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Terror");
 
+                                b.setToolTipText ("Incluir películas que tengan el terror como uno de sus géneros.");
                                 b.setSelected (true);
 
                                 return b;
@@ -270,6 +248,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("Todas las edades");
 
+                                b.setToolTipText ("Incluir películas aptas para todos los públicos.");
                                 b.setSelected (true);
 
                                 return b;
@@ -277,6 +256,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("+7");
 
+                                b.setToolTipText ("Incluir películas para mayores de 7 años.");
                                 b.setSelected (true);
 
                                 return b;
@@ -284,6 +264,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("+12");
 
+                                b.setToolTipText ("Incluir películas para mayores de 12 años.");
                                 b.setSelected (true);
 
                                 return b;
@@ -291,6 +272,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("+16");
 
+                                b.setToolTipText ("Incluir películas para mayores de 16 años.");
                                 b.setSelected (true);
 
                                 return b;
@@ -298,6 +280,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JCheckBox>) ( () -> {
                                 JCheckBox b = new JCheckBox ("+18");
 
+                                b.setToolTipText ("Incluir películas para adultos.");
                                 b.setSelected (true);
 
                                 return b;
@@ -311,11 +294,21 @@ public class GestionarPeliculasWindow extends JFrame {
                     maxVal.setToolTipText ("La valoración máxima de la película (un número del 1 al 10).");
 
                     JSpinner minDur = new JSpinner (new SpinnerNumberModel ());
-                    ((SpinnerNumberModel) minDur.getModel ()).setMinimum (0);
+                    ((SpinnerNumberModel) minDur.getModel ()).setMinimum (1);
+                    ((SpinnerNumberModel) minDur.getModel ())
+                            .setValue (((SpinnerNumberModel) minDur.getModel ()).getMinimum ());
                     minDur.setToolTipText ("La duración mínima de la película (en minutos).");
 
                     JSpinner maxDur = new JSpinner (new SpinnerNumberModel ());
-                    ((SpinnerNumberModel) maxDur.getModel ()).setMinimum (0);
+                    ((SpinnerNumberModel) maxDur.getModel ()).setMinimum (1);
+                    ((SpinnerNumberModel) maxDur
+                            .getModel ())
+                                    .setValue (Pelicula
+                                            .orderBy (db.obtenerDatosPeliculas (),
+                                                    (Comparator <Pelicula>) ( (Pelicula x, Pelicula y) -> x
+                                                            .getDuracion ().compareTo (y.getDuracion ())),
+                                                    true)
+                                            .get (0).getDuracion ().toMinutes ());
                     maxDur.setToolTipText ("La duración máxima de la película (en minutos).");
 
                     JSpinner minFecha = new JSpinner (
@@ -336,11 +329,12 @@ public class GestionarPeliculasWindow extends JFrame {
 
                     JCheckBox desc = new JCheckBox ("Orden descendente");
 
-                    JButton filterButton = ((Supplier <JButton>) ( () -> {
+                    filterButton [0] = ((Supplier <JButton>) ( () -> {
                         JButton b = new JButton (new ImageIcon (
                                 f.getClass ()
                                         .getResource ("/toolbarButtonGraphics/general/Search24.gif")));
 
+                        b.setToolTipText ("Aplicar los filtros y criterios de ordenación");
                         b.addActionListener (e -> {
                             if (((SpinnerNumberModel) minVal.getModel ()).getNumber ()
                                     .doubleValue () < 1
@@ -467,8 +461,8 @@ public class GestionarPeliculasWindow extends JFrame {
 
                                                                                 return 0;
                                                                             })).getAsInt ()]),
-                                    (Filter <Pelicula>) ( (Pelicula x) -> x.getNombre ()
-                                            .contains (nombre.getText ())
+                                    (Filter <Pelicula>) ( (Pelicula x) -> x.getNombre ().toLowerCase (Locale.ROOT)
+                                            .contains (nombre.getText ().toLowerCase (Locale.ROOT))
                                             && x.getValoracion () >= ((SpinnerNumberModel) minVal
                                                     .getModel ()).getNumber ().doubleValue ()
                                             && x.getValoracion () <= ((SpinnerNumberModel) maxVal
@@ -521,18 +515,21 @@ public class GestionarPeliculasWindow extends JFrame {
                             ((Supplier <JButton>) ( () -> {
                                 JButton b = new JButton ("Ver detalles");
 
-                                b.setEnabled (false);
+                                b.setEnabled (peliculas.getSelectedItem () != null);
                                 b.addActionListener (e -> {
                                     try {
+                                        pw [0] = null;
+                                        f.setVisible (false);
+                                        pw [0] = w;
+
                                         new PeliculaDetailsWindow ((Pelicula) peliculas.getSelectedItem (), f);
-                                        f.dispose ();
                                     }
 
                                     catch (NullPointerException e1) {
-                                        f.setVisible (false);
                                         JOptionPane.showMessageDialog (f,
                                                 "La película seleccionada es nula por lo que no pueden verse sus detalles.",
                                                 "Error al ver los detalles de la película", JOptionPane.ERROR_MESSAGE);
+
                                         f.setVisible (true);
                                     }
                                 });
@@ -544,7 +541,12 @@ public class GestionarPeliculasWindow extends JFrame {
 
                                 b.setEnabled (false);
                                 b.addActionListener (e -> {
-                                    filterButton.doClick (0);
+                                    pw [0] = null;
+                                    f.setVisible (false);
+                                    pw [0] = w;
+    
+                                    pelicula [0] = (Pelicula) peliculas.getSelectedItem ();
+                                    new PeliculaWindow (pelicula, f);
                                 });
 
                                 return b;
@@ -564,7 +566,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                             }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
                                         return;
 
-                                    filterButton.doClick (0);
+                                    filterButton [0].doClick (0);
                                 });
 
                                 return b;
@@ -592,7 +594,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                         return l;
                     })).get ());
-                    r.add (Box.createRigidArea (new Dimension (0, 50)));
+                    r.add (Box.createRigidArea (new Dimension (0, 25)));
 
                     r.add (((Supplier <JPanel>) ( () -> {
                         JPanel s = new JPanel ();
@@ -773,9 +775,9 @@ public class GestionarPeliculasWindow extends JFrame {
                                         ww.add (Box.createRigidArea (new Dimension (10, 0)));
 
                                         ww.add (((Supplier <JPanel>) ( () -> {
-                                            JPanel x = new JPanel (new GridLayout (3, 4, 15, 15));
+                                            JPanel x = new JPanel (new GridLayout (2, 6, 15, 15));
 
-                                            for (int i = 0; i <= 11; x.add (generos.get (i++)))
+                                            for (int i = 0; i < generos.size (); x.add (generos.get (i++)))
                                                 ;
 
                                             return x;
@@ -810,7 +812,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                     })).get ());
 
                                     return v;
-                                })).get (), BorderLayout.CENTER);
+                                })).get ());
 
                                 return u;
                             })).get ());
@@ -892,7 +894,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                             t.add (Box.createRigidArea (new Dimension (0, 25)));
 
-                            t.add (filterButton);
+                            t.add (filterButton [0]);
 
                             t.add (Box.createRigidArea (new Dimension (0, 100)));
 
@@ -907,13 +909,11 @@ public class GestionarPeliculasWindow extends JFrame {
                             return t;
                         })).get ());
 
-                        s.add (new JLabel (" "));
-
                         s.add (((Supplier <JPanel>) ( () -> {
                             JPanel t = new JPanel ();
                             t.setLayout (new BoxLayout (t, BoxLayout.Y_AXIS));
 
-                            t.add (Box.createRigidArea (new Dimension (0, 250)));
+                            t.add (Box.createRigidArea (new Dimension (0, 500)));
 
                             t.add (peliculaButtons [0]);
 
@@ -940,8 +940,11 @@ public class GestionarPeliculasWindow extends JFrame {
                             JButton b = new JButton ("Crear");
 
                             b.addActionListener (e -> {
+                                pw [0] = null;
+                                f.setVisible (false);
+                                pw [0] = w;
 
-                                peliculas.repaint ();
+                                new PeliculaWindow (pelicula, f);
                             });
 
                             return b;
@@ -979,8 +982,6 @@ public class GestionarPeliculasWindow extends JFrame {
                             return b;
                         })).get ());
 
-                        s.add (Box.createRigidArea (new Dimension (0, 0)));
-
                         return s;
                     })).get ());
 
@@ -995,13 +996,183 @@ public class GestionarPeliculasWindow extends JFrame {
                     JPanel r = new JPanel ();
                     r.setLayout (new BoxLayout (r, BoxLayout.Y_AXIS));
 
+                    JComboBox <SetPeliculas> setspeliculas = new JComboBox <SetPeliculas> (
+                            new Vector <SetPeliculas> (db.obtenerDatosSetPeliculas ().stream ()
+                                    .filter (e -> e.getAdministrador () == null || e.getAdministrador ().equals (admin))
+                                    .collect (Collectors.toList ())));
+                    setspeliculas.setRenderer (new SetsPeliculasComboBoxRenderer ());
+                    setspeliculas.setMaximumRowCount (5);
+                    setspeliculas.setSelectedIndex (setspeliculas.getItemCount () > 0 ? 0 : -1);
+
+                    JTextField nombre = new JTextField (new JTextFieldLimit (75), "", 48);
+                    nombre.setToolTipText (
+                            "Filtrar por nombre (el nombre del set debe contener el texto introducido).");
+
+                    JSpinner minSize = new JSpinner (new SpinnerNumberModel (7, 7, 35, 1));
+                    minSize.setToolTipText ("El tamaño mínimo del set (un número del 7 al 35).");
+
+                    JSpinner maxSize = new JSpinner (new SpinnerNumberModel (35, 7, 35, 1));
+                    maxSize.setToolTipText ("El tamaño máximo del set (un número del 7 al 35).");
+
+                    ButtonGroup orderBy = new ButtonGroup ();
+
+                    JCheckBox desc = new JCheckBox ("Orden descendente");
+
+                    filterButton [1] = ((Supplier <JButton>) ( () -> {
+                        JButton b = new JButton (new ImageIcon (
+                                f.getClass ()
+                                        .getResource ("/toolbarButtonGraphics/general/Search24.gif")));
+
+                        b.setToolTipText ("Aplicar los filtros y criterios de ordenación");
+                        b.addActionListener (e -> {
+                            if (((SpinnerNumberModel) minSize.getModel ()).getNumber ().intValue () < SetPeliculas
+                                    .minSize ()
+                                    || ((SpinnerNumberModel) minSize.getModel ()).getNumber ()
+                                            .intValue () > SetPeliculas.maxSize ()
+                                    || ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
+                                            .intValue () < SetPeliculas.minSize ()
+                                    || ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
+                                            .intValue () > SetPeliculas.maxSize ()) {
+                                JOptionPane.showMessageDialog (f,
+                                        String.format ("El tamaño del set debe ser un número en el intervalo [%d, %d].",
+                                                SetPeliculas.minSize (), SetPeliculas.maxSize ()),
+                                        "Error al filtrar", JOptionPane.ERROR_MESSAGE);
+
+                                return;
+                            }
+
+                            if (((SpinnerNumberModel) minSize.getModel ()).getNumber ()
+                                    .intValue () > ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
+                                            .intValue ()) {
+                                JOptionPane.showMessageDialog (f,
+                                        "El tamaño máximo no puede ser menor que el tamaño mínimo.",
+                                        "Error al filtrar", JOptionPane.ERROR_MESSAGE);
+
+                                return;
+                            }
+
+                            setspeliculas.removeAllItems ();
+
+                            List <SetPeliculas> list = SetPeliculas.tree (db.obtenerDatosSetPeliculas ().stream ()
+                                    .filter (x -> x.getAdministrador () == null || x.getAdministrador ().equals (admin))
+                                    .collect (Collectors.toList ()),
+                                    (Collections.list (orderBy.getElements ()).get (0).isSelected ()
+                                            ? 0
+                                            : 1) == 0
+                                                    ? (desc.isSelected ()
+                                                            ? (Comparator <SetPeliculas>) ( (SetPeliculas x,
+                                                                    SetPeliculas y) -> y.getNombre ()
+                                                                            .compareTo (x.getNombre ()))
+                                                            : (Comparator <SetPeliculas>) ( (SetPeliculas x,
+                                                                    SetPeliculas y) -> x.getNombre ()
+                                                                            .compareTo (y.getNombre ())))
+                                                    : (desc.isSelected ()
+                                                            ? (Comparator <SetPeliculas>) ( (SetPeliculas x,
+                                                                    SetPeliculas y) -> ((Integer) y.size ())
+                                                                            .compareTo ((Integer) x.size ()))
+                                                            : (Comparator <SetPeliculas>) ( (SetPeliculas x,
+                                                                    SetPeliculas y) -> ((Integer) x.size ())
+                                                                            .compareTo ((Integer) y.size ()))),
+                                    (Filter <SetPeliculas>) ( (SetPeliculas x) -> x.getNombre ()
+                                            .toLowerCase (Locale.ROOT)
+                                            .contains (nombre.getText ().toLowerCase (Locale.ROOT))
+                                            && x.size () >= ((SpinnerNumberModel) minSize.getModel ()).getNumber ()
+                                                    .intValue ()
+                                            && x.size () <= ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
+                                                    .intValue ()))
+                                    .getValues ();
+
+                            for (int i = 0; i < list.size (); setspeliculas.addItem (list.get (i++)))
+                                ;
+                            ;
+                        });
+
+                        return b;
+                    })).get ();
+
+                    JButton setButtons[] = new JButton [] {
+                            ((Supplier <JButton>) ( () -> {
+                                JButton b = new JButton ("Ver detalles");
+
+                                b.setEnabled (setspeliculas.getSelectedItem () != null);
+                                b.addActionListener (e -> {
+                                    try {
+                                        pw [0] = null;
+                                        f.setVisible (false);
+                                        pw [0] = w;
+
+                                        System.out.println (setspeliculas.getSelectedItem ());
+
+                                        new SetPeliculasDetailsWindow (
+                                                (SetPeliculas) setspeliculas.getSelectedItem (), f);
+                                    }
+
+                                    catch (NullPointerException e1) {
+                                        f.setVisible (false);
+                                        JOptionPane.showMessageDialog (f,
+                                                "El set de películas seleccionado es nulo por lo que no pueden verse sus detalles.",
+                                                "Error al ver los detalles del set de películas",
+                                                JOptionPane.ERROR_MESSAGE);
+                                        f.setVisible (true);
+                                    }
+                                });
+
+                                return b;
+                            })).get (),
+                            ((Supplier <JButton>) ( () -> {
+                                JButton b = new JButton ("Modificar");
+
+                                b.setEnabled (false);
+                                b.addActionListener (e -> {
+                                    filterButton [1].doClick (0);
+                                });
+
+                                return b;
+                            })).get (),
+                            ((Supplier <JButton>) ( () -> {
+                                JButton b = new JButton ("Eliminar");
+
+                                b.setEnabled (false);
+                                b.addActionListener (e -> {
+                                    if (JOptionPane.showOptionDialog (f,
+                                            "Lo que estás a punto de hacer es una acción irreversible.\n¿Estás seguro de querer continuar?",
+                                            "Eliminar set de películas", JOptionPane.YES_NO_OPTION,
+                                            JOptionPane.WARNING_MESSAGE,
+                                            null, new String [] {
+                                                    "Confirmar",
+                                                    "Cancelar"
+                                            }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
+                                        return;
+
+                                    filterButton [1].doClick (0);
+                                });
+
+                                return b;
+                            })).get ()
+                    };
+
+                    setspeliculas.addActionListener (e -> {
+                        setButtons [0].setEnabled (setspeliculas.getSelectedItem () != null);
+
+                        if (setspeliculas.getSelectedItem () == null
+                                || ((SetPeliculas) setspeliculas.getSelectedItem ()).isDefault ()) {
+                            setButtons [1].setEnabled (false);
+                            setButtons [2].setEnabled (false);
+
+                            return;
+                        }
+
+                        setButtons [1].setEnabled (true);
+                        setButtons [2].setEnabled (true);
+                    });
+
                     r.add (((Supplier <JLabel>) ( () -> {
                         JLabel l = new JLabel ("Sets de películas");
                         l.setFont (l.getFont ().deriveFont (Font.BOLD, 20f));
 
                         return l;
                     })).get ());
-                    r.add (Box.createRigidArea (new Dimension (0, 50)));
+                    r.add (Box.createRigidArea (new Dimension (0, 25)));
 
                     r.add (((Supplier <JPanel>) ( () -> {
                         JPanel s = new JPanel ();
@@ -1011,11 +1182,215 @@ public class GestionarPeliculasWindow extends JFrame {
                             JPanel t = new JPanel ();
                             t.setLayout (new BoxLayout (t, BoxLayout.Y_AXIS));
 
-                            JTextField nombre = new JTextField (new JTextFieldLimit (75), "", 48);
-                            nombre.setToolTipText (
-                                    "Filtrar por nombre (el nombre de la pelicula debe contener el texto introducido).");
+                            t.add (((Supplier <JPanel>) ( () -> {
+                                JPanel u = new JPanel ();
+                                u.setLayout (new BoxLayout (u, BoxLayout.Y_AXIS));
+
+                                u.add (((Supplier <JLabel>) ( () -> {
+                                    JLabel l = new JLabel ("Filtrar");
+                                    l.setFont (l.getFont ().deriveFont (Font.BOLD,
+                                            16f));
+
+                                    return l;
+                                })).get ());
+
+                                u.add (Box.createRigidArea (new Dimension (0, 15)));
+
+                                u.add (((Supplier <JPanel>) ( () -> {
+                                    JPanel v = new JPanel ();
+                                    v.setLayout (new BoxLayout (v, BoxLayout.Y_AXIS));
+
+                                    v.add (((Supplier <JPanel>) ( () -> {
+                                        JPanel ww = new JPanel (new FlowLayout (FlowLayout.LEFT, 5, 0));
+
+                                        ww.add (((Supplier <JLabel>) ( () -> {
+                                            JLabel l = new JLabel ("Nombre:");
+                                            l.setFont (l.getFont ().deriveFont (Font.BOLD,
+                                                    14f));
+
+                                            return l;
+                                        })).get ());
+                                        ww.add (Box.createRigidArea (new Dimension (10, 0)));
+
+                                        ww.add (nombre);
+
+                                        return ww;
+                                    })).get ());
+                                    v.add (Box.createRigidArea (new Dimension (0, 10)));
+
+                                    v.add (((Supplier <JPanel>) ( () -> {
+                                        JPanel ww = new JPanel (new FlowLayout (FlowLayout.LEFT, 5, 0));
+
+                                        ww.add (((Supplier <JLabel>) ( () -> {
+                                            JLabel l = new JLabel ("Tamaño:");
+                                            l.setFont (l.getFont ().deriveFont (Font.BOLD,
+                                                    14f));
+
+                                            return l;
+                                        })).get ());
+                                        ww.add (Box.createRigidArea (new Dimension (10, 0)));
+
+                                        ww.add (((Supplier <JPanel>) ( () -> {
+                                            JPanel x = new JPanel (new FlowLayout (FlowLayout.LEFT));
+
+                                            x.add (new JLabel ("desde"));
+                                            x.add (minSize);
+
+                                            return x;
+                                        })).get ());
+
+                                        ww.add (((Supplier <JPanel>) ( () -> {
+                                            JPanel x = new JPanel (new FlowLayout (FlowLayout.LEFT));
+
+                                            x.add (new JLabel ("a"));
+                                            x.add (maxSize);
+
+                                            return x;
+                                        })).get ());
+
+                                        return ww;
+                                    })).get ());
+
+                                    return v;
+                                })).get ());
+
+                                return u;
+                            })).get ());
+
+                            t.add (Box.createRigidArea (new Dimension (0, 25)));
+
+                            t.add (((Supplier <JPanel>) ( () -> {
+                                JPanel u = new JPanel ();
+                                u.setLayout (new BoxLayout (u, BoxLayout.Y_AXIS));
+
+                                u.add (((Supplier <JLabel>) ( () -> {
+                                    JLabel l = new JLabel ("Ordenar");
+                                    l.setFont (l.getFont ().deriveFont (Font.BOLD,
+                                            16f));
+
+                                    return l;
+                                })).get ());
+
+                                u.add (((Supplier <JPanel>) ( () -> {
+                                    JPanel v = new JPanel (new FlowLayout (FlowLayout.CENTER, 25, 0));
+
+                                    v.add (((Supplier <JPanel>) ( () -> {
+                                        JPanel ww = new JPanel (new GridLayout (2, 1, 15, 15));
+
+                                        ww.add (((Supplier <JRadioButton>) ( () -> {
+                                            JRadioButton b = new JRadioButton ("Nombre");
+
+                                            b.setSelected (true);
+
+                                            orderBy.add (b);
+
+                                            return b;
+                                        })).get ());
+
+                                        ww.add (((Supplier <JRadioButton>) ( () -> {
+                                            JRadioButton b = new JRadioButton ("Valoracion");
+
+                                            orderBy.add (b);
+
+                                            return b;
+                                        })).get ());
+
+                                        return ww;
+                                    })).get ());
+
+                                    v.add (desc);
+
+                                    return v;
+                                })).get ());
+
+                                return u;
+                            })).get ());
+
+                            t.add (Box.createRigidArea (new Dimension (0, 25)));
+
+                            t.add (filterButton [1]);
+
+                            t.add (Box.createRigidArea (new Dimension (0, 100)));
+
+                            t.add (((Supplier <JPanel>) ( () -> {
+                                JPanel u = new JPanel ();
+
+                                u.add (setspeliculas, BorderLayout.CENTER);
+
+                                return u;
+                            })).get ());
 
                             return t;
+                        })).get ());
+
+                        s.add (((Supplier <JPanel>) ( () -> {
+                            JPanel t = new JPanel ();
+                            t.setLayout (new BoxLayout (t, BoxLayout.Y_AXIS));
+
+                            t.add (Box.createRigidArea (new Dimension (0, 500)));
+
+                            t.add (setButtons [0]);
+
+                            t.add (Box.createRigidArea (new Dimension (0, 25)));
+
+                            t.add (setButtons [1]);
+
+                            t.add (Box.createRigidArea (new Dimension (0, 25)));
+
+                            t.add (setButtons [2]);
+
+                            return t;
+                        })).get ());
+
+                        return s;
+                    })).get ());
+
+                    r.add (Box.createRigidArea (new Dimension (0, 75)));
+
+                    r.add (((Supplier <JPanel>) ( () -> {
+                        JPanel s = new JPanel (new GridLayout (2, 3, 25, 25));
+
+                        s.add (((Supplier <JButton>) ( () -> {
+                            JButton b = new JButton ("Crear");
+
+                            b.addActionListener (e -> {
+
+                                filterButton [1].doClick (0);
+                            });
+
+                            return b;
+                        })).get ());
+
+                        s.add (((Supplier <JButton>) ( () -> {
+                            JButton b = new JButton ("Importar");
+
+                            b.addActionListener (e -> {
+
+                            });
+
+                            return b;
+                        })).get ());
+
+                        s.add (((Supplier <JButton>) ( () -> {
+                            JButton b = new JButton ("Exportar");
+
+                            b.addActionListener (e -> {
+
+                            });
+
+                            return b;
+                        })).get ());
+
+                        s.add (Box.createRigidArea (new Dimension (0, 0)));
+
+                        s.add (((Supplier <JButton>) ( () -> {
+                            JButton b = new JButton ("Eliminar todos los sets");
+
+                            b.addActionListener (e -> {
+
+                            });
+
+                            return b;
                         })).get ());
 
                         return s;

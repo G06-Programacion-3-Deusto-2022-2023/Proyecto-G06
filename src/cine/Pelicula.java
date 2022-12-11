@@ -668,6 +668,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
 
     public void setSets (Collection <SetPeliculas> sets) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
+                && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
                 && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
@@ -851,11 +852,13 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
 
     public static void deleteDefault (int n) throws IllegalArgumentException {
         if (n < 0 || n >= 35)
-            throw new IllegalArgumentException (String.format ("El número %d no es un número de película por defecto válido ya que no está en el intervalo [0, 35)."));
+            throw new IllegalArgumentException (String.format (
+                    "El número %d no es un número de película por defecto válido ya que no está en el intervalo [0, 35)."));
 
         Pelicula p;
         try {
-            p = Pelicula.DEFAULT_PELICULAS.stream ().filter (e -> e.getId ().getLeastSignificantBits() == n).findFirst().get ();
+            p = Pelicula.DEFAULT_PELICULAS.stream ().filter (e -> e.getId ().getLeastSignificantBits () == n)
+                    .findFirst ().get ();
         }
 
         catch (NoSuchElementException e) {
@@ -902,11 +905,11 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
     }
 
     protected static boolean downloadDefaultImages () {
-        File fp = new File (DEFAULT_MOVIE_IMAGE_PATH);
+        File fp = new File (Pelicula.DEFAULT_MOVIE_IMAGE_PATH);
 
         if (fp.exists () && fp.isDirectory () && Arrays.asList (fp.list ())
-                .containsAll (DEFAULT_MOVIE_IMAGE_FILES.stream ()
-                        .map (e -> e.replace (DEFAULT_MOVIE_IMAGE_PATH + File.separator, ""))
+                .containsAll (Pelicula.DEFAULT_MOVIE_IMAGE_FILES.stream ()
+                        .map (e -> e.replace (Pelicula.DEFAULT_MOVIE_IMAGE_PATH + File.separator, ""))
                         .collect (Collectors.toList ()))) {
             Logger.getLogger (Pelicula.class.getName ()).log (Level.INFO,
                     "Todas las imágenes de las películas por defecto estaban ya descargadas.");
@@ -918,20 +921,20 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula> {
 
         List <String> errors = new ArrayList <String> ();
 
-        for (int i = 0; i < DEFAULT_MOVIE_IMAGE_FILES.size (); i++) {
-            if ((fp = new File (DEFAULT_MOVIE_IMAGE_FILES.get (i))).exists ())
+        for (int i = 0; i < Pelicula.DEFAULT_MOVIE_IMAGE_FILES.size (); i++) {
+            if ((fp = new File (Pelicula.DEFAULT_MOVIE_IMAGE_FILES.get (i))).exists ())
                 continue;
 
             try (FileOutputStream f = new FileOutputStream (fp);
                     ReadableByteChannel c = Channels
-                            .newChannel (DEFAULT_MOVIE_IMAGE_URLS.get (i).openStream ())) {
+                            .newChannel (Pelicula.DEFAULT_MOVIE_IMAGE_URLS.get (i).openStream ())) {
                 f.getChannel ().transferFrom (c, 0, Long.MAX_VALUE);
             }
 
             catch (Exception e) {
                 errors.add (String.format (
-                        "%s: %s", DEFAULT_MOVIE_IMAGE_FILES.get (i)
-                                .replace (DEFAULT_MOVIE_IMAGE_PATH + File.separator,
+                        "%s: %s", Pelicula.DEFAULT_MOVIE_IMAGE_FILES.get (i)
+                                .replace (Pelicula.DEFAULT_MOVIE_IMAGE_PATH + File.separator,
                                         ""),
                         e.getMessage ()));
             }

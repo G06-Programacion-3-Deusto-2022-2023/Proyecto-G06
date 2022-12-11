@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import cine.Administrador;
 import cine.GestorBD;
 import cine.Pelicula;
+import cine.SetPeliculas;
 
 public class AdministradorWindow extends JFrame {
     public AdministradorWindow (GestorBD db, Administrador admin) {
@@ -48,7 +49,6 @@ public class AdministradorWindow extends JFrame {
         // encuentra en la base de datos.");
 
         VentanaInicio pw[] = new VentanaInicio [] { w };
-
         AdministradorWindow f = this;
 
         this.addWindowListener (new WindowAdapter () {
@@ -85,7 +85,7 @@ public class AdministradorWindow extends JFrame {
 
                         b.addActionListener (e -> {
                             pw [0] = null;
-                            f.dispose ();
+                            f.setVisible (false);
                             pw [0] = w;
 
                             new GestionarUsuariosWindow (db, admin, f);

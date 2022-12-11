@@ -1,7 +1,6 @@
 package VentanaGrafica;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -14,6 +13,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,7 +40,7 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
 import cine.Pelicula;
-import internals.JTextFieldLimit;
+import internals.swing.JTextFieldLimit;
 import cine.EdadRecomendada;
 import cine.Genero;
 
@@ -48,52 +49,59 @@ import cine.Genero;
  */
 
 public class PeliculaWindow extends JFrame {
-    public PeliculaWindow (Collection <Pelicula> peliculas) {
-        this (peliculas, null);
+    public PeliculaWindow (Pelicula pelicula[]) {
+        this (pelicula, null);
     }
 
-    public PeliculaWindow (Collection <Pelicula> peliculas, Pelicula pelicula) throws NullPointerException {
+    public PeliculaWindow (Pelicula pelicula[], GestionarPeliculasWindow w) throws NullPointerException, UnsupportedOperationException {
         super ();
 
-        if (peliculas == null)
+        if (pelicula == null)
             throw new NullPointerException (
                     "No se puede pasar una colección nula de películas a la ventana de creación de películas.");
 
+        if (pelicula.length != 1)
+            throw new UnsupportedOperationException (
+                    "Solo se puede pasar un array de películas que contenga un único elemento.");
+
         PeliculaWindow f = this;
 
-        JTextField nombre = new JTextField (new JTextFieldLimit (75), pelicula == null ? "" : pelicula.getNombre (),
+        JTextField nombre = new JTextField (new JTextFieldLimit (75),
+                pelicula [0] == null ? "" : pelicula [0].getNombre (),
                 48);
         nombre.setToolTipText ("Dejar vacío este campo implica que el nombre de la película será su ID.");
 
-        JTextField rutaImagen = new JTextField (pelicula == null ? "" : pelicula.getRutaImagen (), 75);
+        JTextField rutaImagen = new JTextField (pelicula [0] == null ? "" : pelicula [0].getRutaImagen (), 75);
         rutaImagen.setToolTipText ("Deja vacío este campo para que la película use una imagen por defecto.");
 
         JSpinner valoracion = new JSpinner (
-                new SpinnerNumberModel (pelicula == null ? 5 : pelicula.getValoracion (), 1, 10, 0.1));
+                new SpinnerNumberModel (pelicula [0] == null ? 5 : pelicula [0].getValoracion (), 1, 10, 0.1));
         valoracion.setToolTipText ("La valoración de la película (un número del 1 al 10).");
 
         JSpinner fecha = new JSpinner (new SpinnerNumberModel (
-                pelicula == null ? Pelicula.defaultFecha ().getValue () : pelicula.getFecha ().getValue (),
+                pelicula [0] == null ? Pelicula.defaultFecha ().getValue () : pelicula [0].getFecha ().getValue (),
                 Pelicula.minFecha ().getValue (), Pelicula.maxFecha ().getValue (), 1));
         fecha.setToolTipText (String.format ("El año de salida de la película (desde el %s al %s).",
                 Pelicula.minFecha (), Pelicula.maxFecha ()));
 
-        JTextField director = new JTextField (new JTextFieldLimit (50), pelicula == null ? "" : pelicula.getDirector (),
+        JTextField director = new JTextField (new JTextFieldLimit (50),
+                pelicula [0] == null ? "" : pelicula [0].getDirector (),
                 32);
         director.setToolTipText (
                 "Nombre del director de la película. Si se deja vacío se asume que la película no tiene director.");
 
         JSpinner horas = new JSpinner (new SpinnerNumberModel ());
         ((SpinnerNumberModel) horas.getModel ()).setMinimum (0);
-        if (pelicula != null)
-            ((SpinnerNumberModel) horas.getModel ()).setValue (pelicula.getDuracion ().toHoursPart ());
+        if (pelicula [0] != null)
+            ((SpinnerNumberModel) horas.getModel ()).setValue (pelicula [0].getDuracion ().toHoursPart ());
 
         JSpinner minutos = new JSpinner (
-                new SpinnerNumberModel (pelicula == null ? 0 : pelicula.getDuracion ().toMinutesPart (), 0, 59, 1));
+                new SpinnerNumberModel (pelicula [0] == null ? 0 : pelicula [0].getDuracion ().toMinutesPart (), 0, 59,
+                        1));
 
         ButtonGroup edad = new ButtonGroup ();
         EdadRecomendada edadValue[] = new EdadRecomendada [] {
-                pelicula == null ? EdadRecomendada.TODOS : pelicula.getEdad () };
+                pelicula [0] == null ? EdadRecomendada.TODOS : pelicula [0].getEdad () };
 
         List <JCheckBox> generos = new ArrayList <JCheckBox> ();
         SortedSet <Genero.Nombre> generosValues = new TreeSet <Genero.Nombre> (
@@ -101,6 +109,16 @@ public class PeliculaWindow extends JFrame {
                         .compareUnsigned (a.getValue (), b.getValue ())));
 
         this.setLayout (new BoxLayout (this.getContentPane (), BoxLayout.Y_AXIS));
+
+        this.addWindowListener (new WindowAdapter () {
+            @Override
+            public void windowClosed (WindowEvent e) {
+                if (w == null)
+                    return;
+
+                w.setVisible (true);
+            }
+        });
 
         this.add (((Supplier <JPanel>) ( () -> {
             JPanel p = new JPanel ();
@@ -249,8 +267,8 @@ public class PeliculaWindow extends JFrame {
                                         JCheckBox b = new JCheckBox ("Acción");
 
                                         b.setSelected (
-                                                pelicula != null
-                                                        && pelicula.getGeneros ().contains (Genero.Nombre.ACCION));
+                                                pelicula [0] != null
+                                                        && pelicula [0].getGeneros ().contains (Genero.Nombre.ACCION));
                                         b.addActionListener (e -> {
                                             if (generosValues.contains (Genero.Nombre.ACCION)) {
                                                 generosValues.remove (Genero.Nombre.ACCION);
@@ -268,8 +286,8 @@ public class PeliculaWindow extends JFrame {
                                         JCheckBox b = new JCheckBox ("Ciencia ficción");
 
                                         b.setSelected (
-                                                pelicula != null
-                                                        && pelicula.getGeneros ()
+                                                pelicula [0] != null
+                                                        && pelicula [0].getGeneros ()
                                                                 .contains (Genero.Nombre.CIENCIA_FICCION));
                                         b.addActionListener (e -> {
                                             if (generosValues.contains (Genero.Nombre.CIENCIA_FICCION)) {
@@ -287,8 +305,8 @@ public class PeliculaWindow extends JFrame {
                                         JCheckBox b = new JCheckBox ("Comedia");
 
                                         b.setSelected (
-                                                pelicula != null
-                                                        && pelicula.getGeneros ().contains (Genero.Nombre.COMEDIA));
+                                                pelicula [0] != null
+                                                        && pelicula [0].getGeneros ().contains (Genero.Nombre.COMEDIA));
                                         b.addActionListener (e -> {
                                             if (generosValues.contains (Genero.Nombre.COMEDIA)) {
                                                 generosValues.remove (Genero.Nombre.COMEDIA);
@@ -305,8 +323,9 @@ public class PeliculaWindow extends JFrame {
                                         JCheckBox b = new JCheckBox ("Documental");
 
                                         b.setSelected (
-                                                pelicula != null
-                                                        && pelicula.getGeneros ().contains (Genero.Nombre.DOCUMENTAL));
+                                                pelicula [0] != null
+                                                        && pelicula [0].getGeneros ()
+                                                                .contains (Genero.Nombre.DOCUMENTAL));
                                         b.addActionListener (e -> {
                                             if (generosValues.contains (Genero.Nombre.DOCUMENTAL)) {
                                                 generosValues.remove (Genero.Nombre.DOCUMENTAL);
@@ -323,8 +342,8 @@ public class PeliculaWindow extends JFrame {
                                         JCheckBox b = new JCheckBox ("Drama");
 
                                         b.setSelected (
-                                                pelicula != null
-                                                        && pelicula.getGeneros ().contains (Genero.Nombre.DRAMA));
+                                                pelicula [0] != null
+                                                        && pelicula [0].getGeneros ().contains (Genero.Nombre.DRAMA));
                                         b.addActionListener (e -> {
                                             if (generosValues.contains (Genero.Nombre.DRAMA)) {
                                                 generosValues.remove (Genero.Nombre.DRAMA);
@@ -341,8 +360,9 @@ public class PeliculaWindow extends JFrame {
                                         JCheckBox b = new JCheckBox ("Fantasia");
 
                                         b.setSelected (
-                                                pelicula != null
-                                                        && pelicula.getGeneros ().contains (Genero.Nombre.FANTASIA));
+                                                pelicula [0] != null
+                                                        && pelicula [0].getGeneros ()
+                                                                .contains (Genero.Nombre.FANTASIA));
                                         b.addActionListener (e -> {
                                             if (generosValues.contains (Genero.Nombre.FANTASIA)) {
                                                 generosValues.remove (Genero.Nombre.FANTASIA);
@@ -359,8 +379,9 @@ public class PeliculaWindow extends JFrame {
                                         JCheckBox b = new JCheckBox ("Melodrama");
 
                                         b.setSelected (
-                                                pelicula != null
-                                                        && pelicula.getGeneros ().contains (Genero.Nombre.MELODRAMA));
+                                                pelicula [0] != null
+                                                        && pelicula [0].getGeneros ()
+                                                                .contains (Genero.Nombre.MELODRAMA));
                                         b.addActionListener (e -> {
                                             if (generosValues.contains (Genero.Nombre.MELODRAMA)) {
                                                 generosValues.remove (Genero.Nombre.MELODRAMA);
@@ -377,8 +398,8 @@ public class PeliculaWindow extends JFrame {
                                         JCheckBox b = new JCheckBox ("Musical");
 
                                         b.setSelected (
-                                                pelicula != null
-                                                        && pelicula.getGeneros ().contains (Genero.Nombre.MUSICAL));
+                                                pelicula [0] != null
+                                                        && pelicula [0].getGeneros ().contains (Genero.Nombre.MUSICAL));
                                         b.addActionListener (e -> {
                                             if (generosValues.contains (Genero.Nombre.MUSICAL)) {
                                                 generosValues.remove (Genero.Nombre.MUSICAL);
@@ -395,8 +416,8 @@ public class PeliculaWindow extends JFrame {
                                         JCheckBox b = new JCheckBox ("Romance");
 
                                         b.setSelected (
-                                                pelicula != null
-                                                        && pelicula.getGeneros ().contains (Genero.Nombre.ROMANCE));
+                                                pelicula [0] != null
+                                                        && pelicula [0].getGeneros ().contains (Genero.Nombre.ROMANCE));
                                         b.addActionListener (e -> {
                                             if (generosValues.contains (Genero.Nombre.ROMANCE)) {
                                                 generosValues.remove (Genero.Nombre.ROMANCE);
@@ -413,8 +434,9 @@ public class PeliculaWindow extends JFrame {
                                         JCheckBox b = new JCheckBox ("Suspense");
 
                                         b.setSelected (
-                                                pelicula != null
-                                                        && pelicula.getGeneros ().contains (Genero.Nombre.SUSPENSE));
+                                                pelicula [0] != null
+                                                        && pelicula [0].getGeneros ()
+                                                                .contains (Genero.Nombre.SUSPENSE));
                                         b.addActionListener (e -> {
                                             if (generosValues.contains (Genero.Nombre.SUSPENSE)) {
                                                 generosValues.remove (Genero.Nombre.SUSPENSE);
@@ -431,8 +453,8 @@ public class PeliculaWindow extends JFrame {
                                         JCheckBox b = new JCheckBox ("Terror");
 
                                         b.setSelected (
-                                                pelicula != null
-                                                        && pelicula.getGeneros ().contains (Genero.Nombre.TERROR));
+                                                pelicula [0] != null
+                                                        && pelicula [0].getGeneros ().contains (Genero.Nombre.TERROR));
                                         b.addActionListener (e -> {
                                             if (generosValues.contains (Genero.Nombre.TERROR)) {
                                                 generosValues.remove (Genero.Nombre.TERROR);
@@ -456,7 +478,7 @@ public class PeliculaWindow extends JFrame {
                     JPanel r = new JPanel (new FlowLayout (FlowLayout.CENTER, 15, 0));
 
                     r.add (((Supplier <JButton>) ( () -> {
-                        JButton b = new JButton (pelicula == null ? "Añadir" : "Modificar");
+                        JButton b = new JButton (pelicula [0] == null ? "Añadir" : "Modificar");
                         b.addActionListener (e -> {
                             long d;
                             if ((d = ((SpinnerNumberModel) horas.getModel ()).getNumber ().longValue () * 60
@@ -492,28 +514,16 @@ public class PeliculaWindow extends JFrame {
                                     edadValue [0],
                                     generosValues);
 
-                            if (np.getNombre ().equals (np.getId ().toString ())) {
-                                Pelicula array[] = peliculas.toArray (new Pelicula [0]);
+                            pelicula [0] = (pelicula [0] == null ? np : ((Supplier <Pelicula>) ( () -> {
+                                pelicula [0].setNombre (np.getNombre ());
+                                pelicula [0].setValoracion (np.getValoracion ());
+                                pelicula [0].setFecha (np.getFecha ());
+                                pelicula [0].setDirector (np.getDirector ());
+                                pelicula [0].setDuracion (np.getDuracion ());
+                                pelicula [0].setEdad (np.getEdad ());
+                                pelicula [0].setGeneros (np.getGeneros ());
 
-                                int nuevas = 0;
-                                for (int i = 0; i < array.length; nuevas += array [i++].getNombre ().toLowerCase ()
-                                        .contains ("nueva película") ? 1 : 0)
-                                    ;
-
-                                np.setNombre (String.format ("Nueva película%s",
-                                        nuevas == 0 ? "" : String.format (" #%d", nuevas + 1)));
-                            }
-
-                            peliculas.add (pelicula == null ? np : ((Supplier <Pelicula>) ( () -> {
-                                pelicula.setNombre (np.getNombre ());
-                                pelicula.setValoracion (np.getValoracion ());
-                                pelicula.setFecha (np.getFecha ());
-                                pelicula.setDirector (np.getDirector ());
-                                pelicula.setDuracion (np.getDuracion ());
-                                pelicula.setEdad (np.getEdad ());
-                                pelicula.setGeneros (np.getGeneros ());
-
-                                return pelicula;
+                                return pelicula [0];
                             })).get ());
 
                             f.dispose ();
@@ -567,7 +577,7 @@ public class PeliculaWindow extends JFrame {
         })).get ());
 
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
-        this.setTitle ("Añadir una película");
+        this.setTitle (String.format ("%s una película", pelicula [0] == null ? "Añadir" : "Modificar"));
         this.setIconImage (
                 ((ImageIcon) UIManager.getIcon ("OptionPane.questionIcon", new Locale ("es-ES"))).getImage ());
         this.pack ();

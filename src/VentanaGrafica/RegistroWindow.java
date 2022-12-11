@@ -27,7 +27,7 @@ import cine.Administrador;
 import cine.Espectador;
 import cine.GestorBD;
 import cine.Usuario;
-import internals.JTextFieldLimit;
+import internals.swing.JTextFieldLimit;
 
 public class RegistroWindow extends JFrame {
     public RegistroWindow (GestorBD bd) throws NullPointerException {
@@ -80,6 +80,8 @@ public class RegistroWindow extends JFrame {
                                         pass.setText (password);
                                         confirm.setText (password);
                                     });
+
+                                    return b;
                                 })).get ()));
 
                 return q;
@@ -190,7 +192,7 @@ public class RegistroWindow extends JFrame {
                         return;
                     }
 
-                    bd.consumeKey (key);
+                    bd.consumeAdminKey (key);
 
                     bd.insertarDatosAdministrador (
                             new Administrador (usuario.getText (), new String (pass.getPassword ())));

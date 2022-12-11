@@ -314,6 +314,7 @@ public class HistorialWindow extends JFrame {
         this.setIconImage (
                 ((ImageIcon) UIManager.getIcon ("OptionPane.informationIcon", new Locale ("es-ES"))).getImage ());
         this.pack ();
+        this.setResizable (false);
         this.setLocationRelativeTo (null);
         this.setVisible (true);
     }

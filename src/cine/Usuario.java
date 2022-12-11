@@ -1,10 +1,18 @@
 package cine;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
+import org.passay.IllegalCharacterRule;
+import org.passay.PasswordData;
 import org.passay.PasswordGenerator;
+import org.passay.PasswordValidator;
+import org.passay.WhitespaceRule;
 
 public abstract class Usuario {
     private static final int RPASSLEN = 14;
@@ -92,9 +100,31 @@ public abstract class Usuario {
     }
 
     public static String generatePassword () {
+        enum CustomCharacterData implements org.passay.CharacterData {
+            Special ("INSUFFICIENT_SPECIAL","!#$%&()*+,-./:;<=>?@[\\]^_`{|}~");
+
+            private final String errorCode;
+            private final String characters;
+
+            CustomCharacterData (final String code, final String charString) {
+                errorCode = code;
+                characters = charString;
+            }
+
+            @Override
+            public String getErrorCode() {
+              return errorCode;
+            }
+          
+            @Override
+            public String getCharacters() {
+              return characters;
+            }
+        }
+
         return new PasswordGenerator ().generatePassword (
                 Usuario.RPASSLEN,
-                new CharacterRule (EnglishCharacterData.Special),
+                new CharacterRule(CustomCharacterData.Special),
                 new CharacterRule (EnglishCharacterData.LowerCase),
                 new CharacterRule (EnglishCharacterData.UpperCase),
                 new CharacterRule (EnglishCharacterData.Digit));

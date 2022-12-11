@@ -18,6 +18,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class GestorBD {
 
@@ -55,7 +57,7 @@ public class GestorBD {
 	        String sql2 = "CREATE TABLE IF NOT EXISTS ADMINISTRADOR (\n"
 	                   + " ID_ADMINISTRADOR STRING PRIMARY KEY NOT NULL,\n"
 	                   + " NOMBRE_ADMINISTRADOR STRING ,\n"
-	                   + " CONTRASEÑA_ADMINISTRADOR STRING \n"
+	                   + " CONTRASEï¿½A_ADMINISTRADOR STRING \n"
 	                   + " SETS_PELICULAS ARRAY \n"
 	                   + ");";
 	        String sql3 = "CREATE TABLE IF NOT EXISTS ESPECTADOR (\n"
@@ -152,7 +154,7 @@ public class GestorBD {
 		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
 		     Statement stmt = con.createStatement()) {
 			//Se define la plantilla de la sentencia SQL
-			String sql = "INSERT INTO ADMINISTRADOR (ID_ADMINISTRADOR, NOMBRE_ADMINISTRADOR, CONTRASEÑA_ADMINISTRADOR) VALUES ('%s', '%s', '%s');";
+			String sql = "INSERT INTO ADMINISTRADOR (ID_ADMINISTRADOR, NOMBRE_ADMINISTRADOR, CONTRASEï¿½A_ADMINISTRADOR) VALUES ('%s', '%s', '%s');";
 			
 			System.out.println("- Insertando administrador...");
 			
@@ -242,13 +244,14 @@ public class GestorBD {
 				ex.printStackTrace();						
 			}
 	}
-	public void CrearLlaves() {
+	public void createAdminKeys () {
 		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
 			     Statement stmt = con.createStatement()) {
 				for (int i = 0; i < 10; i++) {
-					String sql = "INSERT INTO LLAVES (LLAVE) VALUES ('%s')";
-					if (1 == stmt.executeUpdate(String.format(sql, Espectador.generatePassword()))) {
-						System.out.println(" - llaves insertadas: %s");
+					String key = Usuario.generatePassword();
+					String sql = String.format ("INSERT INTO LLAVES (LLAVE) VALUES ('%s')", key);
+					if (1 == stmt.executeUpdate(sql)) {
+						System.out.println(String.format (" - llave insertada: %s", key));
 					} else {
 						System.out.println(String.format(" - No se han insertado llaves"));
 					}
@@ -335,7 +338,7 @@ public class GestorBD {
 			while (rs.next()) {
 				UUID id = UUID.fromString(rs.getString("ID_ADMINISTRADOR"));
 				
-				administrador = new Administrador(id, rs.getString("NOMBRE_ADMINISTRADOR"), rs.getString("CONTRASEÑA_ADMINISTRADOR"), null);
+				administrador = new Administrador(id, rs.getString("NOMBRE_ADMINISTRADOR"), rs.getString("CONTRASEï¿½A_ADMINISTRADOR"), null);
 				
 				administradores.add(administrador);
 			}
@@ -370,7 +373,7 @@ public class GestorBD {
 				Collection <Entrada> historial = new TreeSet<Entrada>();
 				Set <Espectador> grupo = new TreeSet<Espectador>();
 				
-				espectador = new Espectador(id, rs.getString("NOMBRE_ESPECTADOR"), rs.getString("CONTRASEÑA_ESPECTADOR"),(byte) rs.getInt("EDAD"), preferencias, historial, grupo);
+				espectador = new Espectador(id, rs.getString("NOMBRE_ESPECTADOR"), rs.getString("CONTRASEï¿½A_ESPECTADOR"),(byte) rs.getInt("EDAD"), preferencias, historial, grupo);
 				
 				espectadores.add(espectador);
 			}
@@ -498,7 +501,7 @@ public class GestorBD {
 			while (rs.next()) {
 				UUID id = UUID.fromString(rs.getString("ID_ADMINISTRADOR"));
 				
-				administrador = new Administrador(id, rs.getString("NOMBRE_ADMINISTRADOR"), rs.getString("CONTRASEÑA_ADMINISTRADOR"), null);
+				administrador = new Administrador(id, rs.getString("NOMBRE_ADMINISTRADOR"), rs.getString("CONTRASEï¿½A_ADMINISTRADOR"), null);
 				
 
 			}
@@ -514,7 +517,7 @@ public class GestorBD {
 		
 		return administrador;
 	}
-	public List<String> obtenerLlaves() {
+	public List<String> getAdminKeys() {
 		List<String> llaves = new ArrayList<String>();
 		
 		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
@@ -542,7 +545,7 @@ public class GestorBD {
 		return llaves;
 		
 	}
-	public void borrarLlaves() {
+	public void deleteAdminKeys () {
 		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
 				Statement stmt = con.createStatement()) {
 			String sql7 = "DELETE FROM LLAVES;";
@@ -556,6 +559,25 @@ public class GestorBD {
 			}
 	}
 
+	public void regenerateAdminKeys () {
+		this.deleteAdminKeys ();
+		this.createAdminKeys ();
+	}
+
+	public void consumeAdminKey (String key) {
+		try (Connection con = DriverManager.getConnection (CONNECTION_STRING);) {
+			Statement stmt = con.createStatement ();
+
+			int r = stmt.executeUpdate (String.format ("DELETE FROM LLAVES WHERE LLAVE = %s", key));
+
+			Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO, String.format ("Se ha%s eliminado %d llave%.", r == 1 ? "" : "n", r, r == 1 ? "" : "s"));
+		}
+
+		catch (Exception e) {
+			Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING, String.format ("* Error al borrar llaves: %s", e.getMessage()));
+			e.printStackTrace();
+		}
+	}
 	
 	public void borrarDatos() {
 		//Se abre la conexiÃ³n y se obtiene el Statement

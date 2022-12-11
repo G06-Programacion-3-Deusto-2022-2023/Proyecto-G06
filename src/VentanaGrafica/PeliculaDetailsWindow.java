@@ -12,7 +12,6 @@ import javax.imageio.ImageIO;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -34,7 +33,7 @@ public class PeliculaDetailsWindow extends JFrame {
         this (pelicula, null);
     }
 
-    public PeliculaDetailsWindow (Pelicula pelicula, GestionarPeliculasWindow w) throws NullPointerException {
+    public PeliculaDetailsWindow (Pelicula pelicula, JFrame w) throws NullPointerException {
         super ();
 
         if (pelicula == null)
@@ -82,7 +81,7 @@ public class PeliculaDetailsWindow extends JFrame {
                                     String.format ("No se pudo crear una imagen a partir del archivo %s",
                                             pelicula.getRutaImagen ()));
     
-                            img = new ImageIcon (getClass ()
+                            img = new ImageIcon (this.getClass ()
                                     .getResource ("/toolbarButtonGraphics/media/Movie24.gif")).getImage ()
                                             .getScaledInstance (200, 200, 0);
                         }
@@ -245,10 +244,11 @@ public class PeliculaDetailsWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.pack ();
         this.setResizable (false);
-        this.setIconImage (new ImageIcon (getClass ()
+        this.setIconImage (new ImageIcon (this.getClass ()
                 .getResource ("/toolbarButtonGraphics/media/Movie24.gif")).getImage ()
                         .getScaledInstance (64, 64, 0));
         this.setTitle (String.format ("Detalles de %s", pelicula.getNombre ()));
+        this.setLocationRelativeTo (w);
         this.setVisible (true);
     }
 }

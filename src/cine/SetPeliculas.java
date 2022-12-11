@@ -67,7 +67,10 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
 
         this.id = id != null && ((id.getMostSignificantBits () == 0
                 && id.getLeastSignificantBits () == 0
-                && Pelicula.isAmongstCallers ("cine.SetPeliculas") && !SetPeliculas.DEFAULT_SET)
+                && Pelicula.isAmongstCallers ("cine.SetPeliculas")
+                && (!SetPeliculas.DEFAULT_SET
+                        || (SetPeliculas.DEFAULT_SET
+                                && Pelicula.isAmongstCallers ("cine.GestorBD"))))
                 || id.getMostSignificantBits () != 0 || id.getLeastSignificantBits () != 0)
                         ? id
                         : UUID.randomUUID ();
@@ -107,7 +110,8 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     }
 
     public void setNombre (String nombre) {
-        if (this.isDefault () && SetPeliculas.DEFAULT_SET)
+        if (this.isDefault () && SetPeliculas.DEFAULT_SET
+                && !Pelicula.isAmongstCallers ("cine.SetPeliculas") && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
         if (nombre != null && !nombre.equals ("")) {
@@ -138,7 +142,8 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
 
     public void setPeliculas (Collection <Pelicula> peliculas) {
         if (this.isDefault () && SetPeliculas.DEFAULT_SET
-                && !(Pelicula.isAmongstCallers ("cine.Pelicula") || Pelicula.isAmongstCallers ("cine.SetPeliculas")))
+                && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return;
 
         this.peliculas = new TreeSet <Pelicula> (
@@ -190,7 +195,7 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     @Override
     public String toString () {
         return "Set de películas (hash: " + this.hashCode () + ") " + "{\n\tID: " + this.id.toString ()
-                + (this.isDefault () ? " (set predeterminado)" : "") + "\n\tNombre: " + "\n\tTamaño: "
+                + (this.isDefault () ? " (set predeterminado)" : "") + "\n\tNombre: " + this.nombre + "\n\tTamaño: "
                 + this.size ()
                 + "\n\tAdministrador: "
                 + (this.administrador == null ? ""
@@ -205,9 +210,18 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
         return this.peliculas.size ();
     }
 
+    public static int minSize () {
+        return SetPeliculas.MIN_SIZE;
+    }
+
+    public static int maxSize () {
+        return SetPeliculas.MAX_SIZE;
+    }
+
     public boolean add (Pelicula pelicula) {
         if (this.isDefault () && SetPeliculas.DEFAULT_SET
-                && !(Pelicula.isAmongstCallers ("cine.Pelicula") || Pelicula.isAmongstCallers ("cine.SetPeliculas")))
+                && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return false;
 
         if (pelicula == null)
@@ -235,7 +249,8 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
 
     public boolean remove (Pelicula pelicula) {
         if (this.isDefault () && SetPeliculas.DEFAULT_SET
-                && !(Pelicula.isAmongstCallers ("cine.Pelicula") || Pelicula.isAmongstCallers ("cine.SetPeliculas")))
+                && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
+                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
             return false;
 
         if (!this.contains (pelicula))

@@ -39,8 +39,8 @@ import cine.Administrador;
 import cine.Espectador;
 import cine.GestorBD;
 import cine.Usuario;
-import internals.JTextFieldLimit;
 import internals.bst.Filter;
+import internals.swing.JTextFieldLimit;
 
 public class GestionarUsuariosWindow extends JFrame {
     public GestionarUsuariosWindow (GestorBD db, Administrador admin) {
@@ -63,12 +63,13 @@ public class GestionarUsuariosWindow extends JFrame {
             throw new UnsupportedOperationException (
                     "El administrador enviado a la ventana de gestión de usuarios no se encuentra en la base de datos.");
 
+        AdministradorWindow pw [] = new AdministradorWindow [] { w };
         GestionarUsuariosWindow f = this;
 
         this.addWindowListener (new WindowAdapter () {
             @Override
             public void windowClosed (WindowEvent e) {
-                if (w == null)
+                if (pw [0] == null)
                     return;
 
                 w.setVisible (true);
@@ -418,10 +419,27 @@ public class GestionarUsuariosWindow extends JFrame {
                             JLabel l = new JLabel (String.format ("%d llaves restantes", 0));
 
                             t.add (((Supplier <JButton>) ( () -> {
+                                JButton b = new JButton ("Ver llaves");
+
+                                b.addActionListener (e -> {
+                                    pw [0] = null;
+                                    f.setVisible (false);
+                                    pw [0] = w;
+
+                                    new SeeKeysWindow (db, f);
+                                });
+
+                                return b;
+                            })).get ());
+                            t.add (Box.createRigidArea (new Dimension (0, 10)));
+
+                            t.add (((Supplier <JButton>) ( () -> {
                                 JButton b = new JButton ("Regenerar llaves");
 
                                 b.addActionListener (e -> {
-                                    l.setText (String.format ("%d llaves restantes", 10));
+                                    db.regenerateAdminKeys ();
+
+                                    l.setText (String.format ("%d llaves restantes", db.getAdminKeys().size ()));
                                     l.repaint ();
                                 });
 
