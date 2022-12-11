@@ -4,7 +4,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import java.awt.event.WindowAdapter;
 import java.util.ArrayList;
 
 import javax.swing.JButton;
@@ -16,13 +16,19 @@ import javax.swing.WindowConstants;
 
 import cine.Administrador;
 import cine.Espectador;
+import cine.GestorBD;
 import cine.Usuario;
 
 public class VentanaInicioSesion extends JFrame{
 	
 	private static final long serialVersionUID = 1L;
-
-	public VentanaInicioSesion() {
+	
+	GestorBD bd;
+	
+	public VentanaInicioSesion(VentanaInicio v) {
+		bd = new GestorBD();
+		
+		VentanaInicioSesion v2 = this;
 		
 		ArrayList<Espectador> espectadores = new ArrayList<>();
 		ArrayList<Administrador> administradores = new ArrayList<>();
@@ -42,7 +48,7 @@ public class VentanaInicioSesion extends JFrame{
 		this.getContentPane().add(iniciarSesion);
 		
 		this.setTitle("Ventana inicio sesion");		
-		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
 		this.setSize(800, 600);
 		this.setLocationRelativeTo(null);
@@ -56,10 +62,10 @@ public class VentanaInicioSesion extends JFrame{
 					if (usuario.getNombre().equals(textoUsuario.getText()) && usuario.getContrasena().equals(textoContrasena.getText())) {
 						if (administradores.contains(usuario)) {
 							System.out.println("administrador");
-							SwingUtilities.invokeLater(() -> new VentanaAdministrador((Administrador) usuario));
+							SwingUtilities.invokeLater(() -> new AdministradorWindow(bd, (Administrador) usuario));
 						} else if (espectadores.contains(usuario)) {
 							System.out.println("espectador");
-							SwingUtilities.invokeLater(() -> new VentanaEspectador((Espectador) usuario));
+							SwingUtilities.invokeLater(() -> new VentanaEspectador(v2, (Espectador) usuario));
 						}
 					}
 				}
@@ -67,11 +73,11 @@ public class VentanaInicioSesion extends JFrame{
 			}
 		});
 		
-		this.addWindowListener(new WindowListener() {
+		this.addWindowListener(new WindowAdapter() {
 			
 			@Override
 			public void windowOpened(WindowEvent e) {
-				
+				v.setVisible(false);
 				
 				Espectador espectador = new Espectador("iker", "1234");
 				espectadores.add(espectador);
@@ -84,38 +90,8 @@ public class VentanaInicioSesion extends JFrame{
 			}
 			
 			@Override
-			public void windowIconified(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void windowDeiconified(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void windowDeactivated(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void windowClosing(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
 			public void windowClosed(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void windowActivated(WindowEvent e) {
-				// TODO Auto-generated method stub
+				v.setVisible(true);
 				
 			}
 		});

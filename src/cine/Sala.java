@@ -141,4 +141,12 @@ public class Sala {
         int index = this.butacas.indexOf (butaca);
         return index == -1 ? new int [] { -1, -1 } : new int [] { index / Sala.COLUMNAS, index % Sala.COLUMNAS };
     }
+    public static int getColumnas() {
+		return Sala.COLUMNAS;
+    	
+    }
+    public static int getFilas() {
+		return Sala.FILAS;
+    	
+    }
 }

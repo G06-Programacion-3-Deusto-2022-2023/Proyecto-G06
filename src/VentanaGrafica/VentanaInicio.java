@@ -3,6 +3,8 @@ package VentanaGrafica;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -10,6 +12,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
+
+import cine.Espectador;
+import cine.GestorBD;
 
 public class VentanaInicio extends JFrame {
 
@@ -23,6 +28,9 @@ public class VentanaInicio extends JFrame {
 	private JPanel Inferior;
 	
 	public VentanaInicio() {
+		VentanaInicio v = this;
+		
+		
 		
 		this.DeustoCines = new JLabel("Deusto Cines");
 		
@@ -46,15 +54,14 @@ public class VentanaInicio extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				SwingUtilities.invokeLater(() -> new VentanaInicioSesion());
-				
+				SwingUtilities.invokeLater(() -> new VentanaInicioSesion(v));
 			}
 		});
 		this.Registrarse.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("Hola");
+				SwingUtilities.invokeLater(() -> new RegistroWindow(new GestorBD()));
 				
 			}
 		});
@@ -62,7 +69,7 @@ public class VentanaInicio extends JFrame {
 	
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("Hola");
+				SwingUtilities.invokeLater(() -> new VentanaEspectador(new VentanaInicioSesion(v), new Espectador("Anonimos")));
 		
 			}
 		});
@@ -73,6 +80,7 @@ public class VentanaInicio extends JFrame {
 		this.setSize(800, 600);
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);	
+		
 	}
 	
 }

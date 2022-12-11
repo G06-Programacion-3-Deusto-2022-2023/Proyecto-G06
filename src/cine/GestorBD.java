@@ -79,8 +79,11 @@ public class GestorBD {
 	        		   + " NOMBRE_SETPELICULA STRING,\n"
 	        		   + " NOMBRE_PELICULA STRING \n"
 	        		   + ");";
+	        String sql7 = "CREATE TABLE IF NOT EXISTS LLAVES (\n"
+	        		   + " LLAVE STRING \n"
+	        		   + ");";
 	        	        
-	        if (!stmt.execute(sql1) && !stmt.execute(sql2) && !stmt.execute(sql3) && !stmt.execute(sql4) && !stmt.execute(sql5) && !stmt.execute(sql6)) {
+	        if (!stmt.execute(sql1) && !stmt.execute(sql2) && !stmt.execute(sql3) && !stmt.execute(sql4) && !stmt.execute(sql5) && !stmt.execute(sql6) && !stmt.execute(sql7)) {
 	        	System.out.println("- Se ha creado la tabla pelicula, la tabla administrador, la tabla espectador, la tabla complemento y la tabla set_Pelicula");
 	        }
 	        
@@ -101,8 +104,9 @@ public class GestorBD {
 	        String sql4 = "DROP TABLE IF EXISTS COMPLEMENTO";
 	        String sql5 = "DROP TABLE IF EXISTS SET_PELICULA";
 			String sql6 = "DROP TABLE IF EXISTS ARRAY_SET_PELICULA";
+			String sql7 = "DROP TABLE IF EXISTS LLAVES";
 	        //Se ejecuta la sentencia de creación de la tabla Estudiantes
-	        if (!stmt.execute(sql1) && !stmt.execute(sql2) && !stmt.execute(sql3) && !stmt.execute(sql4) && !stmt.execute(sql5) && !stmt.execute(sql6)) {
+	        if (!stmt.execute(sql1) && !stmt.execute(sql2) && !stmt.execute(sql3) && !stmt.execute(sql4) && !stmt.execute(sql5) && !stmt.execute(sql6) && !stmt.execute(sql7)) {
 	        	System.out.println("Se han borrado las tablas");
 	        }
 		} catch (Exception ex) {
@@ -233,6 +237,23 @@ public class GestorBD {
 						}
 					}
 				}			
+			} catch (Exception ex) {
+				System.err.println(String.format("* Error al insertar datos de la BBDD: %s", ex.getMessage()));
+				ex.printStackTrace();						
+			}
+	}
+	public void CrearLlaves() {
+		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
+			     Statement stmt = con.createStatement()) {
+				for (int i = 0; i < 10; i++) {
+					String sql = "INSERT INTO LLAVES (LLAVE) VALUES ('%s')";
+					if (1 == stmt.executeUpdate(String.format(sql, Espectador.generatePassword()))) {
+						System.out.println(" - llaves insertadas: %s");
+					} else {
+						System.out.println(String.format(" - No se han insertado llaves"));
+					}
+				}
+				
 			} catch (Exception ex) {
 				System.err.println(String.format("* Error al insertar datos de la BBDD: %s", ex.getMessage()));
 				ex.printStackTrace();						
@@ -493,7 +514,47 @@ public class GestorBD {
 		
 		return administrador;
 	}
-	
+	public List<String> obtenerLlaves() {
+		List<String> llaves = new ArrayList<String>();
+		
+		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
+			     Statement stmt = con.createStatement()) {
+				String sql = "SELECT * FROM LLAVES";
+				
+				//Se ejecuta la sentencia y se obtiene el ResultSet con los resutlados
+				ResultSet rs = stmt.executeQuery(sql);			
+				
+				//Se recorre el ResultSet y se crean objetos Cliente
+				while (rs.next()) {
+					
+					llaves.add(rs.getString("LLAVE"));
+					
+				}
+				
+				//Se cierra el ResultSet
+				rs.close();
+				
+				System.out.println(String.format("- Se han recuperado %d llaves...", llaves.size()));			
+			} catch (Exception ex) {
+				System.err.println(String.format("* Error al obtener datos de la BBDD : %s", ex.getMessage()));
+				ex.printStackTrace();						
+			}		
+		return llaves;
+		
+	}
+	public void borrarLlaves() {
+		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
+				Statement stmt = con.createStatement()) {
+			String sql7 = "DELETE FROM LLAVES;";
+			
+			int result7 = stmt.executeUpdate(sql7);
+			
+			System.out.println(String.format("- Se han borrado %d llaves", result7));
+			} catch (Exception ex) {
+				System.err.println(String.format("* Error al borrar llaves: %s", ex.getMessage()));
+				ex.printStackTrace();	
+			}
+	}
 
 	
 	public void borrarDatos() {
@@ -505,15 +566,19 @@ public class GestorBD {
 			String sql2 = "DELETE FROM ADMINISTRADOR;";	
 			String sql3 = "DELETE FROM ESPECTADOR;";	
 			String sql4 = "DELETE FROM COMPLEMENTO;";	
-			String sql5 = "DELETE FROM SET_PELICULA;";	
+			String sql5 = "DELETE FROM SET_PELICULA;";
+			String sql6 = "DELETE FROM ARRAY_SETPELICULA";
+			String sql7 = "DELETE FROM LLAVES;";	
 			
 			int result1 = stmt.executeUpdate(sql1);
 			int result2 = stmt.executeUpdate(sql2);
 			int result3 = stmt.executeUpdate(sql3);
 			int result4 = stmt.executeUpdate(sql4);
 			int result5 = stmt.executeUpdate(sql5);
+			stmt.executeUpdate(sql6);
+			int result7 = stmt.executeUpdate(sql7);
 			
-			System.out.println(String.format("- Se han borrado %d peliculas, %d Administradores, %d espectadores, %d complementos, %d setsPeliculas,", result1, result2, result3, result4, result5));
+			System.out.println(String.format("- Se han borrado %d peliculas, %d Administradores, %d espectadores, %d complementos, %d setsPeliculas, %d llaves", result1, result2, result3, result4, result5, result7));
 		} catch (Exception ex) {
 			System.err.println(String.format("* Error al borrar datos de la BBDD: %s", ex.getMessage()));
 			ex.printStackTrace();						
