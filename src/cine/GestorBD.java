@@ -56,8 +56,8 @@ public class GestorBD {
 	                   + ");";
 	        String sql2 = "CREATE TABLE IF NOT EXISTS ADMINISTRADOR (\n"
 	                   + " ID_ADMINISTRADOR STRING PRIMARY KEY NOT NULL,\n"
-	                   + " NOMBRE_ADMINISTRADOR STRING ,\n"
-	                   + " CONTRASE�A_ADMINISTRADOR STRING \n"
+	                   + " NOMBRE_ADMINISTRADOR STRING,\n"
+	                   + " CONTRASENA_ADMINISTRADOR STRING \n"
 	                   + " SETS_PELICULAS ARRAY \n"
 	                   + ");";
 	        String sql3 = "CREATE TABLE IF NOT EXISTS ESPECTADOR (\n"
@@ -154,7 +154,7 @@ public class GestorBD {
 		try (Connection con = DriverManager.getConnection(CONNECTION_STRING);
 		     Statement stmt = con.createStatement()) {
 			//Se define la plantilla de la sentencia SQL
-			String sql = "INSERT INTO ADMINISTRADOR (ID_ADMINISTRADOR, NOMBRE_ADMINISTRADOR, CONTRASE�A_ADMINISTRADOR) VALUES ('%s', '%s', '%s');";
+			String sql = "INSERT INTO ADMINISTRADOR (ID_ADMINISTRADOR, NOMBRE_ADMINISTRADOR, CONTRASENA_ADMINISTRADOR) VALUES ('%s', '%s', '%s');";
 			
 			System.out.println("- Insertando administrador...");
 			
@@ -338,7 +338,7 @@ public class GestorBD {
 			while (rs.next()) {
 				UUID id = UUID.fromString(rs.getString("ID_ADMINISTRADOR"));
 				
-				administrador = new Administrador(id, rs.getString("NOMBRE_ADMINISTRADOR"), rs.getString("CONTRASE�A_ADMINISTRADOR"), null);
+				administrador = new Administrador(id, rs.getString("NOMBRE_ADMINISTRADOR"), rs.getString("CONTRASENA_ADMINISTRADOR"), null);
 				
 				administradores.add(administrador);
 			}
@@ -373,7 +373,7 @@ public class GestorBD {
 				Collection <Entrada> historial = new TreeSet<Entrada>();
 				Set <Espectador> grupo = new TreeSet<Espectador>();
 				
-				espectador = new Espectador(id, rs.getString("NOMBRE_ESPECTADOR"), rs.getString("CONTRASE�A_ESPECTADOR"),(byte) rs.getInt("EDAD"), preferencias, historial, grupo);
+				espectador = new Espectador(id, rs.getString("NOMBRE_ESPECTADOR"), rs.getString("CONTRASENA_ESPECTADOR"),(byte) rs.getInt("EDAD"), preferencias, historial, grupo);
 				
 				espectadores.add(espectador);
 			}
@@ -501,7 +501,7 @@ public class GestorBD {
 			while (rs.next()) {
 				UUID id = UUID.fromString(rs.getString("ID_ADMINISTRADOR"));
 				
-				administrador = new Administrador(id, rs.getString("NOMBRE_ADMINISTRADOR"), rs.getString("CONTRASE�A_ADMINISTRADOR"), null);
+				administrador = new Administrador(id, rs.getString("NOMBRE_ADMINISTRADOR"), rs.getString("CONTRASENA_ADMINISTRADOR"), null);
 				
 
 			}
@@ -568,13 +568,13 @@ public class GestorBD {
 		try (Connection con = DriverManager.getConnection (CONNECTION_STRING);) {
 			Statement stmt = con.createStatement ();
 
-			int r = stmt.executeUpdate (String.format ("DELETE FROM LLAVES WHERE LLAVE = %s", key));
+			int r = stmt.executeUpdate (String.format ("DELETE FROM LLAVES WHERE LLAVE = \'%s\'", key));
 
-			Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO, String.format ("Se ha%s eliminado %d llave%.", r == 1 ? "" : "n", r, r == 1 ? "" : "s"));
+			Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO, String.format ("Se ha%s eliminado %d llave%s.", r == 1 ? "" : "n", r, r == 1 ? "" : "s"));
 		}
 
 		catch (Exception e) {
-			Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING, String.format ("* Error al borrar llaves: %s", e.getMessage()));
+			Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING, String.format ("* Error al borrar llaves: \"%s\"", e.getMessage()));
 			e.printStackTrace();
 		}
 	}

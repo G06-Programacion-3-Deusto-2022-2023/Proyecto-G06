@@ -303,7 +303,7 @@ public class GestionarPeliculasWindow extends JFrame {
                     ((SpinnerNumberModel) maxDur.getModel ()).setMinimum (1);
                     ((SpinnerNumberModel) maxDur
                             .getModel ())
-                                    .setValue (Pelicula
+                                    .setValue (db.obtenerDatosPeliculas().isEmpty() ? Integer.MAX_VALUE : Pelicula
                                             .orderBy (db.obtenerDatosPeliculas (),
                                                     (Comparator <Pelicula>) ( (Pelicula x, Pelicula y) -> x
                                                             .getDuracion ().compareTo (y.getDuracion ())),

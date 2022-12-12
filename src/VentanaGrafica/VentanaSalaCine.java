@@ -21,6 +21,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
 import cine.Espectador;
+import cine.GestorBD;
 import cine.Pelicula;
 import cine.Sala;
 
@@ -36,7 +37,7 @@ public class VentanaSalaCine extends JFrame {
 	boolean FilaSeleccionada;
 	boolean ColumnaSeleccionada;
 	
-	public VentanaSalaCine(VentanaSeleccionarPelicula v2,Espectador espectador, Pelicula pelicula) {
+	public VentanaSalaCine(GestorBD db, VentanaSeleccionarPelicula v2,Espectador espectador, Pelicula pelicula) {
 		
 		VentanaSalaCine v = this;
 		
@@ -44,7 +45,7 @@ public class VentanaSalaCine extends JFrame {
 		FilaSeleccionada = false;
 		sala = new Sala();
 		ListFilaColumna = new ArrayList<Pair<Integer,Integer>>();
-		JLabel seleccionarPelicula = new JLabel("Seleccionar pelicula");
+		JLabel seleccionarPelicula = new JLabel("Seleccionar asiento");
 		JComboBox<Integer> Fila = new JComboBox<Integer>();
 		JComboBox<Integer> Columna = new JComboBox<Integer>();
 		JPanel PanelNorth = new JPanel(new GridLayout(2,1));
@@ -98,7 +99,7 @@ public class VentanaSalaCine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				Pair<Integer,Integer> butaca = new Pair<Integer, Integer>((Integer) Fila.getSelectedItem(), (Integer) Columna.getSelectedItem());
 				
-				SwingUtilities.invokeLater(() -> new VentanaComplementos(v, espectador, pelicula, sala, butaca));
+				SwingUtilities.invokeLater(() -> new VentanaComplementos(db, v, espectador, pelicula, sala, butaca));
 				
 			}
 		});

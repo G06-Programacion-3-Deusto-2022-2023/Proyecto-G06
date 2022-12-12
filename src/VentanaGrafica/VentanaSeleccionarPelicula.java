@@ -26,6 +26,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
 import cine.Espectador;
+import cine.GestorBD;
 import cine.Pelicula;
 
 public class VentanaSeleccionarPelicula extends JFrame {
@@ -41,7 +42,7 @@ public class VentanaSeleccionarPelicula extends JFrame {
 	JLabel imagen2;
 	JLabel imagen3;
 
-	public VentanaSeleccionarPelicula(Espectador espectador, VentanaEspectador v2) {
+	public VentanaSeleccionarPelicula(GestorBD db, Espectador espectador, VentanaEspectador v2) {
 		
 		VentanaSeleccionarPelicula v = this;
 		
@@ -288,7 +289,7 @@ public class VentanaSeleccionarPelicula extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				for (Pelicula pelicula : peliculas) {
 					if (pelicula.getNombre().equals(pelicula1.getText())) {
-						SwingUtilities.invokeLater(() -> new VentanaSalaCine(v,espectador, pelicula));
+						SwingUtilities.invokeLater(() -> new VentanaSalaCine(db, v,espectador, pelicula));
 					}
 				}
 				
@@ -300,7 +301,7 @@ public class VentanaSeleccionarPelicula extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				for (Pelicula pelicula : peliculas) {
 					if (pelicula.getNombre().equals(pelicula2.getText())) {
-						SwingUtilities.invokeLater(() -> new VentanaSalaCine(v,espectador, pelicula));
+						SwingUtilities.invokeLater(() -> new VentanaSalaCine(db, v,espectador, pelicula));
 					}
 				}
 				
@@ -312,7 +313,7 @@ public class VentanaSeleccionarPelicula extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				for (Pelicula pelicula : peliculas) {
 					if (pelicula.getNombre().equals(pelicula3.getText())) {
-						SwingUtilities.invokeLater(() -> new VentanaSalaCine(v,espectador, pelicula));
+						SwingUtilities.invokeLater(() -> new VentanaSalaCine(db, v,espectador, pelicula));
 					}
 				}
 				

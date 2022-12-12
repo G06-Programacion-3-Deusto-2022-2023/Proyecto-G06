@@ -27,17 +27,19 @@ public class VentanaInicio extends JFrame {
 	private JPanel Superior;
 	private JPanel Inferior;
 	
-	public VentanaInicio() {
+	public VentanaInicio () {
+		this (null);
+	}
+
+	public VentanaInicio (GestorBD db) {
 		VentanaInicio v = this;
-		
-		
 		
 		this.DeustoCines = new JLabel("Deusto Cines");
 		
 		this.Superior = new JPanel();
 		this.Superior.add(DeustoCines);
 		
-		this.inicioSesion = new JButton("Iniciar sesion como usuario");
+		this.inicioSesion = new JButton("Iniciar sesión");
 		this.Registrarse = new JButton("Registrarse");
 		this.Invitado = new JButton("Continuar como invitado");
 		
@@ -54,7 +56,7 @@ public class VentanaInicio extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				SwingUtilities.invokeLater(() -> new VentanaInicioSesion(v));
+				SwingUtilities.invokeLater(() -> new VentanaInicioSesion(db, v));
 			}
 		});
 		this.Registrarse.addActionListener(new ActionListener() {
@@ -69,7 +71,7 @@ public class VentanaInicio extends JFrame {
 	
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				SwingUtilities.invokeLater(() -> new VentanaEspectador(new VentanaInicioSesion(v), new Espectador("Anonimos")));
+				SwingUtilities.invokeLater(() -> new VentanaEspectador(db, new VentanaInicioSesion(db, v), new Espectador("Anonimos")));
 		
 			}
 		});

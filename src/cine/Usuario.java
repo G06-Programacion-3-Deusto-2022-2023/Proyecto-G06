@@ -1,18 +1,10 @@
 package cine;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
-import org.passay.IllegalCharacterRule;
-import org.passay.PasswordData;
 import org.passay.PasswordGenerator;
-import org.passay.PasswordValidator;
-import org.passay.WhitespaceRule;
 
 public abstract class Usuario {
     private static final int RPASSLEN = 14;

@@ -59,9 +59,9 @@ public class GestionarUsuariosWindow extends JFrame {
             throw new NullPointerException (
                     "No se puede pasar un administador nulo a la ventana de gestión de usuarios.");
 
-        if (!db.obtenerDatosAdministradores ().contains (admin))
-            throw new UnsupportedOperationException (
-                    "El administrador enviado a la ventana de gestión de usuarios no se encuentra en la base de datos.");
+        // if (!db.obtenerDatosAdministradores ().contains (admin))
+        //     throw new UnsupportedOperationException (
+        //             "El administrador enviado a la ventana de gestión de usuarios no se encuentra en la base de datos.");
 
         AdministradorWindow pw [] = new AdministradorWindow [] { w };
         GestionarUsuariosWindow f = this;

@@ -18,6 +18,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
 import cine.Espectador;
+import cine.GestorBD;
 import cine.Butaca;
 import cine.Complemento;
 import cine.Entrada;
@@ -29,7 +30,7 @@ public class VentanaDatosAsistencia extends JFrame {
 	
 	private static final long serialVersionUID = 1L;
 
-	public VentanaDatosAsistencia(VentanaComplementos v2,Espectador espectador, Pelicula pelicula,Sala sala ,Pair<Integer,Integer> butaca, Map<Complemento,Integer> complementos) {
+	public VentanaDatosAsistencia(GestorBD db, VentanaComplementos v2,Espectador espectador, Pelicula pelicula,Sala sala ,Pair<Integer,Integer> butaca, Map<Complemento,Integer> complementos) {
 		BigDecimal precio = BigDecimal.valueOf(7);
 		precio = PrecioComplementos(complementos, precio);
 		
@@ -54,7 +55,7 @@ public class VentanaDatosAsistencia extends JFrame {
 				Entrada entrada = new Entrada(espectador, pelicula, Calendar.getInstance(), sala, new Butaca(espectador), complementos);
 				espectador.getHistorial().add(entrada);
 				setVisible(false);
-				SwingUtilities.invokeLater(() -> new VentanaEspectador(new VentanaInicioSesion(new VentanaInicio()),espectador));
+				SwingUtilities.invokeLater(() -> new VentanaEspectador(db, new VentanaInicioSesion(db, new VentanaInicio()),espectador));
 			}
 		});
 		

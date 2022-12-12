@@ -27,6 +27,7 @@ import javax.swing.WindowConstants;
 import javax.swing.event.ChangeListener;
 
 import cine.Espectador;
+import cine.GestorBD;
 import cine.Complemento;
 import cine.Pelicula;
 import cine.Sala;
@@ -39,7 +40,7 @@ public class VentanaComplementos extends JFrame {
 	Set<Complemento> complementos;
 	Map<Complemento,Integer> complementosEspectador;
 	
-	public VentanaComplementos (VentanaSalaCine v2,Espectador espectador, Pelicula pelicula,Sala sala ,Pair<Integer, Integer> Butaca) {
+	public VentanaComplementos (GestorBD db, VentanaSalaCine v2,Espectador espectador, Pelicula pelicula,Sala sala ,Pair<Integer, Integer> Butaca) {
 		
 		VentanaComplementos v = this;
 		
@@ -50,7 +51,7 @@ public class VentanaComplementos extends JFrame {
 		JLabel unidadesTexto = new JLabel("Undidades");
 		JComboBox<String> productos = new JComboBox<String>();
 		JTextField unidades = new JTextField();
-		JButton anadir = new JButton("Añadir");
+		JButton anadir = new JButton("Anadir");
 		JButton quitar = new JButton("Quitar");
 		JButton confirmar = new JButton("Confirmar");
 		JPanel producto = new JPanel(new GridLayout(2,2));
@@ -99,7 +100,7 @@ public class VentanaComplementos extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				SwingUtilities.invokeLater(() -> new VentanaDatosAsistencia(v ,espectador, pelicula,sala ,Butaca, complementosEspectador));
+				SwingUtilities.invokeLater(() -> new VentanaDatosAsistencia(db, v ,espectador, pelicula,sala ,Butaca, complementosEspectador));
 				
 			}
 		});
@@ -114,7 +115,7 @@ public class VentanaComplementos extends JFrame {
 				complementos.add(complemento2);
 				complementos.add(complemento3);
 				
-				AñadirComplementos(productos, complementos);
+				AnadirComplementos(productos, complementos);
 				
 				v2.setVisible(false);
 			}
@@ -133,7 +134,7 @@ public class VentanaComplementos extends JFrame {
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 	}
-	public void AñadirComplementos (JComboBox<String> productos, Set<Complemento> complementos) {
+	public void AnadirComplementos (JComboBox<String> productos, Set<Complemento> complementos) {
 		List<Complemento> Lista = new ArrayList<Complemento>(complementos);
 		for (int i = 0; i < Lista.size(); i++) {
 			productos.addItem(Lista.get(i).getNombre());

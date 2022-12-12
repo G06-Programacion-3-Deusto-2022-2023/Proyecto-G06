@@ -14,6 +14,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
 import cine.Espectador;
+import cine.GestorBD;
 import cine.Sala;
 import internals.Pair;
 
@@ -21,7 +22,7 @@ public class VentanaEspectador extends JFrame {
 	
 	private static final long serialVersionUID = 1L;
 
-	public VentanaEspectador(VentanaInicioSesion v2,Espectador espectador) {
+	public VentanaEspectador(GestorBD db, VentanaInicioSesion v2,Espectador espectador) {
 		VentanaEspectador v = this;
 		
 		JButton pelicula = new JButton("Asistir a una pelcula");
@@ -35,7 +36,7 @@ public class VentanaEspectador extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				SwingUtilities.invokeLater(() -> new VentanaSeleccionarPelicula(espectador, v));
+				SwingUtilities.invokeLater(() -> new VentanaSeleccionarPelicula(db, espectador, v));
 				
 			}
 		});

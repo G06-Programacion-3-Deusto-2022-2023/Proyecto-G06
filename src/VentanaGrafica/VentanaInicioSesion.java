@@ -22,11 +22,8 @@ import cine.Usuario;
 public class VentanaInicioSesion extends JFrame{
 	
 	private static final long serialVersionUID = 1L;
-	
-	GestorBD bd;
-	
-	public VentanaInicioSesion(VentanaInicio v) {
-		bd = new GestorBD();
+		
+	public VentanaInicioSesion(GestorBD bd, VentanaInicio v) {
 		
 		VentanaInicioSesion v2 = this;
 		
@@ -35,10 +32,10 @@ public class VentanaInicioSesion extends JFrame{
 		ArrayList<Usuario> usuarios = new ArrayList<>();
 		
 		JLabel usuario = new JLabel("Usuario");
-		JLabel contrasena = new JLabel("Contrasena");
+		JLabel contrasena = new JLabel("Contraseña");
 		JButton iniciarSesion = new JButton("Iniciar sesion");
-		JTextField textoUsuario = new JTextField("usuario");
-		JTextField textoContrasena = new JTextField("contrasena");
+		JTextField textoUsuario = new JTextField();
+		JTextField textoContrasena = new JTextField();
 		
 		this.getContentPane().setLayout(new GridLayout(3,2));
 		this.getContentPane().add(usuario);
@@ -47,7 +44,7 @@ public class VentanaInicioSesion extends JFrame{
 		this.getContentPane().add(textoContrasena);
 		this.getContentPane().add(iniciarSesion);
 		
-		this.setTitle("Ventana inicio sesion");		
+		this.setTitle("Ventana inicio sesión");		
 		this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
 		this.setSize(800, 600);
@@ -61,11 +58,9 @@ public class VentanaInicioSesion extends JFrame{
 				for (Usuario usuario : usuarios) {
 					if (usuario.getNombre().equals(textoUsuario.getText()) && usuario.getContrasena().equals(textoContrasena.getText())) {
 						if (administradores.contains(usuario)) {
-							System.out.println("administrador");
 							SwingUtilities.invokeLater(() -> new AdministradorWindow(bd, (Administrador) usuario));
 						} else if (espectadores.contains(usuario)) {
-							System.out.println("espectador");
-							SwingUtilities.invokeLater(() -> new VentanaEspectador(v2, (Espectador) usuario));
+							SwingUtilities.invokeLater(() -> new VentanaEspectador(bd, v2, (Espectador) usuario));
 						}
 					}
 				}
