@@ -2,7 +2,9 @@
 bin/
 
 # Data
-data/
+data/db
+data/default
+data/img
 
 # Compiled class file
 *.class

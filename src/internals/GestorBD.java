@@ -115,7 +115,7 @@ public class GestorBD {
         }
 
         this.insert (Complemento.getDefault ().stream ().collect (Collectors.toList ()),
-                Collections.singleton (SetPeliculas.getDefault ()));
+                Collections.singleton (SetPeliculas.getDefault ()), Pelicula.getDefault ());
 
         this.createAdminKeys ();
     }

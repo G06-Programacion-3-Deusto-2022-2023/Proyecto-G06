@@ -7,6 +7,7 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Year;
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -53,7 +55,8 @@ public class PeliculaWindow extends JFrame {
         this (pelicula, null);
     }
 
-    public PeliculaWindow (Pelicula pelicula[], GestionarPeliculasWindow w) throws NullPointerException, UnsupportedOperationException {
+    public PeliculaWindow (Pelicula pelicula[], GestionarPeliculasWindow w)
+            throws NullPointerException, UnsupportedOperationException {
         super ();
 
         if (pelicula == null)
@@ -489,6 +492,13 @@ public class PeliculaWindow extends JFrame {
                                 return;
                             }
 
+                            if (generosValues.isEmpty ()) {
+                                JOptionPane.showMessageDialog (f,
+                                        "La película debe pertenecer a algún género.");
+
+                                return;
+                            }
+
                             if (!(rutaImagen.getText () == null || rutaImagen.getText ().equals ("")) &&
                                     (!new File (rutaImagen.getText ()).exists () || ((BooleanSupplier) ( () -> {
                                         try {
@@ -506,7 +516,39 @@ public class PeliculaWindow extends JFrame {
                                 return;
                             }
 
-                            Pelicula np = new Pelicula (nombre.getText (), rutaImagen.getText (),
+                            UUID id = pelicula [0] == null ? UUID.randomUUID () : pelicula [0].getId ();
+
+                            String imgPath = rutaImagen.getText ();
+                            if (!rutaImagen.getText ().equals ("")) {
+                                try {
+                                    Files.createDirectories (new File ("data/img").toPath ());
+                                }
+
+                                catch (IOException ex) {
+                                    JOptionPane.showMessageDialog (f,
+                                            "No pudo abrirse el archivo de la imagen.");
+
+                                    return;
+                                }
+
+                                File file = new File (rutaImagen.getText ());
+                                try {
+                                    Files.copy (file.toPath (), new File ("data/img/" + id.toString ()
+                                            + (file.getName ().lastIndexOf (".") == -1 ? ".jpg"
+                                                    : file.getName ().substring (file.getName ().lastIndexOf ("."))))
+                                                            .toPath (),
+                                            StandardCopyOption.REPLACE_EXISTING);
+                                }
+
+                                catch (IOException ex) {
+                                    JOptionPane.showMessageDialog (f,
+                                            "No pudo abrirse el archivo de la imagen.");
+
+                                    return;
+                                }
+                            }
+
+                            Pelicula np = new Pelicula (nombre.getText (), imgPath,
                                     (Double) valoracion.getValue (),
                                     Year.of (((SpinnerNumberModel) fecha.getModel ()).getNumber ().intValue ()),
                                     director.getText (),

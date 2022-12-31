@@ -1107,7 +1107,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
         return list;
     }
 
-    static Pelicula fromJSONObject (JSONObject o) throws NullPointerException, JSONException {
+    protected static Pelicula fromJSONObject (JSONObject o) throws NullPointerException, JSONException {
         if (o == null)
             throw new NullPointerException (String.format ("No se puede pasar un JSONObject nulo al método %s.",
                     Thread.currentThread ().getStackTrace () [0].getMethodName ()));
