@@ -1,15 +1,21 @@
 package VentanaGrafica;
 
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -21,12 +27,6 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import java.awt.FlowLayout;
-import java.awt.Font;
 
 import cine.Complemento;
 import cine.Entrada;

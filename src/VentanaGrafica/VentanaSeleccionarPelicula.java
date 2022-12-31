@@ -5,8 +5,6 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -16,7 +14,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.imageio.ImageIO;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -26,8 +23,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
 import cine.Espectador;
-import cine.GestorBD;
 import cine.Pelicula;
+import internals.GestorBD;
 
 public class VentanaSeleccionarPelicula extends JFrame {
 
@@ -85,7 +82,7 @@ public class VentanaSeleccionarPelicula extends JFrame {
 		centralSuperior.add(foto2);
 		centralSuperior.add(foto3);
 		
-		this.setTitle(espectador.getNombre());		
+		this.setTitle(espectador == null ? "Anónimo" : espectador.getNombre());
 		this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
 		this.setSize(1000, 800);

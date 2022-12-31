@@ -1,16 +1,17 @@
 package test;
 
-import java.util.function.Supplier;
+import static org.junit.Assert.assertEquals;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
 
 import cine.Complemento;
 import cine.Entrada;

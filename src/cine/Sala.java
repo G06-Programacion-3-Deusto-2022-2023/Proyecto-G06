@@ -1,11 +1,11 @@
 package cine;
 
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class Sala {
     private static final int FILAS = 15;

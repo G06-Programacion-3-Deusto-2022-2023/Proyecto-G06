@@ -1,31 +1,30 @@
 package VentanaGrafica;
 
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
-import javax.swing.JPanel;
-import javax.swing.JTextPane;
-import javax.swing.UIManager;
-import javax.swing.WindowConstants;
-
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.GridLayout;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextPane;
+import javax.swing.UIManager;
+import javax.swing.WindowConstants;
 
-import cine.GestorBD;
+import internals.GestorBD;
 
 public class SeeKeysWindow extends JFrame {
     public SeeKeysWindow (GestorBD db) {

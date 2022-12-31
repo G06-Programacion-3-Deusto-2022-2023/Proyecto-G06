@@ -9,11 +9,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import internals.HasID;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
 
-public class Entrada implements Comparable <Entrada>, Treeable <Entrada> {
+public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID {
     private static final BigDecimal DEFAULT_PRECIO = BigDecimal.valueOf (7.9);
     private static final int DESCUENTO_ESPECTADOR = 30;
 

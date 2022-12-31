@@ -1,5 +1,8 @@
 package internals.swing;
 
+import java.awt.Component;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.function.Supplier;
@@ -12,9 +15,6 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
-import java.awt.Image;
-import java.awt.Component;
-import java.awt.image.BufferedImage;
 
 import cine.Pelicula;
 

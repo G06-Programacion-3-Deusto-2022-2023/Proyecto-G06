@@ -1,34 +1,36 @@
 package cine;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.io.File;
-import java.io.IOException;
-import java.util.logging.Logger;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.stream.Collectors;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import internals.GestorBD;
+import internals.HasID;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
 
-public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPeliculas> {
+public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPeliculas>, HasID {
     private static final Random random = new Random ();
     private static final int MIN_SIZE = 7;
     private static final int MAX_SIZE = 35;
@@ -65,13 +67,12 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     public SetPeliculas (UUID id, Administrador administrador, String nombre, Collection <Pelicula> peliculas) {
         super ();
 
-        this.id = id != null && ((id.getMostSignificantBits () == 0
-                && id.getLeastSignificantBits () == 0
+        this.id = id != null && ((SetPeliculas.isDefault (id)
                 && Pelicula.isAmongstCallers ("cine.SetPeliculas")
                 && (!SetPeliculas.DEFAULT_SET
                         || (SetPeliculas.DEFAULT_SET
-                                && Pelicula.isAmongstCallers ("cine.GestorBD"))))
-                || id.getMostSignificantBits () != 0 || id.getLeastSignificantBits () != 0)
+                                && Pelicula.isAmongstCallers ("internals.GestorBD"))))
+                || !SetPeliculas.isDefault (id))
                         ? id
                         : UUID.randomUUID ();
         this.setAdministrador (administrador);
@@ -111,7 +112,8 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
 
     public void setNombre (String nombre) {
         if (this.isDefault () && SetPeliculas.DEFAULT_SET
-                && !Pelicula.isAmongstCallers ("cine.SetPeliculas") && !Pelicula.isAmongstCallers ("cine.GestorBD"))
+                && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
+                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
             return;
 
         if (nombre != null && !nombre.equals ("")) {
@@ -143,7 +145,7 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     public void setPeliculas (Collection <Pelicula> peliculas) {
         if (this.isDefault () && SetPeliculas.DEFAULT_SET
                 && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
-                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
+                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.peliculas = new TreeSet <Pelicula> (
@@ -186,7 +188,7 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
             return this.id.compareTo (set.id);
 
         int comp;
-        if ((comp = this.nombre.compareTo (set.nombre)) != 0)
+        if ((comp = this.nombre.toLowerCase ().compareTo (set.nombre.toLowerCase ())) != 0)
             return comp;
 
         return this.id.compareTo (set.id);
@@ -221,7 +223,7 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     public boolean add (Pelicula pelicula) {
         if (this.isDefault () && SetPeliculas.DEFAULT_SET
                 && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
-                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
+                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
             return false;
 
         if (pelicula == null)
@@ -250,7 +252,7 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     public boolean remove (Pelicula pelicula) {
         if (this.isDefault () && SetPeliculas.DEFAULT_SET
                 && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
-                && !Pelicula.isAmongstCallers ("cine.GestorBD"))
+                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
             return false;
 
         if (!this.contains (pelicula))
@@ -288,7 +290,11 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     }
 
     public boolean isDefault () {
-        return this.id.equals (new UUID (0L, 0L));
+        return SetPeliculas.isDefault (this.id);
+    }
+
+    public static boolean isDefault (UUID id) {
+        return id.equals (new UUID (0L, 0L));
     }
 
     protected static boolean isDefaultSet () {

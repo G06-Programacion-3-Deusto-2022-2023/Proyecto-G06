@@ -1,30 +1,27 @@
 package VentanaGrafica;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.Locale;
+import java.util.function.Supplier;
+
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-
-import java.awt.Font;
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Dimension;
-import java.awt.GridLayout;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
-import java.util.Locale;
-import java.util.function.Supplier;
 
 import cine.Administrador;
-import cine.GestorBD;
-import cine.Pelicula;
-import cine.SetPeliculas;
+import internals.GestorBD;
 
 public class AdministradorWindow extends JFrame {
     public AdministradorWindow (GestorBD db, Administrador admin) {
@@ -119,7 +116,7 @@ public class AdministradorWindow extends JFrame {
 
                         b.addActionListener (e -> {
                             pw [0] = null;
-                            f.dispose ();
+                            f.setVisible (false);
                             pw [0] = w;
 
                             new MiscOptionsWindow (db, admin, f);

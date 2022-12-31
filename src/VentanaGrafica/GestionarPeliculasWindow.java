@@ -1,38 +1,17 @@
 package VentanaGrafica;
 
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JSeparator;
-import javax.swing.JSpinner;
-import javax.swing.JTextField;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
-import javax.swing.UIManager;
-import javax.swing.WindowConstants;
-import javax.swing.AbstractButton;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.time.Duration;
-import java.time.Year;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.FlowLayout;
-
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.time.Duration;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,12 +24,34 @@ import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import javax.swing.AbstractButton;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JSeparator;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.WindowConstants;
+import javax.swing.event.ChangeListener;
+
 import cine.Administrador;
 import cine.EdadRecomendada;
 import cine.Genero;
-import cine.GestorBD;
 import cine.Pelicula;
 import cine.SetPeliculas;
+import internals.GestorBD;
 import internals.bst.Filter;
 import internals.swing.JTextFieldLimit;
 import internals.swing.PeliculasComboBoxRenderer;
@@ -78,7 +79,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
         Pelicula pelicula[] = new Pelicula [1];
         SetPeliculas setpeliculas[] = new SetPeliculas [1];
-        JButton filterButton[] = new JButton [2];
+        Runnable filters[] = new Runnable [2];
 
         this.addComponentListener (new ComponentAdapter () {
             @Override
@@ -97,10 +98,10 @@ public class GestionarPeliculasWindow extends JFrame {
                                 nuevas == 0 ? "" : String.format (" #%d", nuevas + 1)));
                     }
 
-                    db.insertarDatosPelicula (pelicula);
+                    db.insert (pelicula);
                     pelicula [0] = null;
 
-                    filterButton [0].doClick (0);
+                    filters [0].run ();
                 }
             }
         });
@@ -114,6 +115,14 @@ public class GestionarPeliculasWindow extends JFrame {
                 w.setVisible (true);
             }
         });
+
+        if (w != null)
+            w.addWindowListener (new WindowAdapter () {
+                @Override
+                public void windowClosed (WindowEvent e) {
+                    f.dispose ();
+                }
+            });
 
         this.add (((Supplier <JLabel>) ( () -> {
             JLabel l = new JLabel (
@@ -303,12 +312,13 @@ public class GestionarPeliculasWindow extends JFrame {
                     ((SpinnerNumberModel) maxDur.getModel ()).setMinimum (1);
                     ((SpinnerNumberModel) maxDur
                             .getModel ())
-                                    .setValue (db.obtenerDatosPeliculas().isEmpty() ? Integer.MAX_VALUE : Pelicula
-                                            .orderBy (db.obtenerDatosPeliculas (),
-                                                    (Comparator <Pelicula>) ( (Pelicula x, Pelicula y) -> x
-                                                            .getDuracion ().compareTo (y.getDuracion ())),
-                                                    true)
-                                            .get (0).getDuracion ().toMinutes ());
+                                    .setValue (db.obtenerDatosPeliculas ().isEmpty () ? Integer.MAX_VALUE
+                                            : Pelicula
+                                                    .orderBy (db.obtenerDatosPeliculas (),
+                                                            (Comparator <Pelicula>) ( (Pelicula x, Pelicula y) -> x
+                                                                    .getDuracion ().compareTo (y.getDuracion ())),
+                                                            true)
+                                                    .get (0).getDuracion ().toMinutes ());
                     maxDur.setToolTipText ("La duración máxima de la película (en minutos).");
 
                     JSpinner minFecha = new JSpinner (
@@ -329,187 +339,193 @@ public class GestionarPeliculasWindow extends JFrame {
 
                     JCheckBox desc = new JCheckBox ("Orden descendente");
 
-                    filterButton [0] = ((Supplier <JButton>) ( () -> {
-                        JButton b = new JButton (new ImageIcon (
-                                f.getClass ()
-                                        .getResource ("/toolbarButtonGraphics/general/Search24.gif")));
+                    ActionListener filterAL = e -> (filters [0] = () -> {
+                        if (((SpinnerNumberModel) minVal.getModel ()).getNumber ()
+                                .doubleValue () < 1
+                                || ((SpinnerNumberModel) minVal.getModel ()).getNumber ()
+                                        .doubleValue () > 10
+                                || ((SpinnerNumberModel) maxVal.getModel ()).getNumber ()
+                                        .doubleValue () < 1
+                                || ((SpinnerNumberModel) maxVal.getModel ()).getNumber ()
+                                        .doubleValue () > 10) {
+                            JOptionPane.showMessageDialog (f,
+                                    "La valoración debe ser un número entre el 1 y el 10.",
+                                    "Error al filtrar", JOptionPane.ERROR_MESSAGE);
 
-                        b.setToolTipText ("Aplicar los filtros y criterios de ordenación");
-                        b.addActionListener (e -> {
-                            if (((SpinnerNumberModel) minVal.getModel ()).getNumber ()
-                                    .doubleValue () < 1
-                                    || ((SpinnerNumberModel) minVal.getModel ()).getNumber ()
-                                            .doubleValue () > 10
-                                    || ((SpinnerNumberModel) maxVal.getModel ()).getNumber ()
-                                            .doubleValue () < 1
-                                    || ((SpinnerNumberModel) maxVal.getModel ()).getNumber ()
-                                            .doubleValue () > 10) {
-                                JOptionPane.showMessageDialog (f,
-                                        "La valoración debe ser un número entre el 1 y el 10.",
-                                        "Error al filtrar", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
 
-                                return;
-                            }
+                        if (((SpinnerNumberModel) minFecha.getModel ()).getNumber ()
+                                .intValue () < Pelicula.minFecha ().getValue ()
+                                || ((SpinnerNumberModel) minFecha.getModel ()).getNumber ()
+                                        .intValue () > Pelicula.maxFecha ().getValue ()
+                                || ((SpinnerNumberModel) maxFecha.getModel ()).getNumber ()
+                                        .intValue () < Pelicula.minFecha ().getValue ()
+                                || ((SpinnerNumberModel) maxFecha.getModel ()).getNumber ()
+                                        .intValue () > Pelicula.maxFecha ().getValue ()) {
+                            JOptionPane.showMessageDialog (f,
+                                    String.format ("La fecha de salida estar entre el %s y el %s.",
+                                            Pelicula.minFecha ().getValue (), Pelicula.maxFecha ().getValue ()),
+                                    "Error al filtrar", JOptionPane.ERROR_MESSAGE);
 
-                            if (((SpinnerNumberModel) minFecha.getModel ()).getNumber ()
-                                    .intValue () < Pelicula.minFecha ().getValue ()
-                                    || ((SpinnerNumberModel) minFecha.getModel ()).getNumber ()
-                                            .intValue () > Pelicula.maxFecha ().getValue ()
-                                    || ((SpinnerNumberModel) maxFecha.getModel ()).getNumber ()
-                                            .intValue () < Pelicula.minFecha ().getValue ()
-                                    || ((SpinnerNumberModel) maxFecha.getModel ()).getNumber ()
-                                            .intValue () > Pelicula.maxFecha ().getValue ()) {
-                                JOptionPane.showMessageDialog (f,
-                                        String.format ("La fecha de salida estar entre el %s y el %s.",
-                                                Pelicula.minFecha ().getValue (), Pelicula.maxFecha ().getValue ()),
-                                        "Error al filtrar", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
 
-                                return;
-                            }
+                        if (((SpinnerNumberModel) minVal.getModel ()).getNumber ()
+                                .doubleValue () > ((SpinnerNumberModel) maxVal.getModel ()).getNumber ()
+                                        .doubleValue ()) {
+                            JOptionPane.showMessageDialog (f,
+                                    "La valoración mínima no puede ser mayor que la valoración máxima.",
+                                    "Error al filtrar", JOptionPane.ERROR_MESSAGE);
 
-                            if (((SpinnerNumberModel) minVal.getModel ()).getNumber ()
-                                    .doubleValue () > ((SpinnerNumberModel) maxVal.getModel ()).getNumber ()
-                                            .doubleValue ()) {
-                                JOptionPane.showMessageDialog (f,
-                                        "La valoración mínima no puede ser mayor que la valoración máxima.",
-                                        "Error al filtrar", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
 
-                                return;
-                            }
+                        if (((SpinnerNumberModel) minFecha.getModel ()).getNumber ()
+                                .intValue () > ((SpinnerNumberModel) maxFecha.getModel ()).getNumber ()
+                                        .intValue ()) {
+                            JOptionPane.showMessageDialog (f,
+                                    "La fecha de salida mínima no puede ser mayor que la fecha de salida máxima.",
+                                    "Error al filtrar", JOptionPane.ERROR_MESSAGE);
 
-                            if (((SpinnerNumberModel) minFecha.getModel ()).getNumber ()
-                                    .intValue () > ((SpinnerNumberModel) maxFecha.getModel ()).getNumber ()
-                                            .intValue ()) {
-                                JOptionPane.showMessageDialog (f,
-                                        "La fecha de salida mínima no puede ser mayor que la fecha de salida máxima.",
-                                        "Error al filtrar", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
 
-                                return;
-                            }
+                        peliculas.removeAllItems ();
 
-                            peliculas.removeAllItems ();
+                        // Copiar y pegar es una guarrada pero no me apetece
+                        // nada crear una variable.
+                        List <Pelicula> list = Pelicula.tree (db.obtenerDatosPeliculas (),
+                                desc.isSelected ()
+                                        ? (Comparator <Pelicula>) ((new Comparator [] {
+                                                (Object x, Object y) -> ((Pelicula) y)
+                                                        .getNombre ()
+                                                        .compareTo (
+                                                                ((Pelicula) x).getNombre ()),
+                                                (Object x,
+                                                        Object y) -> ((Double) ((Pelicula) y)
+                                                                .getValoracion ()).compareTo (
+                                                                        (Double) ((Pelicula) x)
+                                                                                .getValoracion ()),
+                                                (Object x, Object y) -> ((Pelicula) y)
+                                                        .getFecha ()
+                                                        .compareTo (
+                                                                ((Pelicula) x).getFecha ()),
+                                                (Object x, Object y) -> ((Pelicula) y)
+                                                        .getDirector ()
+                                                        .compareTo (
+                                                                ((Pelicula) x).getDirector ()),
+                                                (Object x, Object y) -> ((Pelicula) y)
+                                                        .getDuracion ()
+                                                        .compareTo (
+                                                                ((Pelicula) x)
+                                                                        .getDuracion ()) }) [((IntSupplier) ( () -> {
+                                                                            List <AbstractButton> l = Collections
+                                                                                    .list (orderBy
+                                                                                            .getElements ());
+                                                                            for (int i = 0; i < l
+                                                                                    .size (); i++)
+                                                                                if (l.get (i)
+                                                                                        .isSelected ())
+                                                                                    return i;
 
-                            // Copiar y pegar es una guarrada pero no me apetece
-                            // nada crear una variable.
-                            List <Pelicula> list = Pelicula.tree (db.obtenerDatosPeliculas (),
-                                    desc.isSelected ()
-                                            ? (Comparator <Pelicula>) ((new Comparator [] {
-                                                    (Object x, Object y) -> ((Pelicula) y)
-                                                            .getNombre ()
-                                                            .compareTo (
-                                                                    ((Pelicula) x).getNombre ()),
-                                                    (Object x,
-                                                            Object y) -> ((Double) ((Pelicula) y)
-                                                                    .getValoracion ()).compareTo (
-                                                                            (Double) ((Pelicula) x)
-                                                                                    .getValoracion ()),
-                                                    (Object x, Object y) -> ((Pelicula) y)
-                                                            .getFecha ()
-                                                            .compareTo (
-                                                                    ((Pelicula) x).getFecha ()),
-                                                    (Object x, Object y) -> ((Pelicula) y)
-                                                            .getDirector ()
-                                                            .compareTo (
-                                                                    ((Pelicula) x).getDirector ()),
-                                                    (Object x, Object y) -> ((Pelicula) y)
-                                                            .getDuracion ()
-                                                            .compareTo (
-                                                                    ((Pelicula) x)
-                                                                            .getDuracion ()) }) [((IntSupplier) ( () -> {
-                                                                                List <AbstractButton> l = Collections
-                                                                                        .list (orderBy
-                                                                                                .getElements ());
-                                                                                for (int i = 0; i < l
-                                                                                        .size (); i++)
-                                                                                    if (l.get (i)
-                                                                                            .isSelected ())
-                                                                                        return i;
+                                                                            return 0;
+                                                                        })).getAsInt ()])
+                                        : (Comparator <Pelicula>) ((new Comparator [] {
+                                                (Object x, Object y) -> ((Pelicula) x)
+                                                        .getNombre ()
+                                                        .compareTo (
+                                                                ((Pelicula) y).getNombre ()),
+                                                (Object x,
+                                                        Object y) -> ((Double) ((Pelicula) x)
+                                                                .getValoracion ()).compareTo (
+                                                                        (Double) ((Pelicula) y)
+                                                                                .getValoracion ()),
+                                                (Object x, Object y) -> ((Pelicula) x)
+                                                        .getFecha ()
+                                                        .compareTo (
+                                                                ((Pelicula) y).getFecha ()),
+                                                (Object x, Object y) -> ((Pelicula) x)
+                                                        .getDirector ()
+                                                        .compareTo (
+                                                                ((Pelicula) y).getDirector ()),
+                                                (Object x, Object y) -> ((Pelicula) x)
+                                                        .getDuracion ()
+                                                        .compareTo (
+                                                                ((Pelicula) y)
+                                                                        .getDuracion ()) }) [((IntSupplier) ( () -> {
+                                                                            List <AbstractButton> l = Collections
+                                                                                    .list (orderBy
+                                                                                            .getElements ());
+                                                                            for (int i = 0; i < l
+                                                                                    .size (); i++)
+                                                                                if (l.get (i)
+                                                                                        .isSelected ())
+                                                                                    return i;
 
-                                                                                return 0;
-                                                                            })).getAsInt ()])
-                                            : (Comparator <Pelicula>) ((new Comparator [] {
-                                                    (Object x, Object y) -> ((Pelicula) x)
-                                                            .getNombre ()
-                                                            .compareTo (
-                                                                    ((Pelicula) y).getNombre ()),
-                                                    (Object x,
-                                                            Object y) -> ((Double) ((Pelicula) x)
-                                                                    .getValoracion ()).compareTo (
-                                                                            (Double) ((Pelicula) y)
-                                                                                    .getValoracion ()),
-                                                    (Object x, Object y) -> ((Pelicula) x)
-                                                            .getFecha ()
-                                                            .compareTo (
-                                                                    ((Pelicula) y).getFecha ()),
-                                                    (Object x, Object y) -> ((Pelicula) x)
-                                                            .getDirector ()
-                                                            .compareTo (
-                                                                    ((Pelicula) y).getDirector ()),
-                                                    (Object x, Object y) -> ((Pelicula) x)
-                                                            .getDuracion ()
-                                                            .compareTo (
-                                                                    ((Pelicula) y)
-                                                                            .getDuracion ()) }) [((IntSupplier) ( () -> {
-                                                                                List <AbstractButton> l = Collections
-                                                                                        .list (orderBy
-                                                                                                .getElements ());
-                                                                                for (int i = 0; i < l
-                                                                                        .size (); i++)
-                                                                                    if (l.get (i)
-                                                                                            .isSelected ())
-                                                                                        return i;
+                                                                            return 0;
+                                                                        })).getAsInt ()]),
+                                (Filter <Pelicula>) ( (Pelicula x) -> x.getNombre ().toLowerCase (Locale.ROOT)
+                                        .contains (nombre.getText ().toLowerCase (Locale.ROOT))
+                                        && x.getValoracion () >= ((SpinnerNumberModel) minVal
+                                                .getModel ()).getNumber ().doubleValue ()
+                                        && x.getValoracion () <= ((SpinnerNumberModel) maxVal
+                                                .getModel ()).getNumber ().doubleValue ()
+                                        && x.getFecha ().compareTo (Year
+                                                .of (((SpinnerNumberModel) minFecha.getModel ())
+                                                        .getNumber ().intValue ())) >= 0
+                                        && x.getFecha ().compareTo (Year
+                                                .of (((SpinnerNumberModel) maxFecha.getModel ())
+                                                        .getNumber ().intValue ())) <= 0
+                                        && x.getDirector ().contains (director.getText ())
+                                        && x.getDuracion ().compareTo (Duration.ofMinutes (
+                                                ((SpinnerNumberModel) minDur.getModel ())
+                                                        .getNumber ().longValue ())) >= 0
+                                        && x.getDuracion ().compareTo (Duration.ofMinutes (
+                                                ((SpinnerNumberModel) maxDur.getModel ())
+                                                        .getNumber ().longValue ())) <= 0
+                                        && ((BooleanSupplier) ( () -> {
+                                            for (int i = 0; i < edades.size (); i++)
+                                                if (edades.get (i).isSelected ()
+                                                        && x.getEdad ()
+                                                                .getValue () == EdadRecomendada
+                                                                        .values () [i]
+                                                                                .getValue ())
+                                                    return true;
 
-                                                                                return 0;
-                                                                            })).getAsInt ()]),
-                                    (Filter <Pelicula>) ( (Pelicula x) -> x.getNombre ().toLowerCase (Locale.ROOT)
-                                            .contains (nombre.getText ().toLowerCase (Locale.ROOT))
-                                            && x.getValoracion () >= ((SpinnerNumberModel) minVal
-                                                    .getModel ()).getNumber ().doubleValue ()
-                                            && x.getValoracion () <= ((SpinnerNumberModel) maxVal
-                                                    .getModel ()).getNumber ().doubleValue ()
-                                            && x.getFecha ().compareTo (Year
-                                                    .of (((SpinnerNumberModel) minFecha.getModel ())
-                                                            .getNumber ().intValue ())) >= 0
-                                            && x.getFecha ().compareTo (Year
-                                                    .of (((SpinnerNumberModel) maxFecha.getModel ())
-                                                            .getNumber ().intValue ())) <= 0
-                                            && x.getDirector ().contains (director.getText ())
-                                            && x.getDuracion ().compareTo (Duration.ofMinutes (
-                                                    ((SpinnerNumberModel) minDur.getModel ())
-                                                            .getNumber ().longValue ())) >= 0
-                                            && x.getDuracion ().compareTo (Duration.ofMinutes (
-                                                    ((SpinnerNumberModel) maxDur.getModel ())
-                                                            .getNumber ().longValue ())) <= 0
-                                            && ((BooleanSupplier) ( () -> {
-                                                for (int i = 0; i < edades.size (); i++)
-                                                    if (edades.get (i).isSelected ()
-                                                            && x.getEdad ()
-                                                                    .getValue () == EdadRecomendada
-                                                                            .values () [i]
-                                                                                    .getValue ())
-                                                        return true;
+                                            return false;
+                                        })).getAsBoolean () && ((BooleanSupplier) ( () -> {
+                                            short values = 0;
 
-                                                return false;
-                                            })).getAsBoolean () && ((BooleanSupplier) ( () -> {
-                                                short values = 0;
+                                            for (int i = 0; i < generos.size (); i++)
+                                                if (generos.get (i).isSelected ())
+                                                    values += 1 << i;
 
-                                                for (int i = 0; i < generos.size (); i++)
-                                                    if (generos.get (i).isSelected ())
-                                                        values += 1 << i;
+                                            return (Genero.Nombre.toValor (x.getGeneros ())
+                                                    & values) != 0;
+                                        })).getAsBoolean ()))
+                                .getValues ();
 
-                                                return (Genero.Nombre.toValor (x.getGeneros ())
-                                                        | values) != 0;
-                                            })).getAsBoolean ()))
-                                    .getValues ();
+                        for (int i = 0; i < list.size (); peliculas.addItem (list.get (i++)))
+                            ;
 
-                            for (int i = 0; i < list.size (); peliculas.addItem (list.get (i++)))
-                                ;
+                        peliculas.repaint ();
+                    }).run ();
+                    ChangeListener filterCL = e -> filters [0].run ();
 
-                            peliculas.repaint ();
-                        });
-
-                        return b;
-                    })).get ();
+                    nombre.addActionListener (filterAL);
+                    director.addActionListener (filterAL);
+                    for (int i = 0; i < generos.size (); generos.get (i++).addActionListener (filterAL))
+                        ;
+                    for (int i = 0; i < edades.size (); edades.get (i++).addActionListener (filterAL))
+                        ;
+                    minVal.addChangeListener (filterCL);
+                    maxVal.addChangeListener (filterCL);
+                    minDur.addChangeListener (filterCL);
+                    maxDur.addChangeListener (filterCL);
+                    minFecha.addChangeListener (filterCL);
+                    maxFecha.addChangeListener (filterCL);
+                    desc.addActionListener (filterAL);
 
                     JButton peliculaButtons[] = new JButton [] {
                             ((Supplier <JButton>) ( () -> {
@@ -544,7 +560,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                     pw [0] = null;
                                     f.setVisible (false);
                                     pw [0] = w;
-    
+
                                     pelicula [0] = (Pelicula) peliculas.getSelectedItem ();
                                     new PeliculaWindow (pelicula, f);
                                 });
@@ -565,8 +581,6 @@ public class GestionarPeliculasWindow extends JFrame {
                                                     "Cancelar"
                                             }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
                                         return;
-
-                                    filterButton [0].doClick (0);
                                 });
 
                                 return b;
@@ -841,6 +855,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                             JRadioButton b = new JRadioButton ("Nombre");
 
                                             b.setSelected (true);
+                                            b.addActionListener (filterAL);
 
                                             orderBy.add (b);
 
@@ -850,6 +865,8 @@ public class GestionarPeliculasWindow extends JFrame {
                                         ww.add (((Supplier <JRadioButton>) ( () -> {
                                             JRadioButton b = new JRadioButton ("Valoracion");
 
+                                            b.addActionListener (filterAL);
+
                                             orderBy.add (b);
 
                                             return b;
@@ -857,6 +874,8 @@ public class GestionarPeliculasWindow extends JFrame {
 
                                         ww.add (((Supplier <JRadioButton>) ( () -> {
                                             JRadioButton b = new JRadioButton ("Fecha");
+
+                                            b.addActionListener (filterAL);
 
                                             orderBy.add (b);
 
@@ -866,6 +885,8 @@ public class GestionarPeliculasWindow extends JFrame {
                                         ww.add (((Supplier <JRadioButton>) ( () -> {
                                             JRadioButton b = new JRadioButton ("Director");
 
+                                            b.addActionListener (filterAL);
+
                                             orderBy.add (b);
 
                                             return b;
@@ -873,6 +894,8 @@ public class GestionarPeliculasWindow extends JFrame {
 
                                         ww.add (((Supplier <JRadioButton>) ( () -> {
                                             JRadioButton b = new JRadioButton ("Duracion");
+
+                                            b.addActionListener (filterAL);
 
                                             orderBy.add (b);
 
@@ -893,10 +916,6 @@ public class GestionarPeliculasWindow extends JFrame {
                             })).get ());
 
                             t.add (Box.createRigidArea (new Dimension (0, 25)));
-
-                            t.add (filterButton [0]);
-
-                            t.add (Box.createRigidArea (new Dimension (0, 100)));
 
                             t.add (((Supplier <JPanel>) ( () -> {
                                 JPanel u = new JPanel ();
@@ -1018,77 +1037,74 @@ public class GestionarPeliculasWindow extends JFrame {
 
                     JCheckBox desc = new JCheckBox ("Orden descendente");
 
-                    filterButton [1] = ((Supplier <JButton>) ( () -> {
-                        JButton b = new JButton (new ImageIcon (
-                                f.getClass ()
-                                        .getResource ("/toolbarButtonGraphics/general/Search24.gif")));
+                    ActionListener filterAL = e -> filters [1] = () -> {
+                        if (((SpinnerNumberModel) minSize.getModel ()).getNumber ().intValue () < SetPeliculas
+                                .minSize ()
+                                || ((SpinnerNumberModel) minSize.getModel ()).getNumber ()
+                                        .intValue () > SetPeliculas.maxSize ()
+                                || ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
+                                        .intValue () < SetPeliculas.minSize ()
+                                || ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
+                                        .intValue () > SetPeliculas.maxSize ()) {
+                            JOptionPane.showMessageDialog (f,
+                                    String.format ("El tamaño del set debe ser un número en el intervalo [%d, %d].",
+                                            SetPeliculas.minSize (), SetPeliculas.maxSize ()),
+                                    "Error al filtrar", JOptionPane.ERROR_MESSAGE);
 
-                        b.setToolTipText ("Aplicar los filtros y criterios de ordenación");
-                        b.addActionListener (e -> {
-                            if (((SpinnerNumberModel) minSize.getModel ()).getNumber ().intValue () < SetPeliculas
-                                    .minSize ()
-                                    || ((SpinnerNumberModel) minSize.getModel ()).getNumber ()
-                                            .intValue () > SetPeliculas.maxSize ()
-                                    || ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
-                                            .intValue () < SetPeliculas.minSize ()
-                                    || ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
-                                            .intValue () > SetPeliculas.maxSize ()) {
-                                JOptionPane.showMessageDialog (f,
-                                        String.format ("El tamaño del set debe ser un número en el intervalo [%d, %d].",
-                                                SetPeliculas.minSize (), SetPeliculas.maxSize ()),
-                                        "Error al filtrar", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
 
-                                return;
-                            }
+                        if (((SpinnerNumberModel) minSize.getModel ()).getNumber ()
+                                .intValue () > ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
+                                        .intValue ()) {
+                            JOptionPane.showMessageDialog (f,
+                                    "El tamaño máximo no puede ser menor que el tamaño mínimo.",
+                                    "Error al filtrar", JOptionPane.ERROR_MESSAGE);
 
-                            if (((SpinnerNumberModel) minSize.getModel ()).getNumber ()
-                                    .intValue () > ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
-                                            .intValue ()) {
-                                JOptionPane.showMessageDialog (f,
-                                        "El tamaño máximo no puede ser menor que el tamaño mínimo.",
-                                        "Error al filtrar", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
 
-                                return;
-                            }
+                        setspeliculas.removeAllItems ();
 
-                            setspeliculas.removeAllItems ();
+                        List <SetPeliculas> list = SetPeliculas.tree (db.obtenerDatosSetPeliculas ().stream ()
+                                .filter (x -> x.getAdministrador () == null || x.getAdministrador ().equals (admin))
+                                .collect (Collectors.toList ()),
+                                (Collections.list (orderBy.getElements ()).get (0).isSelected ()
+                                        ? 0
+                                        : 1) == 0
+                                                ? (desc.isSelected ()
+                                                        ? (Comparator <SetPeliculas>) ( (SetPeliculas x,
+                                                                SetPeliculas y) -> y.getNombre ()
+                                                                        .compareTo (x.getNombre ()))
+                                                        : (Comparator <SetPeliculas>) ( (SetPeliculas x,
+                                                                SetPeliculas y) -> x.getNombre ()
+                                                                        .compareTo (y.getNombre ())))
+                                                : (desc.isSelected ()
+                                                        ? (Comparator <SetPeliculas>) ( (SetPeliculas x,
+                                                                SetPeliculas y) -> ((Integer) y.size ())
+                                                                        .compareTo ((Integer) x.size ()))
+                                                        : (Comparator <SetPeliculas>) ( (SetPeliculas x,
+                                                                SetPeliculas y) -> ((Integer) x.size ())
+                                                                        .compareTo ((Integer) y.size ()))),
+                                (Filter <SetPeliculas>) ( (SetPeliculas x) -> x.getNombre ()
+                                        .toLowerCase (Locale.ROOT)
+                                        .contains (nombre.getText ().toLowerCase (Locale.ROOT))
+                                        && x.size () >= ((SpinnerNumberModel) minSize.getModel ()).getNumber ()
+                                                .intValue ()
+                                        && x.size () <= ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
+                                                .intValue ()))
+                                .getValues ();
 
-                            List <SetPeliculas> list = SetPeliculas.tree (db.obtenerDatosSetPeliculas ().stream ()
-                                    .filter (x -> x.getAdministrador () == null || x.getAdministrador ().equals (admin))
-                                    .collect (Collectors.toList ()),
-                                    (Collections.list (orderBy.getElements ()).get (0).isSelected ()
-                                            ? 0
-                                            : 1) == 0
-                                                    ? (desc.isSelected ()
-                                                            ? (Comparator <SetPeliculas>) ( (SetPeliculas x,
-                                                                    SetPeliculas y) -> y.getNombre ()
-                                                                            .compareTo (x.getNombre ()))
-                                                            : (Comparator <SetPeliculas>) ( (SetPeliculas x,
-                                                                    SetPeliculas y) -> x.getNombre ()
-                                                                            .compareTo (y.getNombre ())))
-                                                    : (desc.isSelected ()
-                                                            ? (Comparator <SetPeliculas>) ( (SetPeliculas x,
-                                                                    SetPeliculas y) -> ((Integer) y.size ())
-                                                                            .compareTo ((Integer) x.size ()))
-                                                            : (Comparator <SetPeliculas>) ( (SetPeliculas x,
-                                                                    SetPeliculas y) -> ((Integer) x.size ())
-                                                                            .compareTo ((Integer) y.size ()))),
-                                    (Filter <SetPeliculas>) ( (SetPeliculas x) -> x.getNombre ()
-                                            .toLowerCase (Locale.ROOT)
-                                            .contains (nombre.getText ().toLowerCase (Locale.ROOT))
-                                            && x.size () >= ((SpinnerNumberModel) minSize.getModel ()).getNumber ()
-                                                    .intValue ()
-                                            && x.size () <= ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
-                                                    .intValue ()))
-                                    .getValues ();
-
-                            for (int i = 0; i < list.size (); setspeliculas.addItem (list.get (i++)))
-                                ;
+                        for (int i = 0; i < list.size (); setspeliculas.addItem (list.get (i++)))
                             ;
-                        });
+                        ;
+                    };
+                    ChangeListener filterCL = e -> filters [1].run ();
 
-                        return b;
-                    })).get ();
+                    nombre.addActionListener (filterAL);
+                    minSize.addChangeListener (filterCL);
+                    maxSize.addChangeListener (filterCL);
+                    desc.addActionListener (filterAL);
 
                     JButton setButtons[] = new JButton [] {
                             ((Supplier <JButton>) ( () -> {
@@ -1123,9 +1139,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                 JButton b = new JButton ("Modificar");
 
                                 b.setEnabled (false);
-                                b.addActionListener (e -> {
-                                    filterButton [1].doClick (0);
-                                });
+                                b.addActionListener (filterAL);
 
                                 return b;
                             })).get (),
@@ -1144,7 +1158,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                             }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
                                         return;
 
-                                    filterButton [1].doClick (0);
+                                    filters [1].run ();
                                 });
 
                                 return b;
@@ -1281,6 +1295,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                             JRadioButton b = new JRadioButton ("Nombre");
 
                                             b.setSelected (true);
+                                            b.addActionListener (filterAL);
 
                                             orderBy.add (b);
 
@@ -1289,6 +1304,8 @@ public class GestionarPeliculasWindow extends JFrame {
 
                                         ww.add (((Supplier <JRadioButton>) ( () -> {
                                             JRadioButton b = new JRadioButton ("Valoracion");
+
+                                            b.addActionListener (filterAL);
 
                                             orderBy.add (b);
 
@@ -1307,10 +1324,6 @@ public class GestionarPeliculasWindow extends JFrame {
                             })).get ());
 
                             t.add (Box.createRigidArea (new Dimension (0, 25)));
-
-                            t.add (filterButton [1]);
-
-                            t.add (Box.createRigidArea (new Dimension (0, 100)));
 
                             t.add (((Supplier <JPanel>) ( () -> {
                                 JPanel u = new JPanel ();
@@ -1355,7 +1368,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                             b.addActionListener (e -> {
 
-                                filterButton [1].doClick (0);
+                                filters [1].run ();
                             });
 
                             return b;

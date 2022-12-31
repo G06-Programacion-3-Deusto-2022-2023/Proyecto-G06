@@ -1,16 +1,5 @@
 package VentanaGrafica;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
-import java.time.Year;
-import java.time.Duration;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
@@ -18,6 +7,17 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.time.Year;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 import javax.swing.AbstractButton;
 import javax.swing.Box;
@@ -39,10 +39,10 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
-import cine.Pelicula;
-import internals.swing.JTextFieldLimit;
 import cine.EdadRecomendada;
 import cine.Genero;
+import cine.Pelicula;
+import internals.swing.JTextFieldLimit;
 
 /*
  * Esta es la primera ventana que hice en el proyecto y se nota
@@ -58,7 +58,7 @@ public class PeliculaWindow extends JFrame {
 
         if (pelicula == null)
             throw new NullPointerException (
-                    "No se puede pasar una colección nula de películas a la ventana de creación de películas.");
+                    "No se puede pasar un array nulo de películas a la ventana de creación/modificación de películas.");
 
         if (pelicula.length != 1)
             throw new UnsupportedOperationException (

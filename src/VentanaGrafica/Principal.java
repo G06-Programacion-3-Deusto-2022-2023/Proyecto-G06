@@ -1,23 +1,21 @@
 package VentanaGrafica;
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.SwingUtilities;
 
-import cine.GestorBD;
-import cine.Pelicula;
-import cine.SetPeliculas;
+import cine.Administrador;
+import internals.GestorBD;
 
 public class Principal {
+    public static void main (String [] args) {
+        GestorBD db = new GestorBD ();
+        new LoadingWindow ( () -> {
+            if (GestorBD.getDBFile ().exists ())
+                db.borrarBBDD ();
+            db.crearBBDD();
 
-	public static void main (String [] args) {
-		GestorBD db = new GestorBD ();
-		db.borrarBBDD ();
-		db.crearBBDD ();
-		db.insertarDatosPelicula (Pelicula.getDefault ().toArray (new Pelicula [0]));
-		db.insertarDatosSetPelicula (SetPeliculas.getDefault ());
-		db.createAdminKeys ();
-			SwingUtilities.invokeLater ( () -> new VentanaInicio (db));
-	}
-
+            db.insert (new Administrador ("mikel",
+                    "1234"));
+        });
+        SwingUtilities.invokeLater ( () -> new VentanaInicio (db));
+    }
 }

@@ -6,7 +6,9 @@ import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.PasswordGenerator;
 
-public abstract class Usuario {
+import internals.HasID;
+
+public abstract class Usuario implements HasID {
     private static final int RPASSLEN = 14;
 
     protected UUID id;
@@ -69,7 +71,7 @@ public abstract class Usuario {
             return this.id.compareTo (usuario.id);
 
         int comp;
-        if ((comp = this.nombre.compareTo (usuario.nombre)) != 0)
+        if ((comp = this.nombre.toLowerCase ().compareTo (usuario.nombre.toLowerCase ())) != 0)
             return comp;
 
         return this.id.compareTo (usuario.id);
@@ -93,7 +95,7 @@ public abstract class Usuario {
 
     public static String generatePassword () {
         enum CustomCharacterData implements org.passay.CharacterData {
-            Special ("INSUFFICIENT_SPECIAL","!#$%&()*+,-./:;<=>?@[\\]^_`{|}~");
+            Special ("INSUFFICIENT_SPECIAL", "!#$%&()*+,-./:;<=>?@[\\]^_`{|}~");
 
             private final String errorCode;
             private final String characters;
@@ -104,19 +106,19 @@ public abstract class Usuario {
             }
 
             @Override
-            public String getErrorCode() {
-              return errorCode;
+            public String getErrorCode () {
+                return errorCode;
             }
-          
+
             @Override
-            public String getCharacters() {
-              return characters;
+            public String getCharacters () {
+                return characters;
             }
         }
 
         return new PasswordGenerator ().generatePassword (
                 Usuario.RPASSLEN,
-                new CharacterRule(CustomCharacterData.Special),
+                new CharacterRule (CustomCharacterData.Special),
                 new CharacterRule (EnglishCharacterData.LowerCase),
                 new CharacterRule (EnglishCharacterData.UpperCase),
                 new CharacterRule (EnglishCharacterData.Digit));

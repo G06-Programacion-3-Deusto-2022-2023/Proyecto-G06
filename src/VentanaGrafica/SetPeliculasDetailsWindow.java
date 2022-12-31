@@ -1,28 +1,26 @@
 package VentanaGrafica;
 
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.UIManager;
-import javax.swing.WindowConstants;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.Locale;
+import java.util.Vector;
+import java.util.function.Supplier;
+
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-
-import java.awt.Font;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
-import java.util.Locale;
-import java.util.Vector;
-import java.util.function.Supplier;
+import javax.swing.UIManager;
+import javax.swing.WindowConstants;
 
 import cine.Pelicula;
 import cine.SetPeliculas;

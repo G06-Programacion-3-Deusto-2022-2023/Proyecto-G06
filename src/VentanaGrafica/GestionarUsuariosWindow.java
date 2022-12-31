@@ -1,30 +1,14 @@
 package VentanaGrafica;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JFrame;
-import javax.swing.UIManager;
-import javax.swing.WindowConstants;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JSeparator;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-
-import java.awt.Font;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,10 +19,27 @@ import java.util.Vector;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JSeparator;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.WindowConstants;
+
 import cine.Administrador;
 import cine.Espectador;
-import cine.GestorBD;
 import cine.Usuario;
+import internals.GestorBD;
 import internals.bst.Filter;
 import internals.swing.JTextFieldLimit;
 
@@ -60,10 +61,11 @@ public class GestionarUsuariosWindow extends JFrame {
                     "No se puede pasar un administador nulo a la ventana de gestión de usuarios.");
 
         // if (!db.obtenerDatosAdministradores ().contains (admin))
-        //     throw new UnsupportedOperationException (
-        //             "El administrador enviado a la ventana de gestión de usuarios no se encuentra en la base de datos.");
+        // throw new UnsupportedOperationException (
+        // "El administrador enviado a la ventana de gestión de usuarios no se
+        // encuentra en la base de datos.");
 
-        AdministradorWindow pw [] = new AdministradorWindow [] { w };
+        AdministradorWindow pw[] = new AdministradorWindow [] { w };
         GestionarUsuariosWindow f = this;
 
         this.addWindowListener (new WindowAdapter () {
@@ -75,6 +77,14 @@ public class GestionarUsuariosWindow extends JFrame {
                 w.setVisible (true);
             }
         });
+
+        if (w != null)
+            w.addWindowListener (new WindowAdapter () {
+                @Override
+                public void windowClosed (WindowEvent e) {
+                    f.dispose ();
+                }
+            });
 
         this.add (((Supplier <JLabel>) ( () -> {
             JLabel l = new JLabel (admin.getNombre ());
@@ -148,6 +158,54 @@ public class GestionarUsuariosWindow extends JFrame {
                                         "Orden descendente")
                         }));
 
+                        ActionListener filterAL = e -> {
+                            users.removeAllItems ();
+
+                            List <Usuario> list = ((Supplier <List <Usuario>>) ( () -> {
+                                List <Usuario> u = new ArrayList <Usuario> ();
+
+                                if (bb.get (0).isSelected ())
+                                    u.addAll (Administrador
+                                            .tree (db.obtenerDatosAdministradores (),
+                                                    !bb.get (2).isSelected ()
+                                                            ? (Comparator <Administrador>) ( (
+                                                                    Administrador x,
+                                                                    Administrador y) -> x.compareTo (y))
+                                                            : (Comparator <Administrador>) ( (
+                                                                    Administrador x,
+                                                                    Administrador y) -> y
+                                                                            .compareTo (x)),
+                                                    (Filter <Administrador>) ( (Administrador x) -> x
+                                                            .getNombre ().contains (filter.getText ())))
+                                            .getValues ());
+
+                                if (bb.get (1).isSelected ())
+                                    u.addAll (Espectador
+                                            .tree (db.obtenerDatosEspectadores (),
+                                                    !bb.get (2).isSelected ()
+                                                            ? (Comparator <Espectador>) ( (Espectador x,
+                                                                    Espectador y) -> x.compareTo (y))
+                                                            : (Comparator <Espectador>) ( (Espectador x,
+                                                                    Espectador y) -> y.compareTo (x)),
+                                                    (Filter <Espectador>) ( (Espectador x) -> x
+                                                            .getNombre ().contains (filter.getText ())))
+                                            .getValues ());
+
+                                return u;
+                            })).get ();
+
+                            for (int i = 0; i < list.size (); i++)
+                                users.addItem (list.get (i).getNombre ()
+                                        + (list.get (i) instanceof Administrador ? " (A)" : " (E)"));
+
+                            users.repaint ();
+                        };
+
+                        filter.addActionListener (filterAL);
+                        bb.get (0).addActionListener (filterAL);
+                        bb.get (1).addActionListener (filterAL);
+                        bb.get (2).addActionListener (filterAL);
+
                         s.add (((Supplier <JPanel>) ( () -> {
                             JPanel t = new JPanel (new FlowLayout (FlowLayout.CENTER, 10, 0));
 
@@ -189,55 +247,6 @@ public class GestionarUsuariosWindow extends JFrame {
                                 return u;
                             })).get (), BorderLayout.CENTER);
 
-                            t.add (Box.createRigidArea (new Dimension (15, 0)));
-
-                            t.add (((Supplier <JButton>) ( () -> {
-                                JButton b = new JButton (new ImageIcon (
-                                        getClass ()
-                                                .getResource ("/toolbarButtonGraphics/general/Search24.gif")));
-
-                                b.addActionListener (e -> {
-                                    users.removeAllItems ();
-
-                                    List <Usuario> list = ((Supplier <List <Usuario>>) ( () -> {
-                                        List <Usuario> u = new ArrayList <Usuario> ();
-
-                                        if (bb.get (0).isSelected ())
-                                            u.addAll (Administrador
-                                                    .tree (db.obtenerDatosAdministradores (),
-                                                            !bb.get (2).isSelected ()
-                                                                    ? (Comparator <Administrador>) ( (
-                                                                            Administrador x,
-                                                                            Administrador y) -> x.compareTo (y))
-                                                                    : (Comparator <Administrador>) ( (
-                                                                            Administrador x,
-                                                                            Administrador y) -> y
-                                                                                    .compareTo (x)),
-                                                            (Filter <Administrador>) ( (Administrador x) -> x
-                                                                    .getNombre ().contains (filter.getText ())))
-                                                    .getValues ());
-
-                                        if (bb.get (1).isSelected ())
-                                            u.addAll (Espectador
-                                                    .tree (db.obtenerDatosEspectadores (),
-                                                            !bb.get (2).isSelected ()
-                                                                    ? (Comparator <Espectador>) ( (Espectador x,
-                                                                            Espectador y) -> x.compareTo (y))
-                                                                    : (Comparator <Espectador>) ( (Espectador x,
-                                                                            Espectador y) -> y.compareTo (x)),
-                                                            (Filter <Espectador>) ( (Espectador x) -> x
-                                                                    .getNombre ().contains (filter.getText ())))
-                                                    .getValues ());
-
-                                        return u;
-                                    })).get ();
-
-                                    users.repaint ();
-                                });
-
-                                return b;
-                            })).get ());
-
                             return t;
                         })).get ());
 
@@ -261,6 +270,13 @@ public class GestionarUsuariosWindow extends JFrame {
 
                         t.add (((Supplier <JButton>) ( () -> {
                             JButton b = new JButton ("Cambiar contraseña");
+
+                            b.addActionListener (e -> {
+                                String passwd;
+
+                                if ((passwd = JOptionPane.showInputDialog ("Introduce la nueva contraseña.")) == null)
+                                    return;
+                            });
 
                             return b;
                         })).get ());
@@ -315,6 +331,8 @@ public class GestionarUsuariosWindow extends JFrame {
                         JPanel s = new JPanel (new GridLayout (2, 2, 25, 0));
                         s.setAlignmentX (Component.CENTER_ALIGNMENT);
 
+                        JLabel l = new JLabel (String.format ("%d llaves restantes", db.getAdminKeys ().size ()));
+
                         s.add (((Supplier <JPanel>) ( () -> {
                             JPanel t = new JPanel ();
                             t.setLayout (new BoxLayout (t, BoxLayout.Y_AXIS));
@@ -327,52 +345,62 @@ public class GestionarUsuariosWindow extends JFrame {
                                     user.setToolTipText ("Nombre de usuario (obligatorio)");
 
                                     JPasswordField pass = new JPasswordField (new JTextFieldLimit (28), "", 25);
-                                    pass.setToolTipText ("Contraseña (dejar vacío para usar una contraseña aleatoria)");
+
+                                    pass.setToolTipText (
+                                            "Contraseña (dejar vacío para usar una contraseña aleatoria)");
 
                                     JComboBox <String> role = new JComboBox <String> (new Vector <String> (
                                             Arrays.asList (new String [] { "Espectador", "Administrador" })));
 
                                     for (;;) {
-                                        if (JOptionPane.showOptionDialog (f,
-                                                new Object [] { "Introduce un nombre de usuario y una contraseña", user,
-                                                        pass,
-                                                        role },
-                                                "Crear usuario", JOptionPane.OK_CANCEL_OPTION,
-                                                JOptionPane.QUESTION_MESSAGE,
-                                                null, null, null) == JOptionPane.CANCEL_OPTION)
+                                        if (Arrays.asList (JOptionPane.CANCEL_OPTION, JOptionPane.CLOSED_OPTION)
+                                                .contains (JOptionPane.showOptionDialog (f,
+                                                        new Object [] {
+                                                                "Introduce un nombre de usuario y una contraseña", user,
+                                                                pass,
+                                                                role },
+                                                        "Crear usuario", JOptionPane.OK_CANCEL_OPTION,
+                                                        JOptionPane.QUESTION_MESSAGE,
+                                                        null, null, null)))
                                             return;
 
                                         if (user.getText ().equals ("")) {
                                             JOptionPane.showMessageDialog (f,
-                                                    "El usuario debe tener un nombre.");
+                                                    "El usuario debe tener un nombre.",
+                                                    "Error en el registro",
+                                                    JOptionPane.ERROR_MESSAGE);
 
                                             continue;
                                         }
 
                                         if (user.getText ().length () < 3) {
                                             JOptionPane.showMessageDialog (f,
-                                                    "El nombre de usuario debe ser de al menos 3 carácteres.");
+                                                    "El nombre de usuario debe ser de al menos 3 carácteres.",
+                                                    "Error en el registro",
+                                                    JOptionPane.ERROR_MESSAGE);
 
                                             continue;
                                         }
 
                                         if (user.getText ().contains (" ")) {
                                             JOptionPane.showMessageDialog (f,
-                                                    "El nombre de usuario no puede contener espacios.");
+                                                    "El nombre de usuario no puede contener espacios.",
+                                                    "Error en el registro",
+                                                    JOptionPane.ERROR_MESSAGE);
 
                                             continue;
                                         }
 
-                                        if ((role.getSelectedIndex () == 0
-                                                && db.obtenerDatosEspectadores ().stream ().map (Espectador::getNombre)
-                                                        .collect (Collectors.toList ()).contains (user.getText ()))
-                                                || (role.getSelectedIndex () == 1
-                                                        && db.obtenerDatosAdministradores ().stream ()
-                                                                .map (Administrador::getNombre)
-                                                                .collect (Collectors.toList ())
-                                                                .contains (user.getText ()))) {
+                                        if (db.obtenerDatosEspectadores ().stream ().map (Espectador::getNombre)
+                                                .collect (Collectors.toList ()).contains (user.getText ())
+                                                || db.obtenerDatosAdministradores ().stream ()
+                                                        .map (Administrador::getNombre)
+                                                        .collect (Collectors.toList ())
+                                                        .contains (user.getText ())) {
                                             JOptionPane.showMessageDialog (f,
-                                                    "El nombre de usuario no está disponible.");
+                                                    "El nombre de usuario no está disponible.",
+                                                    "Error en el registro",
+                                                    JOptionPane.ERROR_MESSAGE);
 
                                             continue;
                                         }
@@ -380,13 +408,15 @@ public class GestionarUsuariosWindow extends JFrame {
                                         if (!new String (pass.getPassword ()).equals ("")
                                                 && new String (pass.getPassword ()).length () < 4) {
                                             JOptionPane.showMessageDialog (f,
-                                                    "La contraseña del usuario debe ser de al menos 4 carácteres.");
+                                                    "La contraseña del usuario debe ser de al menos 4 carácteres.",
+                                                    "Error en el registro",
+                                                    JOptionPane.ERROR_MESSAGE);
 
                                             continue;
                                         }
 
                                         if (role.getSelectedIndex () == 0) {
-                                            db.insertarDatosEspectador (new Espectador (user.getText (),
+                                            db.insert (new Espectador (user.getText (),
                                                     new String (pass.getPassword ()).equals ("")
                                                             ? Usuario.generatePassword ()
                                                             : new String (pass.getPassword ())));
@@ -394,7 +424,34 @@ public class GestionarUsuariosWindow extends JFrame {
                                             return;
                                         }
 
-                                        db.insertarDatosAdministrador (new Administrador (user.getText (),
+                                        if (db.getAdminKeys ().isEmpty ()) {
+                                            JOptionPane.showMessageDialog (f,
+                                                    "No se puede registrar más administradores por el momento. Contacta con un administrador.",
+                                                    "Error en el registro de administrador",
+                                                    JOptionPane.ERROR_MESSAGE);
+
+                                            return;
+                                        }
+
+                                        for (;;) {
+                                            String key;
+                                            if ((key = JOptionPane.showInputDialog (f,
+                                                    "Para finalizar el registro como administrador introduce una de las llaves de un solo uso disponibles.")) == null)
+                                                return;
+
+                                            if (!db.getAdminKeys ().contains (key))
+                                                continue;
+
+                                            db.consumeAdminKey (key);
+
+                                            l.setText (
+                                                    String.format ("%d llaves restantes", db.getAdminKeys ().size ()));
+                                            l.repaint ();
+
+                                            break;
+                                        }
+
+                                        db.insert (new Administrador (user.getText (),
                                                 new String (pass.getPassword ()).equals ("")
                                                         ? Usuario.generatePassword ()
                                                         : new String (pass.getPassword ())));
@@ -414,9 +471,7 @@ public class GestionarUsuariosWindow extends JFrame {
                         s.add (((Supplier <JPanel>) ( () -> {
                             JPanel t = new JPanel ();
                             t.setLayout (new BoxLayout (t, BoxLayout.Y_AXIS));
-                            t.setAlignmentY (CENTER_ALIGNMENT);
-
-                            JLabel l = new JLabel (String.format ("%d llaves restantes", 0));
+                            t.setAlignmentY (Component.CENTER_ALIGNMENT);
 
                             t.add (((Supplier <JButton>) ( () -> {
                                 JButton b = new JButton ("Ver llaves");
@@ -436,12 +491,12 @@ public class GestionarUsuariosWindow extends JFrame {
                             t.add (((Supplier <JButton>) ( () -> {
                                 JButton b = new JButton ("Regenerar llaves");
 
-                                b.addActionListener (e -> {
+                                b.addActionListener (e -> new LoadingWindow ( () -> {
                                     db.regenerateAdminKeys ();
 
-                                    l.setText (String.format ("%d llaves restantes", db.getAdminKeys().size ()));
+                                    l.setText (String.format ("%d llaves restantes", db.getAdminKeys ().size ()));
                                     l.repaint ();
-                                });
+                                }));
 
                                 return b;
                             })).get ());
@@ -517,12 +572,6 @@ public class GestionarUsuariosWindow extends JFrame {
             return p;
         })).get (), BorderLayout.CENTER);
 
-        this.add (((Supplier <JLabel>) ( () -> {
-            JLabel l = new JLabel (" ");
-            l.setFont (l.getFont ().deriveFont (Font.BOLD, 16f));
-
-            return l;
-        })).get (), BorderLayout.PAGE_END);
 
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle ("Gestionar usuarios");
