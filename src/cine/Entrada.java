@@ -1,23 +1,29 @@
 package cine;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import internals.HasID;
+import internals.Pair;
+import internals.Settings;
+import internals.Triplet;
+import internals.Utils;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
 
 public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID {
-    private static final BigDecimal DEFAULT_PRECIO = BigDecimal.valueOf (7.9);
-    private static final int DESCUENTO_ESPECTADOR = 30;
-
     private UUID id;
     private Espectador espectador;
     private Pelicula pelicula;
@@ -71,6 +77,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
         this.setButaca (butaca);
         this.setComplementos (complementos);
         this.setValoracion (valoracion);
+        this.setPrecio ();
     }
 
     public Entrada (Entrada entrada) {
@@ -119,7 +126,8 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
     }
 
     public void setButaca (Butaca butaca) {
-        this.butaca = this.sala == null || butaca == null || !this.sala.getButacas().contains (butaca) ? this.butaca : butaca;
+        this.butaca = this.sala == null || butaca == null || !this.sala.getButacas ().contains (butaca) ? this.butaca
+                : butaca;
     }
 
     public Map <Complemento, Integer> getComplementos () {
@@ -127,11 +135,14 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
     }
 
     public void setComplementos (Map <Complemento, Integer> complementos) {
-        if (complementos == null || complementos.equals (this.complementos))
+        if (complementos == null) {
+            if (this.complementos == null)
+                this.complementos = new TreeMap <Complemento, Integer> ();
+
             return;
+        }
 
         this.complementos = complementos;
-        this.calcularPrecio ();
     }
 
     public double getValoracion () {
@@ -147,11 +158,15 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
     }
 
     public static BigDecimal getDefaultPrecio () {
-        return new BigDecimal (Entrada.DEFAULT_PRECIO.toString ());
+        return Settings.getPrecioEntrada ();
     }
 
-    public static int getDescuentoEspectador () {
-        return Entrada.DESCUENTO_ESPECTADOR;
+    public void setPrecio () {
+        this.precio = Settings.getPrecioEntrada ()
+                .subtract (new BigDecimal (Settings.getDescuento ()).scaleByPowerOfTen (-2)
+                        .multiply (Settings.getDiaEspectador () == Utils.getCurrentDay () ? BigDecimal.ONE
+                                : BigDecimal.ZERO))
+                .setScale (2, RoundingMode.HALF_EVEN);
     }
 
     @Override
@@ -191,21 +206,54 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
 
     @Override
     public String toString () {
-        return "Entrada [id=" + id + ", espectador=" + espectador + ", pelicula=" + pelicula + ", fecha=" + fecha
-                + ", sala=" + sala + ", butaca=" + butaca + ", complementos=" + complementos + ", precio=" + precio
-                + ", valoracion=" + valoracion + "]";
+        return String.format (
+                "Entrada (hash: %d) {%n\tID: %s%n\tEspectador: %s (ID: %s)%n\tPelícula: %s (ID: %s)%n\tFecha: %s%n\tSala: %s%n%s%n\tComplementos: %s%n\tPrecio: %.2f €%n\tValoración: %s%n\tTotal: %.2f €%n}",
+                this.hashCode (), this.id.toString (), this.espectador.getNombre (), this.espectador.getId (),
+                this.pelicula.getNombre (), this.pelicula.getId (), ((Supplier <String>) ( () -> {
+                    Triplet <Integer, Integer, Integer> date = Utils.getDate (this.fecha);
+
+                    return String.format ("%d/%02d/%d", date.x, date.y, date.z);
+                })).get (), ((Supplier <String>) ( () -> {
+                    int i = Sala.indexOf (this.sala);
+
+                    return i == -1 ? "-" : String.format ("%d", i);
+                })).get (), (((Supplier <String>) ( () -> {
+                    Pair <Integer, Integer> i = this.sala == null ? null : this.sala.indexOf (this.butaca);
+
+                    return String.format ("\tButaca: %s%n\tFila: %s", i == null ? "-" : Integer.toString (i.x + 1),
+                            i == null ? "-" : Integer.toString (i.y + 1));
+                })).get ()), ((Supplier <String>) ( () -> {
+                    if (this.complementos.isEmpty ())
+                        return "ninguno";
+
+                    StringBuilder str = new StringBuilder ("\t{");
+
+                    List <Map.Entry <Complemento, Integer>> c = this.complementos.entrySet ().stream ()
+                            .collect (Collectors.toList ());
+                    for (int i = 0; i < c.size (); i++)
+                        str.append (String.format ("\t\t%n%s (%.2f €%s, x%d),", c.get (i).getKey ().getNombre (),
+                                c.get (i).getKey ().getPrecio ().doubleValue (),
+                                c.get (i).getKey ().getDescuento () == 0 ? ""
+                                        : String.format ("descuento del %d %%", c.get (i).getKey ().getDescuento ()),
+                                c.get (i).getValue ().intValue ()));
+
+                    return str.deleteCharAt (str.length () - 1).append ("%n\t}").toString ();
+                })).get (), this.precio.doubleValue (),
+                Double.isNaN (this.valoracion) || this.valoracion < 1 || this.valoracion > 10 ? "-"
+                        : String.format ("%.1f", this.valoracion),
+                this.total ().doubleValue ());
     }
 
-    private void calcularPrecio () {
-        this.precio = Entrada.DEFAULT_PRECIO
-                .subtract (new BigDecimal (Entrada.DESCUENTO_ESPECTADOR).scaleByPowerOfTen (-2)
-                        .multiply (false ? BigDecimal.ONE : BigDecimal.ZERO));
+    public BigDecimal total () {
+        BigDecimal p = new BigDecimal (this.precio.doubleValue ());
 
         ArrayList <Map.Entry <Complemento, Integer>> keyValueArray = new ArrayList <Map.Entry <Complemento, Integer>> (
                 complementos.entrySet ());
         for (int i = 0; i < complementos.size (); i++)
-            this.precio = this.precio.add (keyValueArray.get (i).getKey ().getPrecio ()
+            p = p.add (keyValueArray.get (i).getKey ().getPrecio ()
                     .multiply (new BigDecimal (keyValueArray.get (i).getValue ())));
+
+        return p.setScale (2, RoundingMode.HALF_EVEN);
     }
 
     public static BST <Entrada> tree (Collection <Entrada> values) {

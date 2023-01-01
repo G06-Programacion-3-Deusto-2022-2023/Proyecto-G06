@@ -26,6 +26,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import internals.HasID;
+import internals.Utils;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
@@ -86,11 +87,11 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
         super ();
 
         this.id = id != null && ((Complemento.isDefault (id)
-                && Pelicula.isAmongstCallers ("cine.Complemento")
+                && Utils.isAmongstCallers ("cine.Complemento")
                 && ((Complemento.DEFAULT_SET & (short) (1 << id.getLeastSignificantBits ())) == 0
                         || ((Complemento.DEFAULT_SET & (short) (1 << id.getLeastSignificantBits ())) != 0
-                                && (Pelicula.isAmongstCallers ("internals.GestorBD")
-                                        || Pelicula.isAmongstCallers ("internals.swing.ComplementosTableModel")))))
+                                && (Utils.isAmongstCallers ("internals.GestorBD")
+                                        || Utils.isAmongstCallers ("internals.swing.ComplementosTableModel")))))
                 || !Complemento.isDefault (id))
                         ? id
                         : UUID.randomUUID ();
@@ -257,7 +258,7 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
         }
 
         catch (JSONException e) {
-            throw new JSONException (Pelicula.isAmongstCallers ("cine.SetPeliculas.fromJSON") ? ""
+            throw new JSONException (Utils.isAmongstCallers ("cine.SetPeliculas.fromJSON") ? ""
                     : "No se puede extraer un JSONArray válido de esta cadena de carácteres");
         }
 

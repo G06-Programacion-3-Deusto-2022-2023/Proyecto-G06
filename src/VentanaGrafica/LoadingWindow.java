@@ -5,9 +5,15 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Image;
 import java.awt.Window;
+import java.io.File;
+import java.io.IOException;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -15,6 +21,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
+
+import internals.ImageDisplayer;
+import internals.Utils;
 
 public class LoadingWindow {
     private class ILoadingWindow extends JWindow {
@@ -36,8 +45,26 @@ public class LoadingWindow {
                     q.add (((Supplier <JPanel>) ( () -> {
                         JPanel r = new JPanel (new FlowLayout (FlowLayout.CENTER, 20, 0));
 
-                        r.add (new JLabel (new ImageIcon (
-                                new ImageIcon ("data/assets/loading.gif").getImage ().getScaledInstance (32, 32, 0))));
+                        final String LOADING_GIF_PATH = "data/assets/loading.gif";
+                        final String LOADING_GIF_URL = "https://usagif.com/wp-content/uploads/loading-42.gif";
+
+                        try {
+                            Utils.downloadFile (LOADING_GIF_PATH, LOADING_GIF_URL);
+                        }
+
+                        catch (Exception e) {
+                            Logger.getLogger (LoadingWindow.class.getName ()).log (Level.WARNING, String.format (
+                                    "No se pudo descargar el archivo %s desde %s.", LOADING_GIF_PATH, LOADING_GIF_URL));
+                        }
+
+                        try {
+                            r.add (new ImageDisplayer (new ImageIcon (new File (LOADING_GIF_PATH).toURI ().toURL ()).getImage (), 64));
+                        }
+
+                        catch (Exception e) {
+                            Logger.getLogger (LoadingWindow.class.getName ()).log (Level.WARNING,
+                                    String.format ("No se pudo cargar el archivo %s.", LOADING_GIF_PATH));
+                        }
 
                         r.add (((Supplier <JLabel>) ( () -> {
                             JLabel l = new JLabel ("Cargando...");

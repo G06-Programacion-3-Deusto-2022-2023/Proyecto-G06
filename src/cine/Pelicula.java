@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,26 +37,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import internals.HasID;
+import internals.Utils;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
 
 public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, HasID {
-    // A ser usada por el método isAmongstCallers para mirar en el stack.
-    private static int STACK_DEPTH = 25;
-
-    protected static boolean isAmongstCallers (String str) {
-        return isAmongstCallers (str, Thread.currentThread ().getStackTrace ());
-    }
-
-    private static boolean isAmongstCallers (String str, StackTraceElement stt[]) {
-        for (int i = 1; i <= STACK_DEPTH && i < stt.length;)
-            if (stt [i++].getClassName ().equals (str))
-                return true;
-
-        return false;
-    }
-
     // Media y desviación estándar de la distribución de las valoraciones de
     // las películas sacadas de los primeros 2²⁰ elementos
     // de la columna averageRating fis.readdel archivo
@@ -141,7 +126,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
     private static final List <String> DEFAULT_MOVIE_IMAGE_FILES = new ArrayList <String> (
             DEFAULT_MOVIE_IMAGE_URLS.stream ().map (e -> {
                 return e == null ? ""
-                        : String.format ("%s%c%s", DEFAULT_MOVIE_IMAGE_PATH, File.separatorChar,
+                        : String.format ("%s%c%s", Pelicula.DEFAULT_MOVIE_IMAGE_PATH, File.separatorChar,
                                 new File (e.getFile ()).getName ());
             }).collect (Collectors.toList ()));
 
@@ -470,10 +455,10 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
         super ();
 
         this.id = id != null && ((Pelicula.isDefault (id)
-                && Pelicula.isAmongstCallers ("cine.Pelicula")
+                && Utils.isAmongstCallers ("cine.Pelicula")
                 && (!Pelicula.isDefaultSet (id.getLeastSignificantBits ())
                         || (Pelicula.isDefaultSet (id.getLeastSignificantBits ())
-                                && Pelicula.isAmongstCallers ("internals.GestorBD"))))
+                                && Utils.isAmongstCallers ("internals.GestorBD"))))
                 || !Pelicula.isDefault (id))
                         ? id
                         : UUID.randomUUID ();
@@ -536,7 +521,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setNombre (String nombre) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.nombre = nombre == null || nombre.equals ("") ? this.id.toString ()
@@ -549,7 +534,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setRutaImagen (String rutaImagen) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.rutaImagen = rutaImagen == null ? "" : rutaImagen;
@@ -561,7 +546,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setValoracion (double valoracion) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.valoracion = ((Double) valoracion).isNaN () || valoracion < 1
@@ -590,7 +575,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setFecha (Year fecha) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.fecha = fecha == null || fecha.compareTo (MIN_FECHA) < 0 || fecha.compareTo (MAX_FECHA) > 0 ? null
@@ -603,7 +588,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setDirector (String director) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.director = director == null ? "" : director;
@@ -618,19 +603,12 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
         // C
 
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.duracion = duracion == null || duracion.isNegative () || duracion.isZero ()
                 ? (this.duracion == null ? Pelicula.DEFAULT_DURACION : this.duracion)
-                : (((BooleanSupplier) ( () -> {
-                    StackTraceElement st[] = Thread.currentThread ().getStackTrace ();
-                    for (int i = 1; i <= STACK_DEPTH && i < st.length;)
-                        if (st [i++].getMethodName ().equals ("cine.Pelicula.Pelicula"))
-                            return true;
-
-                    return false;
-                })).getAsBoolean ()
+                : (Utils.isAmongstCallers ("cine.Pelicula")
                         ? Pelicula.DEFAULT_DURACION
                         : Duration.ofMinutes (duracion.toMinutes ()));
     }
@@ -641,7 +619,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setEdad (EdadRecomendada edad) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.edad = edad == null ? EdadRecomendada.TODOS : edad;
@@ -653,7 +631,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setGeneros (Collection <Genero.Nombre> generos) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.generos = generos == null || generos.isEmpty () || generos.contains (Genero.Nombre.NADA)
@@ -667,8 +645,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setSets (Collection <SetPeliculas> sets) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("cine.SetPeliculas")
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.sets = new TreeSet <SetPeliculas> ((Comparator <SetPeliculas>) ( (a, b) -> {
@@ -709,9 +687,9 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
     public boolean removeSet (SetPeliculas set) {
         if (this.sets == null || set == null
                 || (this.isDefault () && set.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                        && !Pelicula.isAmongstCallers ("cine.Pelicula")
-                        && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
-                        && !Pelicula.isAmongstCallers ("internals.GestorBD")))
+                        && !Utils.isAmongstCallers ("cine.Pelicula")
+                        && !Utils.isAmongstCallers ("cine.SetPeliculas")
+                        && !Utils.isAmongstCallers ("internals.GestorBD")))
             return false;
 
         return !this.sets.contains (set) || (this.sets.remove (set) && set.remove (this));
@@ -731,9 +709,9 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
     }
 
     public void removeFromSets () {
-        if (this.sets == null && (this.isDefault () && !Pelicula.isAmongstCallers ("cine.Pelicula")
-                && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
-                && !Pelicula.isAmongstCallers ("internals.GestorBD")))
+        if (this.sets == null && (this.isDefault () && !Utils.isAmongstCallers ("cine.Pelicula")
+                && !Utils.isAmongstCallers ("cine.SetPeliculas")
+                && !Utils.isAmongstCallers ("internals.GestorBD")))
             return;
 
         this.removeSets (this.sets);
@@ -926,13 +904,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
         List <String> errors = new ArrayList <String> ();
 
         for (int i = 0; i < Pelicula.DEFAULT_MOVIE_IMAGE_FILES.size (); i++) {
-            if ((fp = new File (Pelicula.DEFAULT_MOVIE_IMAGE_FILES.get (i))).exists ())
-                continue;
-
-            try (FileOutputStream f = new FileOutputStream (fp);
-                    ReadableByteChannel c = Channels
-                            .newChannel (Pelicula.DEFAULT_MOVIE_IMAGE_URLS.get (i).openStream ())) {
-                f.getChannel ().transferFrom (c, 0, Long.MAX_VALUE);
+            try {
+                Utils.downloadFile (Pelicula.DEFAULT_MOVIE_IMAGE_PATH, Pelicula.DEFAULT_MOVIE_IMAGE_URLS.get (i));
             }
 
             catch (Exception e) {
@@ -1072,7 +1045,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
         }
 
         catch (JSONException e) {
-            throw new JSONException (Pelicula.isAmongstCallers ("cine.SetPeliculas.fromJSON") ? ""
+            throw new JSONException (Utils.isAmongstCallers ("cine.SetPeliculas.fromJSON") ? ""
                     : "No se puede extraer un JSONArray válido de esta cadena de carácteres");
         }
 

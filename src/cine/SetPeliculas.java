@@ -26,6 +26,7 @@ import org.json.JSONObject;
 
 import internals.GestorBD;
 import internals.HasID;
+import internals.Utils;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
@@ -68,10 +69,10 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
         super ();
 
         this.id = id != null && ((SetPeliculas.isDefault (id)
-                && Pelicula.isAmongstCallers ("cine.SetPeliculas")
+                && Utils.isAmongstCallers ("cine.SetPeliculas")
                 && (!SetPeliculas.DEFAULT_SET
                         || (SetPeliculas.DEFAULT_SET
-                                && Pelicula.isAmongstCallers ("internals.GestorBD"))))
+                                && Utils.isAmongstCallers ("internals.GestorBD"))))
                 || !SetPeliculas.isDefault (id))
                         ? id
                         : UUID.randomUUID ();
@@ -112,8 +113,8 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
 
     public void setNombre (String nombre) {
         if (this.isDefault () && SetPeliculas.DEFAULT_SET
-                && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.SetPeliculas")
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         if (nombre != null && !nombre.equals ("")) {
@@ -144,8 +145,8 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
 
     public void setPeliculas (Collection <Pelicula> peliculas) {
         if (this.isDefault () && SetPeliculas.DEFAULT_SET
-                && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("cine.SetPeliculas")
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.peliculas = new TreeSet <Pelicula> (
@@ -222,8 +223,8 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
 
     public boolean add (Pelicula pelicula) {
         if (this.isDefault () && SetPeliculas.DEFAULT_SET
-                && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("cine.SetPeliculas")
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return false;
 
         if (pelicula == null)
@@ -251,8 +252,8 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
 
     public boolean remove (Pelicula pelicula) {
         if (this.isDefault () && SetPeliculas.DEFAULT_SET
-                && !Pelicula.isAmongstCallers ("cine.Pelicula") && !Pelicula.isAmongstCallers ("cine.SetPeliculas")
-                && !Pelicula.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("cine.SetPeliculas")
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return false;
 
         if (!this.contains (pelicula))
@@ -398,7 +399,7 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
         }
 
         catch (JSONException e) {
-            throw new JSONException (Pelicula.isAmongstCallers ("cine.SetPeliculas.fromJSON") ? ""
+            throw new JSONException (Utils.isAmongstCallers ("cine.SetPeliculas.fromJSON") ? ""
                     : "No se puede extraer un JSONArray válido de esta cadena de carácteres");
         }
 

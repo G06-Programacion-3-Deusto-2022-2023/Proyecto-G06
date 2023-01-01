@@ -1,11 +1,15 @@
 package cine;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import internals.Pair;
 
 public class Sala {
     private static final int FILAS = 15;
@@ -16,6 +20,14 @@ public class Sala {
     private static final int DEFAULT_FILL_THRESHOLD = 95 * Sala.NBUTACAS / 100;
 
     private static final double ADJACENCY_MOD = 1D / 3;
+
+    private static final List <Sala> SALAS = Arrays.asList (new Sala [] {
+            new Sala (),
+            new Sala (),
+            new Sala (),
+            new Sala (),
+            new Sala ()
+    });
 
     private Pelicula pelicula;
     private Vector <Butaca> butacas;
@@ -32,7 +44,6 @@ public class Sala {
             return v;
         })).get ();
     }
-
     public Pelicula getPelicula () {
         return this.pelicula;
     }
@@ -141,12 +152,42 @@ public class Sala {
         int index = this.butacas.indexOf (butaca);
         return index == -1 ? new int [] { -1, -1 } : new int [] { index / Sala.COLUMNAS, index % Sala.COLUMNAS };
     }
-    public static int getColumnas() {
-		return Sala.COLUMNAS;
-    	
+
+    public static int getColumnas () {
+        return Sala.COLUMNAS;
+
     }
-    public static int getFilas() {
-		return Sala.FILAS;
-    	
+
+    public static int getFilas () {
+        return Sala.FILAS;
+
+    }
+
+    public static List <Sala> getSalas () {
+        return new ArrayList <Sala> (Sala.SALAS);
+    }
+
+    public static int indexOf (Sala sala) {
+        try {
+            return Sala.SALAS.indexOf (sala);
+        }
+
+        catch (NullPointerException e) {
+            return -1;
+        }
+    }
+
+    public Pair <Integer, Integer> indexOf (Butaca butaca) {
+        try {
+            int i;
+            if ((i = this.butacas.indexOf (butaca)) == -1)
+                return null;
+
+            return new Pair <Integer, Integer> (i / Sala.COLUMNAS, i % Sala.COLUMNAS);
+        }
+
+        catch (NullPointerException e) {
+            return null;
+        }
     }
 }
