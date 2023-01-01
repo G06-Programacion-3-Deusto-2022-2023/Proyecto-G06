@@ -5,15 +5,12 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.Image;
 import java.awt.Window;
 import java.io.File;
-import java.io.IOException;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.imageio.ImageIO;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -22,8 +19,8 @@ import javax.swing.JPanel;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
-import internals.ImageDisplayer;
 import internals.Utils;
+import internals.swing.ImageDisplayer;
 
 public class LoadingWindow {
     private class ILoadingWindow extends JWindow {
@@ -46,7 +43,7 @@ public class LoadingWindow {
                         JPanel r = new JPanel (new FlowLayout (FlowLayout.CENTER, 20, 0));
 
                         final String LOADING_GIF_PATH = "data/assets/loading.gif";
-                        final String LOADING_GIF_URL = "https://usagif.com/wp-content/uploads/loading-42.gif";
+                        final String LOADING_GIF_URL = "https://gifimage.net/wp-content/uploads/2017/08/loading-gif-transparent-10.gif";
 
                         try {
                             Utils.downloadFile (LOADING_GIF_PATH, LOADING_GIF_URL);
@@ -68,7 +65,7 @@ public class LoadingWindow {
 
                         r.add (((Supplier <JLabel>) ( () -> {
                             JLabel l = new JLabel ("Cargando...");
-                            l.setFont (l.getFont ().deriveFont (Font.BOLD, 16f));
+                            l.setFont (l.getFont ().deriveFont (Font.BOLD, 20f));
 
                             return l;
                         })).get ());

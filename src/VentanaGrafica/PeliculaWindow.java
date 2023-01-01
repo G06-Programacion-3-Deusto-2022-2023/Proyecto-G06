@@ -44,6 +44,7 @@ import javax.swing.WindowConstants;
 import cine.EdadRecomendada;
 import cine.Genero;
 import cine.Pelicula;
+import internals.swing.ImageChooser;
 import internals.swing.JTextFieldLimit;
 
 /*
@@ -153,9 +154,9 @@ public class PeliculaWindow extends JFrame {
                                         UIManager.getIcon ("FileView.fileIcon", new Locale ("es-ES")));
                                 b.setToolTipText ("Abre una ventana externa para seleccionar un archivo.");
                                 b.addActionListener (e -> {
-                                    JFileChooser fc;
-                                    if ((fc = new JFileChooser ()).showOpenDialog (f) == JFileChooser.APPROVE_OPTION)
-                                        rutaImagen.setText (fc.getSelectedFile ().getAbsolutePath ());
+                                    ImageChooser ic;
+                                    if ((ic = new ImageChooser ()).showOpenDialog (f) == JFileChooser.APPROVE_OPTION)
+                                        rutaImagen.setText (ic.getSelectedFile ().getAbsolutePath ());
                                 });
 
                                 return b;

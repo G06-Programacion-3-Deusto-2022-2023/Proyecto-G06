@@ -1,33 +1,31 @@
 package internals.swing;
 
-import java.awt.Component;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Locale;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
-public class JSONChooser extends JFileChooser {
-    public JSONChooser () {
+public class ImageChooser extends JFileChooser {
+    public ImageChooser () {
         super ();
 
         FileFilter f;
         this.addChoosableFileFilter (f = new FileFilter () {
             @Override
             public String getDescription () {
-                return Locale.getDefault ().getLanguage ().equalsIgnoreCase ("es") ? "Archivos JSON (*.json)"
-                        : "JSON files (*.json)";
+                return Locale.getDefault ().getLanguage ().equalsIgnoreCase ("es") ? "Imágenes"
+                        : "Images";
             }
 
             @Override
             public boolean accept (File f) {
                 try {
-                    return f.isDirectory () || (f.getName ().toLowerCase ().endsWith (".json")
-                            && Files.probeContentType (f.toPath ()).equals ("application/json"));
+                    return f.isDirectory () || Files.probeContentType (f.toPath ()).split ("/") [0].equals ("image");
                 }
 
                 catch (NullPointerException | IOException e) {
@@ -40,18 +38,5 @@ public class JSONChooser extends JFileChooser {
             }
         });
         this.setFileFilter (f);
-    }
-
-    @Override
-    public int showSaveDialog (Component parent) {
-        int r = super.showSaveDialog (parent);
-
-        if (r != JFileChooser.APPROVE_OPTION)
-            return r;
-
-        if (!this.getSelectedFile ().getName ().toLowerCase ().endsWith (".json"))
-            this.setSelectedFile (new File (this.getSelectedFile ().getAbsolutePath () + ".json"));
-
-        return r;
     }
 }

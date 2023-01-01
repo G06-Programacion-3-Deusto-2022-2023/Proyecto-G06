@@ -113,4 +113,8 @@ public final class Utils {
         int d = Calendar.getInstance ().get (Calendar.DAY_OF_WEEK);
         return mondayFirst ? (d - 1 == -1 ? 6 : d - 1) : d;
     }
+
+    public static boolean isDiaDelEspectador () {
+        return Utils.getCurrentDay () == Settings.getDiaEspectador ();
+    }
 }

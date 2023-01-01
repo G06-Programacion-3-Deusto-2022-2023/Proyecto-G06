@@ -3,8 +3,6 @@ package internals;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -15,6 +13,7 @@ import java.util.Properties;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public final class Settings {
     private static final String SETTINGS_PATH = "data/settings/settings.properties";
@@ -22,14 +21,14 @@ public final class Settings {
     private static final String COMMENT = "AVISO: ESTE ARCHIVO SOLO DEBE SER MODIFICADO DESDE EL PROGRAMA.";
     private static final String DEFAULT_LOGO_PATH = "data/assets/logo.png";
     private static final String DEFAULT_LOGO_URL = "https://w7.pngwing.com/pngs/130/1021/png-transparent-movie-logo-movie-logo-film-tape-cinema.png";
-    private static Properties properties = new Properties ();
+    private static Properties properties;
     private static final Properties defaults = ((Supplier <Properties>) ( () -> {
         Properties p = new Properties ();
 
         p.setProperty ("nombre", "DeustoCines");
         p.setProperty ("logo", Settings.DEFAULT_LOGO_PATH);
         p.setProperty ("precioentrada", "7.9");
-        p.setProperty ("diaespectador", "3");
+        p.setProperty ("diaespectador", "2");
         p.setProperty ("descuentoespectador", "20");
 
         Settings.properties = new Properties (p);
@@ -51,6 +50,25 @@ public final class Settings {
             Settings.downloadDefaultLogo ();
         }
 
+        Properties temp = new Properties (p);
+        try (FileInputStream fis = new FileInputStream (new File (Settings.SETTINGS_PATH))) {
+            temp.load (fis);
+        }
+
+        catch (IOException | IllegalArgumentException e) {
+            Logger.getLogger (Settings.class.getName ()).log (Level.WARNING, String.format (
+                    "No pudo cargarse la configuración del programa desde el archivo %s.", Settings.SETTINGS_PATH));
+
+            Settings.properties = new Properties (p);
+
+            return p;
+        }
+
+        List <String> l = Collections.list (p.keys ()).stream ().map (Object::toString)
+                .collect (Collectors.toList ());
+        for (int i = 0; i < l.size (); i++)
+            Settings.properties.setProperty (l.get (i), temp.getProperty (l.get (i)));
+
         return p;
     })).get ();
 
@@ -67,7 +85,7 @@ public final class Settings {
     }
 
     public static void load () {
-        Properties temp = new Properties ();
+        Properties temp = new Properties (Settings.defaults);
 
         try (FileInputStream fis = new FileInputStream (new File (Settings.SETTINGS_PATH))) {
             temp.load (fis);
@@ -82,9 +100,10 @@ public final class Settings {
             return;
         }
 
-        List <String> l = (List <String>) Collections.list (Settings.defaults.propertyNames ());
+        List <String> l = Collections.list (Settings.defaults.keys ()).stream ().map (Object::toString)
+                .collect (Collectors.toList ());
         for (int i = 0; i < l.size (); i++)
-            Settings.properties.setProperty (temp.getProperty (l.get (i)), Settings.defaults.getProperty (l.get (i)));
+            Settings.properties.setProperty (l.get (i), temp.getProperty (l.get (i)));
     }
 
     public static void save () {
@@ -195,12 +214,13 @@ public final class Settings {
 
     public static BigDecimal getPrecioEntrada () {
         try {
-            return new BigDecimal (Settings.properties.getProperty ("precioentrada")).setScale (2,
+            return new BigDecimal (Settings.properties.getProperty ("precioentrada").replace (",", ".")).setScale (2,
                     RoundingMode.HALF_EVEN);
         }
 
         catch (NumberFormatException e) {
-            return new BigDecimal (Settings.defaults.getProperty ("precioentrada"));
+            return new BigDecimal (Settings.defaults.getProperty ("precioentrada").replace (",", ".")).setScale (2,
+                    RoundingMode.HALF_EVEN);
         }
     }
 

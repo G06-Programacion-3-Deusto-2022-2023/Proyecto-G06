@@ -1,20 +1,24 @@
 package VentanaGrafica;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Vector;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -25,6 +29,7 @@ import javax.swing.BoxLayout;
 import javax.swing.DefaultCellEditor;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -32,11 +37,15 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.TableRowSorter;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
@@ -48,9 +57,11 @@ import org.json.JSONException;
 import cine.Administrador;
 import cine.Complemento;
 import internals.GestorBD;
+import internals.Settings;
 import internals.swing.ComplementosTableModel;
 import internals.swing.JSONChooser;
 import internals.swing.JTextFieldLimit;
+import internals.swing.PNGChooser;
 
 public class MiscOptionsWindow extends JFrame {
     public MiscOptionsWindow (GestorBD db) {
@@ -80,11 +91,20 @@ public class MiscOptionsWindow extends JFrame {
         });
 
         if (admin != null && db.obtenerDatosAdministradores ().contains (admin))
-            this.add (((Supplier <JLabel>) ( () -> {
-                JLabel l = new JLabel (admin.getNombre ());
-                l.setFont (l.getFont ().deriveFont (Font.BOLD, 16f));
+            this.add (((Supplier <JPanel>) ( () -> {
+                JPanel p = new JPanel ();
+                p.setLayout (new BoxLayout (p, BoxLayout.Y_AXIS));
 
-                return l;
+                p.add (((Supplier <JLabel>) ( () -> {
+                    JLabel l = new JLabel (admin.getNombre ());
+                    l.setFont (l.getFont ().deriveFont (Font.BOLD, 16f));
+
+                    return l;
+                })).get ());
+
+                p.add (Box.createRigidArea (new Dimension (0, 15)));
+
+                return p;
             })).get (), BorderLayout.PAGE_START);
 
         this.add (((Supplier <JPanel>) ( () -> {
@@ -97,19 +117,472 @@ public class MiscOptionsWindow extends JFrame {
                 JPanel q = new JPanel ();
                 q.setLayout (new BoxLayout (q, BoxLayout.Y_AXIS));
 
+                JTextField t[] = new JTextField [] {
+                        new JTextField (new JTextFieldLimit (30), Settings.getNombre (), 25),
+                        new JTextField (new File (Settings.getLogo ()).getAbsolutePath (), 50)
+                };
+
+                JSpinner sp = new JSpinner (new SpinnerNumberModel ());
+
+                JButton b[] = new JButton [] {
+                        new JButton (new ImageIcon (
+                                MiscOptionsWindow.class.getResource ("/toolbarButtonGraphics/general/Save24.gif"))),
+                        new JButton (new ImageIcon (
+                                MiscOptionsWindow.class.getResource ("/toolbarButtonGraphics/general/Save24.gif"))),
+                        new JButton (new ImageIcon (
+                                MiscOptionsWindow.class.getResource ("/toolbarButtonGraphics/general/Save24.gif"))),
+                        new JButton (UIManager.getIcon ("FileView.fileIcon", new Locale ("es-ES"))),
+                        new JButton ("Por defecto")
+                };
+
+                q.add (((Supplier <JPanel>) ( () -> {
+                    JPanel r = new JPanel (new FlowLayout (FlowLayout.LEADING, 1, 0));
+
+                    r.add (((Supplier <JLabel>) ( () -> {
+                        JLabel l = new JLabel ("Nombre del cine:");
+                        l.setFont (l.getFont ().deriveFont (Font.BOLD, 14f));
+
+                        return l;
+                    })).get ());
+
+                    r.add (Box.createRigidArea (new Dimension (2, 0)));
+
+                    r.add (((Supplier <JTextField>) ( () -> {
+                        t [0].getDocument ().addDocumentListener (new DocumentListener () {
+                            @Override
+                            public void insertUpdate (DocumentEvent e) {
+                                this.changedUpdate (e);
+                            }
+
+                            @Override
+                            public void removeUpdate (DocumentEvent e) {
+                                this.changedUpdate (e);
+                            }
+
+                            @Override
+                            public void changedUpdate (DocumentEvent e) {
+                                try {
+                                    b [0].setEnabled (e.getDocument ().getText (0, e.getLength ())
+                                            .equals (Settings.getNombre ()));
+
+                                    b [4].setEnabled (!(t [0].getText ()
+                                            .equals (Settings.defaults ().getProperty ("nombre"))
+                                            && new File (t [1].getText ()).getCanonicalPath ()
+                                                    .equals (new File (Settings.defaults ().getProperty ("logo"))
+                                                            .getCanonicalPath ())
+                                            && new BigDecimal (String.format ("%.2f",
+                                                    ((SpinnerNumberModel) sp.getModel ()).getNumber ().doubleValue ())
+                                                    .replace (",", "."))
+                                                            .setScale (2, RoundingMode.HALF_EVEN)
+                                                            .equals (new BigDecimal (
+                                                                    Settings.defaults ()
+                                                                            .getProperty ("precioentrada")).setScale (2,
+                                                                                    RoundingMode.HALF_EVEN))));
+                                }
+
+                                catch (BadLocationException e1) {
+                                }
+
+                                catch (IOException e1) {
+                                    e1.printStackTrace ();
+                                }
+                            }
+                        });
+
+                        return t [0];
+                    })).get ());
+
+                    r.add (Box.createRigidArea (new Dimension (13, 0)));
+
+                    r.add (((Supplier <JButton>) ( () -> {
+                        b [0].setEnabled (false);
+
+                        b [0].addActionListener (e -> {
+                            Settings.setNombre (t [0].getText ());
+                            Settings.save ();
+
+                            b [0].setEnabled (false);
+                        });
+
+                        return b [0];
+                    })).get ());
+
+                    return r;
+                })).get ());
+
+                q.add (((Supplier <JPanel>) ( () -> {
+                    JPanel r = new JPanel (new FlowLayout (FlowLayout.LEADING, 1, 0));
+
+                    r.add (((Supplier <JLabel>) ( () -> {
+                        JLabel l = new JLabel ("Logo del cine:");
+                        l.setFont (l.getFont ().deriveFont (Font.BOLD, 14f));
+
+                        return l;
+                    })).get ());
+
+                    r.add (Box.createRigidArea (new Dimension (2, 0)));
+
+                    r.add (((Supplier <JTextField>) ( () -> {
+                        t [1].getDocument ().addDocumentListener (new DocumentListener () {
+                            @Override
+                            public void insertUpdate (DocumentEvent e) {
+                                this.changedUpdate (e);
+                            }
+
+                            @Override
+                            public void removeUpdate (DocumentEvent e) {
+                                this.changedUpdate (e);
+                            }
+
+                            @Override
+                            public void changedUpdate (DocumentEvent e) {
+                                try {
+                                    b [1].setEnabled (!new File (e.getDocument ().getText (0, e.getLength ()))
+                                            .equals (new File (Settings.getLogo ())));
+
+                                    b [4].setEnabled (!(t [0].getText ()
+                                            .equals (Settings.defaults ().getProperty ("nombre"))
+                                            && new File (t [1].getText ()).getCanonicalPath ()
+                                                    .equals (new File (Settings.defaults ().getProperty ("logo"))
+                                                            .getCanonicalPath ())
+                                            && new BigDecimal (String.format ("%.2f",
+                                                    ((SpinnerNumberModel) sp.getModel ()).getNumber ().doubleValue ())
+                                                    .replace (",", "."))
+                                                            .setScale (2, RoundingMode.HALF_EVEN)
+                                                            .equals (new BigDecimal (
+                                                                    Settings.defaults ()
+                                                                            .getProperty ("precioentrada")).setScale (2,
+                                                                                    RoundingMode.HALF_EVEN))));
+                                }
+
+                                catch (BadLocationException e1) {
+                                }
+
+                                catch (IOException e1) {
+                                    e1.printStackTrace ();
+                                }
+                            }
+                        });
+
+                        return t [1];
+                    })).get ());
+
+                    r.add (Box.createRigidArea (new Dimension (3, 0)));
+
+                    r.add (((Supplier <JButton>) ( () -> {
+                        b [3].addActionListener (e -> {
+                            PNGChooser ic;
+                            if ((ic = new PNGChooser ()).showOpenDialog (f) != JFileChooser.APPROVE_OPTION)
+                                return;
+
+                            t [1].setText (ic.getSelectedFile ().getAbsolutePath ());
+                        });
+
+                        return b [3];
+                    })).get ());
+
+                    r.add (Box.createRigidArea (new Dimension (13, 0)));
+
+                    r.add (((Supplier <JButton>) ( () -> {
+                        b [1].setEnabled (false);
+
+                        b [1].addActionListener (e -> {
+                            try {
+                                Settings.setLogo (t [1].getText ());
+                            }
+
+                            catch (IllegalArgumentException ex) {
+                                JOptionPane.showMessageDialog (f, "El archivo especificado no es un PNG válido.",
+                                        "Error al establecer el logo.", JOptionPane.ERROR_MESSAGE);
+
+                                return;
+                            }
+
+                            Settings.save ();
+
+                            b [1].setEnabled (false);
+                        });
+
+                        return b [0];
+                    })).get ());
+
+                    return r;
+                })).get ());
+
+                q.add (((Supplier <JPanel>) ( () -> {
+                    JPanel r = new JPanel (new FlowLayout (FlowLayout.LEADING, 1, 0));
+
+                    r.add (((Supplier <JLabel>) ( () -> {
+                        JLabel l = new JLabel ("Precio de las entradas:");
+                        l.setFont (l.getFont ().deriveFont (Font.BOLD, 14f));
+
+                        return l;
+                    })).get ());
+
+                    r.add (Box.createRigidArea (new Dimension (2, 0)));
+
+                    r.add (((Supplier <JSpinner>) ( () -> {
+                        ((SpinnerNumberModel) sp.getModel ()).setMinimum (0.01);
+                        ((SpinnerNumberModel) sp.getModel ()).setValue (Settings.getPrecioEntrada ().doubleValue ());
+                        ((SpinnerNumberModel) sp.getModel ()).setStepSize (0.1);
+                        sp.setEditor (new JSpinner.NumberEditor (sp));
+
+                        sp.addChangeListener (e -> {
+                            BigDecimal n;
+                            b [2].setEnabled ((n = new BigDecimal (String.format ("%.2f",
+                                    ((SpinnerNumberModel) sp.getModel ()).getNumber ().doubleValue ())
+                                    .replace (",", "."))).signum () != 1
+                                    || !n.equals (Settings.getPrecioEntrada ()));
+
+                            try {
+                                b [4].setEnabled (!(t [0].getText ()
+                                        .equals (Settings.defaults ().getProperty ("nombre"))
+                                        && new File (t [1].getText ()).getCanonicalPath ()
+                                                .equals (new File (Settings.defaults ().getProperty ("logo"))
+                                                        .getCanonicalPath ())
+                                        && new BigDecimal (String.format ("%.2f",
+                                                ((SpinnerNumberModel) sp.getModel ()).getNumber ().doubleValue ())
+                                                .replace (",", "."))
+                                                        .setScale (2, RoundingMode.HALF_EVEN)
+                                                        .equals (new BigDecimal (
+                                                                Settings.defaults ()
+                                                                        .getProperty ("precioentrada")).setScale (2,
+                                                                                RoundingMode.HALF_EVEN))));
+                            }
+
+                            catch (IOException e1) {
+                                e1.printStackTrace ();
+                            }
+                        });
+
+                        return sp;
+                    })).get ());
+
+                    r.add (Box.createRigidArea (new Dimension (1, 0)));
+
+                    r.add (new JLabel ("€"));
+
+                    r.add (Box.createRigidArea (new Dimension (13, 0)));
+
+                    r.add (((Supplier <JButton>) ( () -> {
+                        b [2].setEnabled (false);
+
+                        b [2].addActionListener (e -> {
+                            try {
+                                Settings.setPrecioEntrada ();
+                            }
+
+                            catch (IllegalArgumentException ex) {
+                                JOptionPane.showMessageDialog (f,
+                                        "El precio de las entradas debe ser un número positivo.",
+                                        "Error al establecer el precio de las entradas", JOptionPane.ERROR_MESSAGE);
+                            }
+                            Settings.save ();
+
+                            b [2].setEnabled (false);
+                        });
+
+                        return b [2];
+                    })).get ());
+
+                    return r;
+                })).get ());
+
+                q.add (((Supplier <JButton>) ( () -> {
+                    b [4].setEnabled (!(Settings.getNombre ().equals (Settings.defaults ().getProperty ("nombre"))
+                            && Settings.getLogo ().equals (Settings.defaults ().getProperty ("logo"))
+                            && Settings.getPrecioEntrada ().setScale (2, RoundingMode.HALF_EVEN)
+                                    .equals (new BigDecimal (
+                                            Settings.defaults ().getProperty ("precioentrada").replace (",", "."))
+                                                    .setScale (2, RoundingMode.HALF_EVEN))));
+
+                    b [4].addActionListener (e -> {
+                        Settings.setNombre ();
+                        Settings.setLogo ();
+                        Settings.setPrecioEntrada ();
+                        Settings.save ();
+
+                        t [0].setText (Settings.getNombre ());
+                        t [1].setText (new File (Settings.getLogo ()).getAbsolutePath ());
+                        ((SpinnerNumberModel) sp.getModel ()).setValue (Settings.getPrecioEntrada ());
+
+                        b [0].setEnabled (false);
+                        b [1].setEnabled (false);
+                        b [2].setEnabled (false);
+                        b [4].setEnabled (false);
+                    });
+
+                    return b [4];
+                })).get ());
+
                 return q;
             })).get ());
 
+            p.add (Box.createRigidArea (new Dimension (15, 0)));
+
             p.add (new JSeparator (SwingConstants.VERTICAL));
+
+            p.add (Box.createRigidArea (new Dimension (15, 0)));
 
             p.add (((Supplier <JPanel>) ( () -> {
                 JPanel q = new JPanel ();
+                q.setAlignmentX (Component.CENTER_ALIGNMENT);
+                q.setAlignmentY (Component.CENTER_ALIGNMENT);
                 q.setLayout (new BoxLayout (q, BoxLayout.Y_AXIS));
+
+                q.add ((((Supplier <JLabel>) ( () -> {
+                    JLabel l = new JLabel ("Día del espectador");
+                    l.setFont (l.getFont ().deriveFont (Font.BOLD, 20f));
+
+                    return l;
+                }))).get ());
+
+                q.add (Box.createRigidArea (new Dimension (0, 25)));
+
+                q.add (((Supplier <JPanel>) ( () -> {
+                    JPanel r = new JPanel ();
+                    r.setLayout (new BoxLayout (r, BoxLayout.Y_AXIS));
+                    r.setAlignmentX (Component.CENTER_ALIGNMENT);
+                    r.setAlignmentY (Component.CENTER_ALIGNMENT);
+
+                    JComboBox <String> cb = new JComboBox <String> (
+                            new Vector <String> (
+                                    Arrays.asList (new String [] { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes",
+                                            "Sábado", "Domingo" })));
+
+                    JSpinner sp = new JSpinner (new SpinnerNumberModel (Settings.getDescuentoEspectador (), 0, 99, 1));
+
+                    JButton b[] = new JButton [] {
+                            new JButton (new ImageIcon (
+                                    MiscOptionsWindow.class.getResource ("/toolbarButtonGraphics/general/Save24.gif"))),
+                            new JButton (new ImageIcon (
+                                    MiscOptionsWindow.class.getResource ("/toolbarButtonGraphics/general/Save24.gif"))),
+                            new JButton ("Por defecto")
+                    };
+
+                    r.add (((Supplier <JPanel>) ( () -> {
+                        JPanel s = new JPanel (new FlowLayout (FlowLayout.LEADING, 15, 0));
+
+                        s.add (((Supplier <JComboBox <String>>) ( () -> {
+                            cb.setSelectedIndex (Settings.getDiaEspectador ());
+
+                            cb.addActionListener (e -> {
+                                b [0].setEnabled (cb.getSelectedIndex () != Settings.getDiaEspectador ());
+
+                                b [2].setEnabled (!(cb.getSelectedIndex () == Integer
+                                        .parseInt (Settings.defaults ().getProperty ("diaespectador"))
+                                        && ((SpinnerNumberModel) sp.getModel ()).getNumber ().intValue () == Integer
+                                                .parseInt (Settings
+                                                        .defaults ().getProperty ("descuentoespectador"))));
+                            });
+
+                            return cb;
+                        })).get ());
+
+                        s.add (((Supplier <JButton>) ( () -> {
+                            b [0].setEnabled (false);
+
+                            b [0].addActionListener (e -> {
+                                Settings.setDiaEspectador (cb.getSelectedIndex ());
+                                Settings.save ();
+
+                                b [0].setEnabled (false);
+                            });
+
+                            return b [0];
+                        })).get ());
+
+                        return s;
+                    })).get ());
+
+                    r.add (((Supplier <JPanel>) ( () -> {
+                        JPanel s = new JPanel (new FlowLayout (FlowLayout.LEADING, 1, 0));
+
+                        s.add (((Supplier <JSpinner>) ( () -> {
+                            sp.addChangeListener (e -> {
+                                int n;
+                                b [1].setEnabled (
+                                        !((n = ((SpinnerNumberModel) sp.getModel ()).getNumber ().intValue ()) < 0
+                                                || n >= 100 || n == Settings.getDescuentoEspectador ()));
+
+                                b [2].setEnabled (!(cb.getSelectedIndex () == Integer
+                                        .parseInt (Settings.defaults ().getProperty ("diaespectador"))
+                                        && ((SpinnerNumberModel) sp.getModel ()).getNumber ().intValue () == Integer
+                                                .parseInt (Settings
+                                                        .defaults ().getProperty ("descuentoespectador"))));
+                            });
+
+                            return sp;
+                        })).get ());
+
+                        s.add (new JLabel ("%"));
+
+                        s.add (Box.createRigidArea (new Dimension (12, 0)));
+
+                        s.add (((Supplier <JButton>) ( () -> {
+                            b [1].setEnabled (false);
+
+                            b [1].addActionListener (e -> {
+                                try {
+                                    Settings.setDescuentoEspectador (
+                                            (((SpinnerNumberModel) sp.getModel ()).getNumber ().intValue ()));
+                                }
+
+                                catch (IllegalArgumentException ex) {
+                                    JOptionPane.showMessageDialog (f,
+                                            "El descuento del día del espectador debe ser un número entero en el intervalo [0, 100) que represente un porcentaje",
+                                            "Error al establecer el descuento del día de espectador.",
+                                            JOptionPane.ERROR_MESSAGE);
+
+                                    return;
+                                }
+
+                                Settings.save ();
+
+                                b [1].setEnabled (false);
+                            });
+
+                            return b [1];
+                        })).get ());
+
+                        return s;
+                    })).get ());
+
+                    r.add (((Supplier <JButton>) ( () -> {
+                        b [2].setEnabled (!(Settings.getDiaEspectador () == Integer
+                                .parseInt (Settings.defaults ().getProperty ("diaespectador"))
+                                && Settings.getDescuentoEspectador () == Integer
+                                        .parseInt (Settings.defaults ().getProperty ("descuentoespectador"))));
+
+                        b [2].addActionListener (e -> {
+                            cb.setSelectedIndex (Integer.parseInt (Settings.defaults ().getProperty ("diaespectador")));
+                            ((SpinnerNumberModel) sp.getModel ())
+                                    .setValue (Integer
+                                            .parseInt (Settings.defaults ().getProperty ("descuentoespectador")));
+
+                            Settings.setDiaEspectador ();
+                            Settings.setDescuentoEspectador ();
+                            Settings.save ();
+
+                            b [0].setEnabled (false);
+                            b [1].setEnabled (false);
+                            b [2].setEnabled (false);
+                        });
+
+                        return b [2];
+                    })).get ());
+
+                    return r;
+                })).get ());
 
                 return q;
             })).get ());
 
+            p.add (Box.createRigidArea (new Dimension (15, 0)));
+
             p.add (new JSeparator (SwingConstants.VERTICAL));
+
+            p.add (Box.createRigidArea (new Dimension (15, 0)));
 
             p.add (((Supplier <JPanel>) ( () -> {
                 JPanel q = new JPanel ();
@@ -378,8 +851,10 @@ public class MiscOptionsWindow extends JFrame {
                                             fields [2].getText ()
                                     });
 
-                                    return;
+                                    break;
                                 }
+
+                                ((ComplementosTableModel) t.getModel ()).update ();
                             });
 
                             return b [0];

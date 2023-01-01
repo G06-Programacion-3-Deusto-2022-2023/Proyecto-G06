@@ -1,5 +1,7 @@
 package cine;
 
+import internals.Utils;
+
 public class Butaca {
     private Espectador espectador;
 
@@ -48,8 +50,7 @@ public class Butaca {
                                 + (pelicula.getValoracion () < 5 ? -0.075D * (5 - pelicula.getValoracion ())
                                         : (pelicula.getValoracion () - 5) / 15D)
                                 + 0.1 * espectador.fromPreferencias (pelicula)
-                                + 0.2 * (true ? 0 : 1)
-                                + 0.15 * (false ? 1 : 0));
+                                + 0.15 * (Utils.isDiaDelEspectador () ? 1 : 0));
     }
 
     public static boolean determinarOcupacion (Espectador espectador, Pelicula pelicula) {

@@ -24,9 +24,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import internals.Utils;
 import internals.GestorBD;
 import internals.HasID;
-import internals.Utils;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;

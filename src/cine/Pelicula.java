@@ -1,12 +1,9 @@
 package cine;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Year;
@@ -32,12 +29,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import internals.Utils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import internals.HasID;
-import internals.Utils;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;

@@ -14,11 +14,11 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import internals.Utils;
 import internals.HasID;
 import internals.Pair;
 import internals.Settings;
 import internals.Triplet;
-import internals.Utils;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;

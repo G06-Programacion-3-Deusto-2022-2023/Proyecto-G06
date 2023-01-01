@@ -101,7 +101,8 @@ public class GestionarPeliculasWindow extends JFrame {
                     db.insert (pelicula);
                     pelicula [0] = null;
 
-                    filters [0].run ();
+                    if (filters [0] != null)
+                        filters [0].run ();
                 }
             }
         });
@@ -1116,8 +1117,6 @@ public class GestionarPeliculasWindow extends JFrame {
                                         pw [0] = null;
                                         f.setVisible (false);
                                         pw [0] = w;
-
-                                        System.out.println (setspeliculas.getSelectedItem ());
 
                                         new SetPeliculasDetailsWindow (
                                                 (SetPeliculas) setspeliculas.getSelectedItem (), f);
