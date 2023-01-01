@@ -163,7 +163,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
 
     public void setPrecio () {
         this.precio = Settings.getPrecioEntrada ()
-                .subtract (new BigDecimal (Settings.getDescuento ()).scaleByPowerOfTen (-2)
+                .subtract (new BigDecimal (Settings.getDescuentoEspectador ()).scaleByPowerOfTen (-2)
                         .multiply (Settings.getDiaEspectador () == Utils.getCurrentDay () ? BigDecimal.ONE
                                 : BigDecimal.ZERO))
                 .setScale (2, RoundingMode.HALF_EVEN);

@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
@@ -193,7 +194,14 @@ public final class Settings {
     }
 
     public static BigDecimal getPrecioEntrada () {
-        return new BigDecimal (Settings.properties.getProperty ("precioentrada"));
+        try {
+            return new BigDecimal (Settings.properties.getProperty ("precioentrada")).setScale (2,
+                    RoundingMode.HALF_EVEN);
+        }
+
+        catch (NumberFormatException e) {
+            return new BigDecimal (Settings.defaults.getProperty ("precioentrada"));
+        }
     }
 
     public static void setPrecioEntrada () {
@@ -211,7 +219,13 @@ public final class Settings {
     }
 
     public static int getDiaEspectador () {
-        return Integer.parseInt (Settings.properties.getProperty ("diaespectador"));
+        try {
+            return Integer.parseInt (Settings.properties.getProperty ("diaespectador"));
+        }
+
+        catch (NumberFormatException e) {
+            return Integer.parseInt (Settings.defaults.getProperty ("descuentoespectador"));
+        }
     }
 
     public static void setDiaEspectador () {
@@ -225,7 +239,7 @@ public final class Settings {
         Settings.properties.setProperty ("diaespectador", Integer.toString (d));
     }
 
-    public static int getDescuento () {
+    public static int getDescuentoEspectador () {
         return Integer.parseInt (Settings.properties.getProperty ("descuentoespectador"));
     }
 
