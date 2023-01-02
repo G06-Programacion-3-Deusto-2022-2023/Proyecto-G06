@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Locale;
@@ -146,7 +147,7 @@ public class AdministradorWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle (String.format ("Menú principal de %s", admin.getNombre ()));
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("FileChooser.homeFolderIcon", new Locale ("es-ES"))).getImage ());
+                ((ImageIcon) UIManager.getIcon ("FileChooser.homeFolderIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (null);

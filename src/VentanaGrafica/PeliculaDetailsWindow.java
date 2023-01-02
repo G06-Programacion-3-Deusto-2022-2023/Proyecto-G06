@@ -67,28 +67,28 @@ public class PeliculaDetailsWindow extends JFrame {
 
                 q.add (Box.createRigidArea (new Dimension (0, 25)));
 
-                q.add (((Supplier <JLabel>) (() -> {
+                q.add (((Supplier <JLabel>) ( () -> {
                     JLabel l = new JLabel (new ImageIcon (((Supplier <Image>) ( () -> {
                         Image img;
-    
+
                         try {
                             img = new ImageIcon (ImageIO.read (new File (pelicula.getRutaImagen ()))).getImage ()
-                                    .getScaledInstance (200, 200, 0);
+                                    .getScaledInstance (200, 200, Image.SCALE_SMOOTH);
                         }
-    
+
                         catch (IOException e) {
                             Logger.getLogger (GestionarPeliculasWindow.class.getName ()).log (Level.WARNING,
                                     String.format ("No se pudo crear una imagen a partir del archivo %s",
                                             pelicula.getRutaImagen ()));
-    
+
                             img = new ImageIcon (this.getClass ()
                                     .getResource ("/toolbarButtonGraphics/media/Movie24.gif")).getImage ()
-                                            .getScaledInstance (200, 200, 0);
+                                            .getScaledInstance (200, 200, Image.SCALE_SMOOTH);
                         }
-    
+
                         return img;
                     })).get ()));
-                    l.setAlignmentX(Component.CENTER_ALIGNMENT);
+                    l.setAlignmentX (Component.CENTER_ALIGNMENT);
 
                     return l;
                 })).get ());
@@ -242,12 +242,12 @@ public class PeliculaDetailsWindow extends JFrame {
         })).get (), BorderLayout.CENTER);
 
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
-        this.pack ();
-        this.setResizable (false);
         this.setIconImage (new ImageIcon (this.getClass ()
                 .getResource ("/toolbarButtonGraphics/media/Movie24.gif")).getImage ()
-                        .getScaledInstance (64, 64, 0));
+                        .getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.setTitle (String.format ("Detalles de %s", pelicula.getNombre ()));
+        this.pack ();
+        this.setResizable (false);
         this.setLocationRelativeTo (w);
         this.setVisible (true);
     }

@@ -1,5 +1,6 @@
 package VentanaGrafica;
 
+import java.awt.Image;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -158,7 +159,7 @@ public class SetPeliculasDetailsWindow extends JFrame {
         this.pack ();
         this.setResizable (false);
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("FileView.directoryIcon", new Locale ("es-ES"))).getImage ());
+                ((ImageIcon) UIManager.getIcon ("FileView.directoryIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.setTitle (String.format ("Detalles de %s", set.getNombre ()));
         this.setLocationRelativeTo (w);
         this.setVisible (true);

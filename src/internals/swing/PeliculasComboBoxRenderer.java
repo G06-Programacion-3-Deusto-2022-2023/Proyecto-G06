@@ -48,7 +48,7 @@ public final class PeliculasComboBoxRenderer extends JLabel implements ListCellR
                                     value.getRutaImagen ()));
 
                 img = new ImageIcon (imgbuf).getImage ()
-                        .getScaledInstance (64, 64, 0);
+                        .getScaledInstance (64, 64, Image.SCALE_SMOOTH);
             }
 
             catch (IllegalArgumentException | IOException e) {
@@ -58,7 +58,7 @@ public final class PeliculasComboBoxRenderer extends JLabel implements ListCellR
 
                 img = new ImageIcon (this.getClass ()
                         .getResource ("/toolbarButtonGraphics/media/Movie24.gif")).getImage ()
-                                .getScaledInstance (64, 64, 0);
+                                .getScaledInstance (64, 64, Image.SCALE_SMOOTH);
             }
 
             return img;

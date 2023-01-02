@@ -1,5 +1,6 @@
 package VentanaGrafica;
 
+import java.awt.Image;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -576,7 +577,7 @@ public class GestionarUsuariosWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle ("Gestionar usuarios");
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("FileView.hardDriveIcon", new Locale ("es-ES"))).getImage ());
+                ((ImageIcon) UIManager.getIcon ("FileView.hardDriveIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (w);

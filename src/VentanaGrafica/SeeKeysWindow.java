@@ -1,5 +1,6 @@
 package VentanaGrafica;
 
+import java.awt.Image;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -121,7 +122,7 @@ public class SeeKeysWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle ("Llaves");
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("OptionPane.questionIcon", new Locale ("es-ES"))).getImage ());
+                ((ImageIcon) UIManager.getIcon ("OptionPane.questionIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (null);

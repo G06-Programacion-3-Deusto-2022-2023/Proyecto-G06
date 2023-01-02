@@ -1,5 +1,6 @@
 package VentanaGrafica;
 
+import java.awt.Image;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -236,9 +237,11 @@ public class MiscOptionsWindow extends JFrame {
 
                             @Override
                             public void changedUpdate (DocumentEvent e) {
+                                System.out.println (t [1].getText ());
                                 try {
-                                    b [1].setEnabled (!new File (e.getDocument ().getText (0, e.getLength ()))
-                                            .equals (new File (Settings.getLogo ())));
+                                    b [1].setEnabled (!new File (t [1].getText ()).exists () ||
+                                            !new File (t [1].getText ()).getCanonicalFile ()
+                                                    .equals (new File (Settings.getLogo ()).getCanonicalFile ()));
 
                                     b [4].setEnabled (!(t [0].getText ()
                                             .equals (Settings.defaults ().getProperty ("nombre"))
@@ -253,9 +256,6 @@ public class MiscOptionsWindow extends JFrame {
                                                                     Settings.defaults ()
                                                                             .getProperty ("precioentrada")).setScale (2,
                                                                                     RoundingMode.HALF_EVEN))));
-                                }
-
-                                catch (BadLocationException e1) {
                                 }
 
                                 catch (IOException e1) {
@@ -303,7 +303,7 @@ public class MiscOptionsWindow extends JFrame {
                             b [1].setEnabled (false);
                         });
 
-                        return b [0];
+                        return b [1];
                     })).get ());
 
                     return r;
@@ -803,7 +803,7 @@ public class MiscOptionsWindow extends JFrame {
                                                     null, null, null)))
                                         return;
 
-                                    if (fields [0].getText ().equals ("")) {
+                                    if (fields [0].getText ().replace (" ", "").equals ("")) {
                                         JOptionPane.showMessageDialog (f,
                                                 "El complemento debe tener un nombre.",
                                                 "Error en la creación de complemento",
@@ -845,6 +845,14 @@ public class MiscOptionsWindow extends JFrame {
                                         continue;
                                     }
 
+                                    for (;;) {
+                                        if (!fields [0].getText ().endsWith (" "))
+                                            break;
+
+                                        fields [0].setText (fields [0].getText ().substring (0,
+                                                fields [0].getText ().length () - 2));
+                                    }
+
                                     ((ComplementosTableModel) t.getModel ()).addRow (new String [] {
                                             fields [0].getText (),
                                             fields [1].getText (),
@@ -866,9 +874,10 @@ public class MiscOptionsWindow extends JFrame {
                             b [1].setEnabled (false);
 
                             b [1].addActionListener (e -> {
-                                for (int i = 0; i < t.getRowCount (); i++)
-                                    if (t.isRowSelected (i))
-                                        ((ComplementosTableModel) t.getModel ()).removeRow (i);
+                                for (int i = 0; i < t
+                                        .getSelectedRows ().length; ((ComplementosTableModel) t.getModel ())
+                                                .removeRow (t.getSelectedRows () [i++]))
+                                    ;
                             });
 
                             return b [1];
@@ -990,7 +999,7 @@ public class MiscOptionsWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle ("Opciones");
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("FileView.floppyDriveIcon", new Locale ("es-ES"))).getImage ());
+                ((ImageIcon) UIManager.getIcon ("FileView.floppyDriveIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (w);

@@ -1,5 +1,6 @@
 package VentanaGrafica;
 
+import java.awt.Image;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
@@ -251,7 +252,7 @@ public class RegistroWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle ("Registrarse");
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("Tree.expandedIcon", new Locale ("es-ES"))).getImage ());
+                ((ImageIcon) UIManager.getIcon ("Tree.expandedIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (null);

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -20,7 +21,7 @@ public final class Settings {
     private static final String DEFAULT_SETTINGS_PATH = "data/default/settings/settings.properties";
     private static final String COMMENT = "AVISO: ESTE ARCHIVO SOLO DEBE SER MODIFICADO DESDE EL PROGRAMA.";
     private static final String DEFAULT_LOGO_PATH = "data/assets/logo.png";
-    private static final String DEFAULT_LOGO_URL = "https://w7.pngwing.com/pngs/130/1021/png-transparent-movie-logo-movie-logo-film-tape-cinema.png";
+    private static final String DEFAULT_LOGO_URL = "https://clipartmag.com/images/movie-reel-logo-17.png";
     private static Properties properties;
     private static final Properties defaults = ((Supplier <Properties>) ( () -> {
         Properties p = new Properties ();
@@ -190,7 +191,7 @@ public final class Settings {
         }
 
         try {
-            Files.copy (f.toPath (), new File (Settings.defaults.getProperty ("logo")).toPath ());
+            Files.copy (f.toPath (), new File (Settings.defaults.getProperty ("logo")).toPath (), StandardCopyOption.REPLACE_EXISTING);
         }
 
         catch (IOException e) {

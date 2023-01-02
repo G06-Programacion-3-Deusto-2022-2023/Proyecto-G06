@@ -1,9 +1,14 @@
 package internals;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -23,6 +28,7 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 import org.sqlite.SQLiteException;
 
@@ -37,9 +43,13 @@ import cine.SetPeliculas;
 import cine.Usuario;
 
 public class GestorBD {
-    protected static final String DRIVER_NAME = "org.sqlite.JDBC";
-    protected static final String DATABASE_FILE = "data/db/database.db";
-    protected static final String CONNECTION_STRING = "jdbc:sqlite:" + DATABASE_FILE;
+    private static final String DRIVER_NAME = "org.sqlite.JDBC";
+    private static final String DATABASE_FILE = "data/db/database.db";
+    private static final String CONNECTION_STRING = "jdbc:sqlite:" + DATABASE_FILE;
+    private static boolean FILE_LOCKED;
+    private static final boolean WINPERMS[] = new boolean [4];
+    private static final String DEFAULT_UNIX_PERMS = "rwxr-xr-x";
+    private static Pair <Boolean, String> UNIXPERMS = new Pair <Boolean, String> (false, GestorBD.DEFAULT_UNIX_PERMS);
 
     public GestorBD () {
         try {
@@ -52,8 +62,174 @@ public class GestorBD {
         }
     }
 
+    public static File getFile () {
+        return new File (GestorBD.DATABASE_FILE);
+    }
+
+    public static void lock () {
+        if (GestorBD.FILE_LOCKED)
+            return;
+
+        File f;
+        if (!(f = new File (GestorBD.DATABASE_FILE)).exists ())
+            return;
+
+        if (System.getProperty ("os.name").startsWith ("Windows") && !GestorBD.WINPERMS [0]) {
+            GestorBD.WINPERMS [1] = f.canRead ();
+            GestorBD.WINPERMS [2] = f.canExecute ();
+            GestorBD.WINPERMS [3] = f.canWrite ();
+        }
+
+        else if (Boolean.FALSE.equals (GestorBD.UNIXPERMS.x))
+            GestorBD.UNIXPERMS = new Pair <Boolean, String> (true, ((Supplier <String>) ( () -> {
+                Process p;
+                try {
+                    // Sí, usar comandos es una guarrada, lo sé
+                    p = Runtime.getRuntime ()
+                            .exec (String.format ("stat -c \"%%A\" %s", f.getAbsolutePath ()));
+                }
+
+                catch (IOException e) {
+                    Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                            "No se pudieron obtener los permisos originales del archivo de base de datos.");
+
+                    return GestorBD.DEFAULT_UNIX_PERMS;
+                }
+
+                try (BufferedReader r = new BufferedReader (new InputStreamReader (p.getInputStream ()))) {
+                    p.waitFor ();
+                    return r.readLine ().replaceFirst ("-", "").replace ("\"", "");
+                }
+
+                catch (IOException | InterruptedException e) {
+                    Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                            "No se pudieron obtener los permisos originales del archivo de base de datos.");
+
+                    if (e instanceof InterruptedException)
+                        Thread.currentThread ().interrupt ();
+
+                    return GestorBD.DEFAULT_UNIX_PERMS;
+                }
+            })).get ());
+
+        try {
+            if (System.getProperty ("os.name").startsWith ("Windows") && !f.setReadOnly ())
+                throw new IOException ("No se pudo bloquear el archivo de base de datos.");
+
+            if (!System.getProperty ("os.name").startsWith ("Windows")) {
+                Files.setPosixFilePermissions (f.toPath (), PosixFilePermissions.fromString ("r--r--r--"));
+
+                try {
+                    // Sé que usar sudo en un programa así como así es una cosa
+                    // bastante insegura, pero tampoco estamos jugándonos la
+                    // vida con este programa.
+                    Process p = new ProcessBuilder ("sh", "-c", String.format ("[ -z $(lsattr %s | grep \"i\") ] && chattr +i %s || true", f.getAbsolutePath(), f.getAbsolutePath ())).start ();
+                    p.waitFor ();
+                    if (p.exitValue () != 0)
+                        throw new IOException ("No se pudo aplicar el flag de inmutabilidad al archivo de base de datos.");
+                }
+
+                catch (IOException e) {
+                    Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                            "No se pudo aplicar el flag de inmutabilidad al archivo de base de datos.");
+                }
+
+                catch (InterruptedException e) {
+                    e.printStackTrace ();
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
+        catch (IOException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
+                    "No se pudo bloquear el archivo de base de datos.");
+
+            return;
+        }
+
+        GestorBD.FILE_LOCKED = true;
+    }
+
+    public static void unlock () {
+        File f;
+        if (!(f = new File (GestorBD.DATABASE_FILE)).exists ())
+            return;
+
+        if (System.getProperty ("os.name").startsWith ("Windows")) {
+            try {
+                if ((GestorBD.WINPERMS [0] = !(f.setReadable (GestorBD.WINPERMS [1])
+                        || !f.setExecutable (GestorBD.WINPERMS [2]) || !f.setExecutable (GestorBD.WINPERMS [3]))))
+                    throw new IOException ("No se pudo desbloquear el archivo de base de datos.");
+            }
+
+            catch (IOException e) {
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
+                        "No se pudo desbloquear el archivo de base de datos.");
+
+                return;
+            }
+
+            GestorBD.FILE_LOCKED = false;
+
+            return;
+        }
+
+        try {
+            Process p = new ProcessBuilder ("sh", "-c", String.format ("[ ! -z $(lsattr %s | grep \"i\") ] && chattr -i %s || true", f.getAbsolutePath(), f.getAbsolutePath ())).start ();
+            p.waitFor ();
+            if (p.exitValue () != 0)
+                throw new IOException ("No se pudo desbloquear el archivo de base de datos.");
+        }
+
+        catch (IOException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    "No se pudo quitar el flag de inmutabilidad del archivo de base de datos.");
+        }
+
+        catch (InterruptedException e) {
+            e.printStackTrace ();
+            Thread.currentThread ().interrupt ();
+        }
+
+        try {
+            Files.setPosixFilePermissions (f.toPath (), PosixFilePermissions.fromString (GestorBD.UNIXPERMS.y));
+        }
+
+        catch (IOException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
+                    "No se pudo desbloquear el archivo de base de datos.");
+
+            return;
+        }
+
+        GestorBD.FILE_LOCKED = false;
+    }
+
     public void crearBBDD () {
-        new File (new File (GestorBD.DATABASE_FILE).getParent ()).mkdirs ();
+        GestorBD.unlock();
+
+        try {
+            Files.createDirectories (new File (GestorBD.DATABASE_FILE).getParentFile ().toPath ());
+        }
+
+        catch (FileAlreadyExistsException e) {
+            try {
+                Files.delete (new File (GestorBD.DATABASE_FILE).toPath ());
+            }
+
+            catch (IOException e1) {
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
+                        "No pudo crearse la estructura de directorios del archivo de base de datos.");
+                e.printStackTrace ();
+            }
+        }
+
+        catch (IOException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
+                    "No pudo crearse la estructura de directorios del archivo de base de datos.");
+            e.printStackTrace ();
+        }
 
         // Se abre la conexión y se obtiene el Statement
         // Al abrir la conexión, si no existía el fichero, se crea la base de
@@ -121,6 +297,8 @@ public class GestorBD {
     }
 
     public void borrarBBDD () {
+        GestorBD.unlock();
+
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
@@ -138,6 +316,7 @@ public class GestorBD {
                 System.out.println ("Se han borrado las tablas");
             }
         }
+
         catch (Exception ex) {
             System.err.println (String.format ("* Error al borrar la BBDD: %s", ex.getMessage ()));
             ex.printStackTrace ();
@@ -174,6 +353,8 @@ public class GestorBD {
     }
 
     public void insert (HasID... data) {
+        GestorBD.unlock ();
+
         for (int i[] = new int [1]; i [0] < data.length; i [0]++)
             new Runnable [] {
                     data [i [0]] instanceof Administrador
@@ -198,6 +379,8 @@ public class GestorBD {
                     .asList (Administrador.class, Complemento.class, Espectador.class, Pelicula.class,
                             SetPeliculas.class)
                     .indexOf (data [i [0]].getClass ())].run ();
+
+        GestorBD.lock ();
     }
 
     private void insertarDatosPelicula (Pelicula... peliculas) {
@@ -348,6 +531,8 @@ public class GestorBD {
     }
 
     private void createAdminKeys () {
+        GestorBD.unlock ();
+
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
             for (int i = 0; i < 10; i++) {
@@ -360,12 +545,14 @@ public class GestorBD {
                     System.out.println (String.format (" - No se han insertado llaves"));
                 }
             }
-
         }
+
         catch (Exception ex) {
             System.err.println (String.format ("* Error al insertar datos de la BBDD: %s", ex.getMessage ()));
             ex.printStackTrace ();
         }
+
+        GestorBD.lock ();
     }
 
     private void insertarDatosArraySetPelicula (SetPeliculas... setPeliculas) {
@@ -395,6 +582,8 @@ public class GestorBD {
     }
 
     public void update (HasID o) {
+        GestorBD.unlock();
+
         String strs[] = new String [] [] {
                 new String [] {
                         "ADMINISTRADOR", "administrador", "administradores", "el administrador", String.format (
@@ -468,9 +657,13 @@ public class GestorBD {
                             strs [3], o.getId ().toString (), e.getMessage ()));
             e.printStackTrace ();
         }
+
+        GestorBD.lock ();
     }
 
     public void delete (HasID o) {
+        GestorBD.unlock();
+
         String strs[] = new String [] [] {
                 new String [] {
                         "ADMINISTRADOR", "administrador", "administradores", "el administrador"
@@ -505,6 +698,8 @@ public class GestorBD {
                             strs [3], o.getId ().toString (), e.getMessage ()));
             e.printStackTrace ();
         }
+
+        GestorBD.lock ();
     }
 
     public List <Pelicula> obtenerDatosPeliculas () {
@@ -800,6 +995,8 @@ public class GestorBD {
     }
 
     public void deleteAdminKeys () {
+        GestorBD.unlock();
+
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
             String sql7 = "DELETE FROM LLAVES;";
@@ -812,6 +1009,8 @@ public class GestorBD {
             System.err.println (String.format ("* Error al borrar llaves: %s", ex.getMessage ()));
             ex.printStackTrace ();
         }
+
+        GestorBD.lock ();
     }
 
     public void regenerateAdminKeys () {
@@ -820,6 +1019,8 @@ public class GestorBD {
     }
 
     public void consumeAdminKey (String key) {
+        GestorBD.unlock();
+
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);) {
             Statement stmt = con.createStatement ();
 
@@ -834,6 +1035,8 @@ public class GestorBD {
                     String.format ("* Error al borrar llaves: \"%s\"", e.getMessage ()));
             e.printStackTrace ();
         }
+
+        GestorBD.lock();
     }
 
     public void borrarDatos () {
@@ -865,9 +1068,5 @@ public class GestorBD {
             System.err.println (String.format ("* Error al borrar datos de la BBDD: %s", ex.getMessage ()));
             ex.printStackTrace ();
         }
-    }
-
-    public static File getDBFile () {
-        return new File (GestorBD.DATABASE_FILE);
     }
 }

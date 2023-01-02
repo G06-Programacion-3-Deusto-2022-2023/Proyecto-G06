@@ -197,7 +197,7 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
 
     @Override
     public String toString () {
-        return "Set de películas (hash: " + this.hashCode () + ") " + "{\n\tID: " + this.id.toString ()
+        String str = "Set de películas (hash: " + this.hashCode () + ") " + "{\n\tID: " + this.id.toString ()
                 + (this.isDefault () ? " (set predeterminado)" : "") + "\n\tNombre: " + this.nombre + "\n\tTamaño: "
                 + this.size ()
                 + "\n\tAdministrador: "
@@ -205,8 +205,9 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
                         : String.format ("%s (ID: %s)", this.administrador.getNombre (),
                                 this.administrador.getId ().toString ()))
                 + "\n\tPelículas: "
-                + this.peliculas.toString ().replace ("\n", "\n\t\t").replace ("[", "{\n\t\t").replace ("]", "\n\t\t}")
-                + "\n}";
+                + this.peliculas.toString ().replace ("\n", "\n\t\t").replace ("[", "{\n\t\t").replace ("]", "\n\t\t}");
+                
+        return str.substring (0, str.length () - 2).concat ("}\n}");
     }
 
     public int size () {

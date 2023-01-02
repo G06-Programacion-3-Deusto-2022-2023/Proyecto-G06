@@ -8,7 +8,7 @@ import java.awt.RenderingHints;
 import java.awt.Image;
 
 public class ImageDisplayer extends JPanel {
-    private final Image image;
+    private Image image;
 
     public ImageDisplayer (Image image) {
         this (image, image.getWidth (null), image.getHeight (null));
@@ -19,10 +19,37 @@ public class ImageDisplayer extends JPanel {
     }
 
     public ImageDisplayer (Image image, int width, int height) {
+        this (image, width, height, Image.SCALE_DEFAULT);
+    }
+
+    public ImageDisplayer (Image image, int width, int height, int hints) throws NullPointerException {
         super ();
 
-        this.image = image.getScaledInstance (width, height, Image.SCALE_DEFAULT);
+        if (image == null)
+            throw new NullPointerException ("No se puede mostrar una imagen nula en un ImageDisplayer.");
+
+        this.image = image.getScaledInstance (width, height, hints);
         this.image.setAccelerationPriority (1);
+    }
+
+    public Image getImage () {
+        return this.image;
+    }
+
+    public void setImage (Image image) {
+        this.setImage (image, image.getWidth (this), image.getHeight (this));
+    }
+
+    public void setImage (Image image, int width) {
+        this.setImage (image, width, image.getHeight (this) * width / image.getWidth (this));
+    }
+
+    public void setImage (Image image, int width, int height) throws NullPointerException {
+        if (image == null)
+            throw new NullPointerException ("No se puede mostrar una imagen nula en un ImageDisplayer.");
+
+        this.image = image.getScaledInstance (width, height, Image.SCALE_DEFAULT);
+        this.repaint ();
     }
 
     @Override

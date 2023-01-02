@@ -1,5 +1,6 @@
 package VentanaGrafica;
 
+import java.awt.Image;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
@@ -549,6 +550,13 @@ public class PeliculaWindow extends JFrame {
                                 }
                             }
 
+                            for (;;) {
+                                if (!nombre.getText ().endsWith (" "))
+                                    break;
+
+                                nombre.setText (nombre.getText ().substring (0, nombre.getText ().length () - 2));
+                            }
+
                             Pelicula np = new Pelicula (nombre.getText (), imgPath,
                                     (Double) valoracion.getValue (),
                                     Year.of (((SpinnerNumberModel) fecha.getModel ()).getNumber ().intValue ()),
@@ -622,7 +630,7 @@ public class PeliculaWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle (String.format ("%s una película", pelicula [0] == null ? "Añadir" : "Modificar"));
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("OptionPane.questionIcon", new Locale ("es-ES"))).getImage ());
+                ((ImageIcon) UIManager.getIcon ("OptionPane.questionIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (null);

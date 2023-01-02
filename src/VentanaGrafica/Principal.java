@@ -9,7 +9,7 @@ public class Principal {
     public static void main (String [] args) {
         GestorBD db = new GestorBD ();
         new LoadingWindow ( () -> {
-            if (GestorBD.getDBFile ().exists ())
+            if (GestorBD.getFile ().exists ())
                 db.borrarBBDD ();
             db.crearBBDD();
 
