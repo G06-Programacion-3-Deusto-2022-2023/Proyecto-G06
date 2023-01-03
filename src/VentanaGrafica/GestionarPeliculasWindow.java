@@ -46,6 +46,8 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import cine.Administrador;
 import cine.EdadRecomendada;
@@ -479,7 +481,8 @@ public class GestionarPeliculasWindow extends JFrame {
                                         && x.getFecha ().compareTo (Year
                                                 .of (((SpinnerNumberModel) maxFecha.getModel ())
                                                         .getNumber ().intValue ())) <= 0
-                                        && x.getDirector ().contains (director.getText ())
+                                        && x.getDirector ().toLowerCase (Locale.ROOT)
+                                                .contains (director.getText ().toLowerCase (Locale.ROOT))
                                         && x.getDuracion ().compareTo (Duration.ofMinutes (
                                                 ((SpinnerNumberModel) minDur.getModel ())
                                                         .getNumber ().longValue ())) >= 0
@@ -510,13 +513,29 @@ public class GestionarPeliculasWindow extends JFrame {
 
                         for (int i = 0; i < list.size (); peliculas.addItem (list.get (i++)))
                             ;
-
-                        peliculas.repaint ();
                     }).run ();
                     ChangeListener filterCL = e -> filters [0].run ();
+                    DocumentListener filterDL = new DocumentListener () {
+                        @Override
+                        public void insertUpdate (DocumentEvent e) {
+                            this.changedUpdate (e);
+                        }
+
+                        @Override
+                        public void removeUpdate (DocumentEvent e) {
+                            this.changedUpdate (e);
+                        }
+
+                        @Override
+                        public void changedUpdate (DocumentEvent e) {
+                            nombre.postActionEvent ();
+                        }
+                    };
 
                     nombre.addActionListener (filterAL);
+                    nombre.getDocument ().addDocumentListener (filterDL);
                     director.addActionListener (filterAL);
+                    director.getDocument ().addDocumentListener (filterDL);
                     for (int i = 0; i < generos.size (); generos.get (i++).addActionListener (filterAL))
                         ;
                     for (int i = 0; i < edades.size (); edades.get (i++).addActionListener (filterAL))
@@ -1430,7 +1449,8 @@ public class GestionarPeliculasWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle ("Gestionar películas");
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("FileView.hardDriveIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
+                ((ImageIcon) UIManager.getIcon ("FileView.hardDriveIcon", new Locale ("es-ES"))).getImage ()
+                        .getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (w);

@@ -44,11 +44,15 @@ public class ImageDisplayer extends JPanel {
         this.setImage (image, width, image.getHeight (this) * width / image.getWidth (this));
     }
 
-    public void setImage (Image image, int width, int height) throws NullPointerException {
+    public void setImage (Image image, int width, int height) {
+        this.setImage (image, width, height, Image.SCALE_DEFAULT);
+    }
+
+    public void setImage (Image image, int width, int height, int hints) throws NullPointerException {
         if (image == null)
             throw new NullPointerException ("No se puede mostrar una imagen nula en un ImageDisplayer.");
 
-        this.image = image.getScaledInstance (width, height, Image.SCALE_DEFAULT);
+        this.image = image.getScaledInstance (width, height, hints);
         this.repaint ();
     }
 

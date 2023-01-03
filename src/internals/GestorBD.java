@@ -123,10 +123,13 @@ public class GestorBD {
                     // Sé que usar sudo en un programa así como así es una cosa
                     // bastante insegura, pero tampoco estamos jugándonos la
                     // vida con este programa.
-                    Process p = new ProcessBuilder ("sh", "-c", String.format ("[ -z $(lsattr %s | grep \"i\") ] && chattr +i %s || true", f.getAbsolutePath(), f.getAbsolutePath ())).start ();
+                    Process p = new ProcessBuilder ("sh", "-c",
+                            String.format ("[ -z $(lsattr %s | grep \"i\") ] && chattr +i %s || true",
+                                    f.getAbsolutePath (), f.getAbsolutePath ())).start ();
                     p.waitFor ();
                     if (p.exitValue () != 0)
-                        throw new IOException ("No se pudo aplicar el flag de inmutabilidad al archivo de base de datos.");
+                        throw new IOException (
+                                "No se pudo aplicar el flag de inmutabilidad al archivo de base de datos.");
                 }
 
                 catch (IOException e) {
@@ -136,7 +139,7 @@ public class GestorBD {
 
                 catch (InterruptedException e) {
                     e.printStackTrace ();
-                    Thread.currentThread().interrupt();
+                    Thread.currentThread ().interrupt ();
                 }
             }
         }
@@ -176,7 +179,9 @@ public class GestorBD {
         }
 
         try {
-            Process p = new ProcessBuilder ("sh", "-c", String.format ("[ ! -z $(lsattr %s | grep \"i\") ] && chattr -i %s || true", f.getAbsolutePath(), f.getAbsolutePath ())).start ();
+            Process p = new ProcessBuilder ("sh", "-c",
+                    String.format ("[ ! -z $(lsattr %s | grep \"i\") ] && chattr -i %s || true", f.getAbsolutePath (),
+                            f.getAbsolutePath ())).start ();
             p.waitFor ();
             if (p.exitValue () != 0)
                 throw new IOException ("No se pudo desbloquear el archivo de base de datos.");
@@ -207,7 +212,7 @@ public class GestorBD {
     }
 
     public void crearBBDD () {
-        GestorBD.unlock();
+        GestorBD.unlock ();
 
         try {
             Files.createDirectories (new File (GestorBD.DATABASE_FILE).getParentFile ().toPath ());
@@ -297,7 +302,7 @@ public class GestorBD {
     }
 
     public void borrarBBDD () {
-        GestorBD.unlock();
+        GestorBD.unlock ();
 
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
@@ -582,7 +587,7 @@ public class GestorBD {
     }
 
     public void update (HasID o) {
-        GestorBD.unlock();
+        GestorBD.unlock ();
 
         String strs[] = new String [] [] {
                 new String [] {
@@ -662,23 +667,37 @@ public class GestorBD {
     }
 
     public void delete (HasID o) {
-        GestorBD.unlock();
+        GestorBD.unlock ();
 
-        String strs[] = new String [] [] {
-                new String [] {
-                        "ADMINISTRADOR", "administrador", "administradores", "el administrador"
+        Object delete[] = new Object [] [] {
+                new Object [] {
+                        "ADMINISTRADOR", "administrador", "administradores", "el administrador", (Runnable) () -> {
+                            try {
+                                this.deleteAdminData ((Administrador) o);
+                            }
+
+                            catch (ClassCastException e) {
+                            }
+                        }
                 },
-                new String [] {
-                        "COMPLEMENTO", "complemento", "complementos", "el complemento"
+                new Object [] {
+                        "COMPLEMENTO", "complemento", "complementos", "el complemento", null
                 },
-                new String [] {
-                        "ESPECTADOR", "espectador", "espectadores", "el espectador"
+                new Object [] {
+                        "ESPECTADOR", "espectador", "espectadores", "el espectador", (Runnable) () -> {
+                            try {
+                                this.deleteEspectadorData ((Espectador) o);
+                            }
+
+                            catch (ClassCastException e) {
+                            }
+                        }
                 },
-                new String [] {
-                        "PELICULA", "película", "películas", "la película"
+                new Object [] {
+                        "PELICULA", "película", "películas", "la película", null
                 },
-                new String [] {
-                        "SETS_PELICULAS", "set de peliculas", "sets de películas", "el set de películas"
+                new Object [] {
+                        "SETS_PELICULAS", "set de peliculas", "sets de películas", "el set de películas", null
                 }
         } [Arrays.asList (Administrador.class, Complemento.class, Espectador.class, Pelicula.class, SetPeliculas.class)
                 .indexOf (o.getClass ())];
@@ -687,19 +706,34 @@ public class GestorBD {
                 Statement stmt = con.createStatement ()) {
 
             int deleted = stmt.executeUpdate (
-                    String.format ("DELETE FROM %s WHERE ID_%s = '%s'", strs [0], strs [0], o.getId ()));
+                    String.format ("DELETE FROM %s WHERE ID_%s = '%s'", delete [0], delete [0], o.getId ()));
             Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO, String.format ("Se ha%s eliminado %d %s.",
-                    deleted == 1 ? "" : "n", deleted, strs [deleted == 1 ? 1 : 2]));
+                    deleted == 1 ? "" : "n", deleted, delete [deleted == 1 ? 1 : 2]));
         }
 
         catch (Exception e) {
             Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
                     String.format ("Error al eliminar %s con ID %s de la BBDD: %s",
-                            strs [3], o.getId ().toString (), e.getMessage ()));
+                            delete [3], o.getId ().toString (), e.getMessage ()));
             e.printStackTrace ();
         }
 
+        if (delete [4] != null)
+            ((Runnable) delete [4]).run ();
+
         GestorBD.lock ();
+    }
+
+    public void deleteEspectadorData (Espectador espectador) {
+        espectador.getHistorial ().clear ();
+        this.update (espectador);
+    }
+
+    public void deleteAdminData (Administrador admin) {
+        SetPeliculas sets[] = admin.getSetsPeliculas ().toArray (new SetPeliculas [0]);
+        for (int i = 0; i < sets.length; this.delete (sets [i++]))
+            ;
+        this.update (admin);
     }
 
     public List <Pelicula> obtenerDatosPeliculas () {
@@ -995,7 +1029,7 @@ public class GestorBD {
     }
 
     public void deleteAdminKeys () {
-        GestorBD.unlock();
+        GestorBD.unlock ();
 
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
@@ -1019,7 +1053,7 @@ public class GestorBD {
     }
 
     public void consumeAdminKey (String key) {
-        GestorBD.unlock();
+        GestorBD.unlock ();
 
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);) {
             Statement stmt = con.createStatement ();
@@ -1036,7 +1070,7 @@ public class GestorBD {
             e.printStackTrace ();
         }
 
-        GestorBD.lock();
+        GestorBD.lock ();
     }
 
     public void borrarDatos () {

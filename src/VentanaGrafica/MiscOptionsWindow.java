@@ -237,7 +237,6 @@ public class MiscOptionsWindow extends JFrame {
 
                             @Override
                             public void changedUpdate (DocumentEvent e) {
-                                System.out.println (t [1].getText ());
                                 try {
                                     b [1].setEnabled (!new File (t [1].getText ()).exists () ||
                                             !new File (t [1].getText ()).getCanonicalFile ()

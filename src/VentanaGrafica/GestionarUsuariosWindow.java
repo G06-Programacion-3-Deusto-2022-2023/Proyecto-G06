@@ -36,6 +36,10 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import org.sqlite.Function.Window;
 
 import cine.Administrador;
 import cine.Espectador;
@@ -61,10 +65,9 @@ public class GestionarUsuariosWindow extends JFrame {
             throw new NullPointerException (
                     "No se puede pasar un administador nulo a la ventana de gestión de usuarios.");
 
-        // if (!db.obtenerDatosAdministradores ().contains (admin))
-        // throw new UnsupportedOperationException (
-        // "El administrador enviado a la ventana de gestión de usuarios no se
-        // encuentra en la base de datos.");
+        if (!db.obtenerDatosAdministradores ().contains (admin))
+            throw new UnsupportedOperationException (
+                    "El administrador enviado a la ventana de gestión de usuarios no se encuentra en la base de datos.");
 
         AdministradorWindow pw[] = new AdministradorWindow [] { w };
         GestionarUsuariosWindow f = this;
@@ -98,11 +101,19 @@ public class GestionarUsuariosWindow extends JFrame {
             JPanel p = new JPanel ();
             p.setLayout (new BoxLayout (p, BoxLayout.Y_AXIS));
 
-            p.add (Box.createRigidArea (new Dimension (0, 50)));
+            p.add (Box.createRigidArea (new Dimension (0, 25)));
 
             p.add (((Supplier <JPanel>) ( () -> {
                 JPanel q = new JPanel ();
                 q.setLayout (new BoxLayout (q, BoxLayout.X_AXIS));
+
+                q.add (Box.createRigidArea (new Dimension (25, 0)));
+
+                JButton bbb[] = new JButton [] {
+                        new JButton ("Cambiar contraseña"),
+                        new JButton ("Borrar datos"),
+                        new JButton ("Eliminar")
+                };
 
                 JComboBox <String> users = new JComboBox <String> (((Supplier <Vector <String>>) ( () -> {
                     Vector <String> v = new Vector <String> ();
@@ -127,6 +138,13 @@ public class GestionarUsuariosWindow extends JFrame {
 
                     return v;
                 })).get ());
+                users.addActionListener (e -> {
+                    bbb [0].setEnabled (users.getItemCount () != 0);
+                    bbb [1].setEnabled (users.getItemCount () != 0);
+                    bbb [2].setEnabled (users.getItemCount () != 0);
+                });
+                if (users.getItemCount () != 0)
+                    users.setSelectedIndex (0);
 
                 q.add (((Supplier <JPanel>) ( () -> {
                     JPanel r = new JPanel ();
@@ -203,6 +221,22 @@ public class GestionarUsuariosWindow extends JFrame {
                         };
 
                         filter.addActionListener (filterAL);
+                        filter.getDocument ().addDocumentListener (new DocumentListener () {
+                            @Override
+                            public void insertUpdate (DocumentEvent e) {
+                                this.changedUpdate (e);
+                            }
+
+                            @Override
+                            public void removeUpdate (DocumentEvent e) {
+                                this.changedUpdate (e);
+                            }
+
+                            @Override
+                            public void changedUpdate (DocumentEvent e) {
+                                filter.postActionEvent ();
+                            }
+                        });
                         bb.get (0).addActionListener (filterAL);
                         bb.get (1).addActionListener (filterAL);
                         bb.get (2).addActionListener (filterAL);
@@ -270,28 +304,97 @@ public class GestionarUsuariosWindow extends JFrame {
                         JPanel t = new JPanel (new GridLayout (3, 1, 0, 25));
 
                         t.add (((Supplier <JButton>) ( () -> {
-                            JButton b = new JButton ("Cambiar contraseña");
+                            bbb [0].setEnabled (users.getSelectedIndex () != -1);
 
-                            b.addActionListener (e -> {
-                                String passwd;
+                            bbb [0].addActionListener (e -> {
+                                JPasswordField passwd = new JPasswordField (new JTextFieldLimit (28), "", 25);
 
-                                if ((passwd = JOptionPane.showInputDialog ("Introduce la nueva contraseña.")) == null)
+                                for (;;) {
+                                    if (JOptionPane.showOptionDialog (f,
+                                            new Object [] { "Introduce la nueva contraseña.", passwd },
+                                            "Cambiar contraseña", JOptionPane.YES_OPTION,
+                                            JOptionPane.INFORMATION_MESSAGE,
+                                            null, new String [] { "Confirmar", "Cancelar" },
+                                            JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
+                                        return;
+
+                                    if (new String (passwd.getPassword ()).replace (" ", "").equals ("")) {
+                                        JOptionPane.showMessageDialog (f, "No puede introducirse una contraseña vacía.",
+                                                "Error al cambiar la contraseña", JOptionPane.ERROR_MESSAGE);
+
+                                        continue;
+                                    }
+
+                                    if (new String (passwd.getPassword ()).replace (" ", "").length () < 4) {
+                                        JOptionPane.showMessageDialog (f,
+                                                "La contraseña debe tener 4 o más carácteres.",
+                                                "Error al cambiar la contraseña", JOptionPane.ERROR_MESSAGE);
+
+                                        continue;
+                                    }
+
+                                    if (new String (passwd.getPassword ()).contains (" ")) {
+                                        JOptionPane.showMessageDialog (f, "La contraseña no puede contener espacios.",
+                                                "Error al cambiar la contraseña", JOptionPane.ERROR_MESSAGE);
+
+                                        continue;
+                                    }
+
+                                    if (new String (passwd.getPassword ()).contains ("\"")
+                                            || new String (passwd.getPassword ()).contains ("'")) {
+                                        JOptionPane.showMessageDialog (f, "La contraseña no puede contener comillas.",
+                                                "Error al cambiar la contraseña", JOptionPane.ERROR_MESSAGE);
+
+                                        continue;
+                                    }
+
+                                    String username = ((String) users.getSelectedItem ()).substring (0,
+                                            ((String) users.getSelectedItem ()).length () - 4);
+
+                                    Usuario user = ((String) users.getSelectedItem ()).endsWith ((" (A)"))
+                                            ? db.obtenerDatosAdministradorPorNombre (username)
+                                            : db.obtenerDatosEspectadores ().stream ()
+                                                    .filter (x -> x.getNombre ().equals (username)).findFirst ().get ();
+
+                                    if (new String (passwd.getPassword ()).equals (user.getContrasena ())) {
+                                        JOptionPane.showMessageDialog (f,
+                                                "La contraseña introducida es la contraseña del usuario.",
+                                                "Error al cambiar la contraseña", JOptionPane.WARNING_MESSAGE);
+
+                                        continue;
+                                    }
+
+                                    user.setContrasena (new String (passwd.getPassword ()));
+                                    db.update (user);
+
+                                    if (((String) users.getSelectedItem ())
+                                            .substring (0, ((String) users.getSelectedItem ()).length () - 4)
+                                            .equals (admin.getNombre ())) {
+                                        JOptionPane.showMessageDialog (f,
+                                                "Se ha cambiado la contraseña del usuario activo por lo que se procederá a cerrar sesión.",
+                                                "Contraseña del usuario activo modificada",
+                                                JOptionPane.INFORMATION_MESSAGE);
+
+                                        if (w == null)
+                                            f.dispose ();
+
+                                        w.setDefaultCloseOperation (WindowConstants.EXIT_ON_CLOSE);
+                                        pw [0] = null;
+                                        f.dispose ();
+                                        w.dispose ();
+                                    }
+
                                     return;
+                                }
                             });
 
-                            return b;
+                            return bbb [0];
                         })).get ());
 
                         t.add (((Supplier <JButton>) ( () -> {
-                            JButton b = new JButton ("Borrar datos");
+                            bbb [1].setEnabled (users.getSelectedIndex () != -1);
 
-                            return b;
-                        })).get ());
-
-                        t.add (((Supplier <JButton>) ( () -> {
-                            JButton b = new JButton ("Eliminar");
-
-                            b.addActionListener (e -> {
+                            bbb [1].addActionListener (e -> {
                                 if (JOptionPane.showOptionDialog (f,
                                         "Lo que estás a punto de hacer es una acción irreversible.\n¿Estás seguro de querer continuar?",
                                         "Eliminar película", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
@@ -301,17 +404,64 @@ public class GestionarUsuariosWindow extends JFrame {
                                         }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
                                     return;
 
-                                if (!((String) users.getSelectedItem ()).equals (admin.getNombre ()))
-                                    return;
-
-                                JOptionPane.showMessageDialog (f,
-                                        "Se ha eliminado el usuario activo por lo que se procederá a cerrar sesión.",
-                                        "Usuario activo eliminado", JOptionPane.INFORMATION_MESSAGE);
-                                f.dispose ();
-                                Principal.main (null);
+                                db.deleteEspectadorData (db.obtenerDatosEspectadores ().stream ()
+                                        .filter (x -> x.getNombre ().equals (((String) users.getSelectedItem ())
+                                                .substring (0,
+                                                        ((String) users.getSelectedItem ()).length () - 4)))
+                                        .findFirst ().get ());
                             });
 
-                            return b;
+                            return bbb [1];
+                        })).get ());
+
+                        t.add (((Supplier <JButton>) ( () -> {
+                            bbb [2].setEnabled (users.getSelectedIndex () != -1);
+
+                            bbb [2].addActionListener (e -> {
+                                if (JOptionPane.showOptionDialog (f,
+                                        "Lo que estás a punto de hacer es una acción irreversible.\n¿Estás seguro de querer continuar?",
+                                        "Eliminar película", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+                                        null, new String [] {
+                                                "Confirmar",
+                                                "Cancelar"
+                                        }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
+                                    return;
+
+                                String username = ((String) users.getSelectedItem ()).substring (0,
+                                        ((String) users.getSelectedItem ()).length () - 4);
+
+                                if (((String) users.getSelectedItem ()).endsWith (" (E)")) {
+                                    db.delete (db.obtenerDatosEspectadores ().stream ()
+                                            .filter (x -> x.getNombre ().equals (username)).findFirst ().get ());
+
+                                    return;
+                                }
+
+                                db.delete (db.obtenerDatosAdministradorPorNombre (username));
+
+                                if (((String) users.getSelectedItem ())
+                                        .substring (0, ((String) users.getSelectedItem ()).length () - 4)
+                                        .equals (admin.getNombre ())) {
+                                    JOptionPane.showMessageDialog (f,
+                                            "Se ha eliminado el usuario activo por lo que se procederá a cerrar sesión.",
+                                            "Usuario activo eliminado", JOptionPane.INFORMATION_MESSAGE);
+
+                                    if (w == null)
+                                        f.dispose ();
+
+                                    w.setDefaultCloseOperation (WindowConstants.EXIT_ON_CLOSE);
+                                    pw [0] = null;
+                                    f.dispose ();
+                                    w.dispose ();
+
+                                    return;
+                                }
+
+                                users.removeItem (users.getSelectedItem ());
+                                users.repaint ();
+                            });
+
+                            return bbb [2];
                         })).get ());
 
                         return t;
@@ -320,9 +470,9 @@ public class GestionarUsuariosWindow extends JFrame {
                     return r;
                 })).get ());
 
-                q.add (Box.createRigidArea (new Dimension (10, 0)));
+                q.add (Box.createRigidArea (new Dimension (25, 0)));
                 q.add (new JSeparator (SwingConstants.VERTICAL));
-                q.add (Box.createRigidArea (new Dimension (10, 0)));
+                q.add (Box.createRigidArea (new Dimension (25, 0)));
 
                 q.add (((Supplier <JPanel>) ( () -> {
                     JPanel r = new JPanel ();
@@ -358,8 +508,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                                 .contains (JOptionPane.showOptionDialog (f,
                                                         new Object [] {
                                                                 "Introduce un nombre de usuario y una contraseña", user,
-                                                                pass,
-                                                                role },
+                                                                pass, role },
                                                         "Crear usuario", JOptionPane.OK_CANCEL_OPTION,
                                                         JOptionPane.QUESTION_MESSAGE,
                                                         null, null, null)))
@@ -407,11 +556,28 @@ public class GestionarUsuariosWindow extends JFrame {
                                         }
 
                                         if (!new String (pass.getPassword ()).equals ("")
-                                                && new String (pass.getPassword ()).length () < 4) {
+                                                && new String (pass.getPassword ()).replace (" ", "").length () < 4) {
                                             JOptionPane.showMessageDialog (f,
                                                     "La contraseña del usuario debe ser de al menos 4 carácteres.",
                                                     "Error en el registro",
                                                     JOptionPane.ERROR_MESSAGE);
+
+                                            continue;
+                                        }
+
+                                        if (new String (pass.getPassword ()).contains (" ")) {
+                                            JOptionPane.showMessageDialog (f,
+                                                    "La contraseña no puede contener espacios.",
+                                                    "Error en el registro", JOptionPane.ERROR_MESSAGE);
+
+                                            continue;
+                                        }
+
+                                        if (new String (pass.getPassword ()).contains ("\"")
+                                                || new String (pass.getPassword ()).contains ("'")) {
+                                            JOptionPane.showMessageDialog (f,
+                                                    "La contraseña no puede contener comillas.",
+                                                    "Error en el registro", JOptionPane.ERROR_MESSAGE);
 
                                             continue;
                                         }
@@ -567,17 +733,21 @@ public class GestionarUsuariosWindow extends JFrame {
                     return r;
                 })).get ());
 
+                q.add (Box.createRigidArea (new Dimension (25, 0)));
+
                 return q;
             })).get ());
+
+            p.add (Box.createRigidArea (new Dimension (0, 25)));
 
             return p;
         })).get (), BorderLayout.CENTER);
 
-
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle ("Gestionar usuarios");
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("FileView.hardDriveIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
+                ((ImageIcon) UIManager.getIcon ("FileView.hardDriveIcon", new Locale ("es-ES"))).getImage ()
+                        .getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (w);

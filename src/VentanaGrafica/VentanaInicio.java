@@ -4,8 +4,6 @@ import java.awt.Image;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
@@ -14,7 +12,6 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.awt.Font;
 import java.awt.BorderLayout;
-import java.awt.Component;
 
 import java.util.Locale;
 import java.util.function.Supplier;
@@ -91,10 +88,8 @@ public class VentanaInicio extends JFrame {
 
                 if (id [0] != null) {
                     try {
-                        id [0].setImage (
-                                new ImageIcon (new File (Settings.defaults ().getProperty ("logo")).toURI ().toURL ())
-                                        .getImage (),
-                                lw);
+                        Image img = new ImageIcon (new File (Settings.getLogo ()).toURI ().toURL ()).getImage ();
+                        id [0].setImage (img, lw, img.getHeight (null) * lw / img.getWidth (null), Image.SCALE_SMOOTH);
                     }
 
                     catch (MalformedURLException e2) {
@@ -108,12 +103,10 @@ public class VentanaInicio extends JFrame {
                     return;
                 }
 
-                if (addip [0] != null)
+                if (addip [0] != null) {
                     try {
-                        id [0] = new ImageDisplayer (
-                                new ImageIcon (new File (Settings.defaults ().getProperty ("logo")).toURI ().toURL ())
-                                        .getImage (),
-                                lw);
+                        Image img = new ImageIcon (new File (Settings.getLogo ()).toURI ().toURL ()).getImage ();
+                        id [0] = new ImageDisplayer (img, lw, img.getHeight (null) * lw / img.getWidth (null));
                     }
 
                     catch (MalformedURLException e2) {
@@ -124,8 +117,8 @@ public class VentanaInicio extends JFrame {
                         id [0] = null;
                     }
 
-                addip [0].run ();
-                f.repaint ();
+                    addip [0].run ();
+                }
             }
         });
 
@@ -227,6 +220,9 @@ public class VentanaInicio extends JFrame {
 
                             return r;
                         })).get ());
+
+                        f.pack ();
+                        f.repaint ();
                     }).run ();
 
                     return ip [0];

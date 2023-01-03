@@ -131,21 +131,32 @@ public class RegistroWindow extends JFrame {
                     JButton b = new JButton ("Registrarse");
 
                     b.addActionListener (e -> {
-                        if (((JTextField) fields [0] [1]).getText ().equals ("")) {
-                            JOptionPane.showMessageDialog (f, "El usuario debe tener un nombre.");
+                        if (((JTextField) fields [0] [1]).getText ().replace (" ", "").equals ("")) {
+                            JOptionPane.showMessageDialog (f, "El usuario debe tener un nombre.",
+                                    "Error en el registro", JOptionPane.ERROR_MESSAGE);
 
                             return;
                         }
 
-                        if (((JTextField) fields [0] [1]).getText ().length () < 3) {
+                        if (((JTextField) fields [0] [1]).getText ().replace (" ", "").length () < 3) {
                             JOptionPane.showMessageDialog (f,
-                                    "El nombre de usuario debe ser de al menos 3 carácteres.");
+                                    "El nombre de usuario debe ser de al menos 3 carácteres.", "Error en el registro",
+                                    JOptionPane.ERROR_MESSAGE);
 
                             return;
                         }
 
                         if (((JTextField) fields [0] [1]).getText ().contains (" ")) {
-                            JOptionPane.showMessageDialog (f, "El nombre de usuario no puede contener espacios.");
+                            JOptionPane.showMessageDialog (f, "El nombre de usuario no puede contener espacios.",
+                                    "Error en el registro", JOptionPane.ERROR_MESSAGE);
+
+                            return;
+                        }
+
+                        if (((JTextField) fields [0] [1]).getText ().contains ("\"")
+                                || ((JTextField) fields [0] [1]).getText ().contains ("'")) {
+                            JOptionPane.showMessageDialog (f, "El nombre de usuario no puede contener comillas.",
+                                    "Error en el registro", JOptionPane.ERROR_MESSAGE);
 
                             return;
                         }
@@ -160,28 +171,43 @@ public class RegistroWindow extends JFrame {
                                                 .collect (Collectors.toList ())
                                                 .contains (((JTextField) fields [0] [1]).getText ()))) {
                             JOptionPane.showMessageDialog (f,
-                                    "El nombre de usuario no está disponible.");
+                                    "El nombre de usuario no está disponible.", "Error en el registro",
+                                    JOptionPane.ERROR_MESSAGE);
 
                             return;
                         }
 
-                        if (new String (((JPasswordField) fields [1] [1]).getPassword ()).equals ("")) {
+                        if (new String (((JPasswordField) fields [1] [1]).getPassword ()).replace (" ", "")
+                                .equals ("")) {
                             JOptionPane.showMessageDialog (f,
-                                    "El usuario debe tener una contraseña.");
+                                    "El usuario debe tener una contraseña.", "Error en el registro",
+                                    JOptionPane.ERROR_MESSAGE);
 
                             return;
                         }
 
-                        if (new String (((JPasswordField) fields [1] [1]).getPassword ()).length () < 4) {
+                        if (new String (((JPasswordField) fields [1] [1]).getPassword ()).replace (" ", "")
+                                .length () < 4) {
                             JOptionPane.showMessageDialog (f,
-                                    "La contraseña del usuario debe ser de al menos 4 carácteres.");
+                                    "La contraseña del usuario debe ser de al menos 4 carácteres.",
+                                    "Error en el registro", JOptionPane.ERROR_MESSAGE);
 
                             return;
                         }
 
                         if (new String (((JPasswordField) fields [1] [1]).getPassword ()).contains (" ")) {
                             JOptionPane.showMessageDialog (f,
-                                    "La contraseña del usuario no puede contener espacios.");
+                                    "La contraseña del usuario no puede contener espacios.", "Error en el registro",
+                                    JOptionPane.ERROR_MESSAGE);
+
+                            return;
+                        }
+
+                        if (new String (((JPasswordField) fields [1] [1]).getPassword ()).contains ("\"")
+                                || new String (((JPasswordField) fields [1] [1]).getPassword ()).contains ("'")) {
+                            JOptionPane.showMessageDialog (f,
+                                    "La contraseña del usuario no puede contener comillas.", "Error en el registro",
+                                    JOptionPane.ERROR_MESSAGE);
 
                             return;
                         }
@@ -189,7 +215,7 @@ public class RegistroWindow extends JFrame {
                         if (!new String (((JPasswordField) fields [2] [1]).getPassword ())
                                 .equals (new String (((JPasswordField) fields [1] [1]).getPassword ()))) {
                             JOptionPane.showMessageDialog (f,
-                                    "Las contraseñas no coinciden.");
+                                    "Las contraseñas no coinciden.", "Error en el registro", JOptionPane.ERROR_MESSAGE);
 
                             return;
                         }
@@ -252,7 +278,8 @@ public class RegistroWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle ("Registrarse");
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("Tree.expandedIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
+                ((ImageIcon) UIManager.getIcon ("Tree.expandedIcon", new Locale ("es-ES"))).getImage ()
+                        .getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (null);
