@@ -131,14 +131,14 @@ public class RegistroWindow extends JFrame {
                     JButton b = new JButton ("Registrarse");
 
                     b.addActionListener (e -> {
-                        if (((JTextField) fields [0] [1]).getText ().replace (" ", "").equals ("")) {
+                        if (((JTextField) fields [0] [1]).getText ().strip ().equals ("")) {
                             JOptionPane.showMessageDialog (f, "El usuario debe tener un nombre.",
                                     "Error en el registro", JOptionPane.ERROR_MESSAGE);
 
                             return;
                         }
 
-                        if (((JTextField) fields [0] [1]).getText ().replace (" ", "").length () < 3) {
+                        if (((JTextField) fields [0] [1]).getText ().strip ().length () < 3) {
                             JOptionPane.showMessageDialog (f,
                                     "El nombre de usuario debe ser de al menos 3 carácteres.", "Error en el registro",
                                     JOptionPane.ERROR_MESSAGE);
@@ -154,7 +154,7 @@ public class RegistroWindow extends JFrame {
                         }
 
                         if (((JTextField) fields [0] [1]).getText ().contains ("\"")
-                                || ((JTextField) fields [0] [1]).getText ().contains ("'")) {
+                                || ((JTextField) fields [0] [1]).getText ().contains ("'") || ((JTextField) fields [0] [1]).getText ().contains ("`")) {
                             JOptionPane.showMessageDialog (f, "El nombre de usuario no puede contener comillas.",
                                     "Error en el registro", JOptionPane.ERROR_MESSAGE);
 
@@ -177,7 +177,7 @@ public class RegistroWindow extends JFrame {
                             return;
                         }
 
-                        if (new String (((JPasswordField) fields [1] [1]).getPassword ()).replace (" ", "")
+                        if (new String (((JPasswordField) fields [1] [1]).getPassword ()).strip ()
                                 .equals ("")) {
                             JOptionPane.showMessageDialog (f,
                                     "El usuario debe tener una contraseña.", "Error en el registro",
@@ -186,7 +186,7 @@ public class RegistroWindow extends JFrame {
                             return;
                         }
 
-                        if (new String (((JPasswordField) fields [1] [1]).getPassword ()).replace (" ", "")
+                        if (new String (((JPasswordField) fields [1] [1]).getPassword ()).strip ()
                                 .length () < 4) {
                             JOptionPane.showMessageDialog (f,
                                     "La contraseña del usuario debe ser de al menos 4 carácteres.",
@@ -204,7 +204,7 @@ public class RegistroWindow extends JFrame {
                         }
 
                         if (new String (((JPasswordField) fields [1] [1]).getPassword ()).contains ("\"")
-                                || new String (((JPasswordField) fields [1] [1]).getPassword ()).contains ("'")) {
+                                || new String (((JPasswordField) fields [1] [1]).getPassword ()).contains ("'") || ((JTextField) fields [0] [1]).getText ().contains ("`")) {
                             JOptionPane.showMessageDialog (f,
                                     "La contraseña del usuario no puede contener comillas.", "Error en el registro",
                                     JOptionPane.ERROR_MESSAGE);

@@ -246,7 +246,7 @@ public class GestorBD {
                     + " ID_PELICULA STRING PRIMARY KEY NOT NULL,\n"
                     + " NOMBRE_PELICULA STRING,\n"
                     + " RUTA_IMAGEN STRING, \n"
-                    + " VALORACION INTEGER NOT NULL,\n"
+                    + " VALORACION DECIMAL(3, 1) NOT NULL,\n"
                     + " FECHA INTEGER, \n"
                     + " DIRECTOR STRING NOT NULL,\n"
                     + " DURACION INTEGER NOT NULL,\n"
@@ -267,7 +267,7 @@ public class GestorBD {
             String sql4 = "CREATE TABLE IF NOT EXISTS COMPLEMENTO (\n"
                     + " ID_COMPLEMENTO STRING ,\n"
                     + " NOMBRE_COMPLEMENTO STRING PRIMARY KEY NOT NULL ,\n"
-                    + " PRECIO DECIMAL(6,4), \n"
+                    + " PRECIO DECIMAL(65,2), \n"
                     + " DESCUENTO INTEGER \n"
                     + ");";
             String sql5 = "CREATE TABLE IF NOT EXISTS SET_PELICULA (\n"
@@ -393,16 +393,17 @@ public class GestorBD {
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
             // Se define la plantilla de la sentencia SQL
-            String sql = "INSERT INTO PELICULA (ID_PELICULA, NOMBRE_PELICULA,RUTA_IMAGEN, VALORACION, FECHA, DIRECTOR, DURACION, EDAD_RECOMENDADA, GENEROS) VALUES ('%s', '%s', '%s', %d, '%s','%s', %d, '%s', %d);";
 
             System.out.println ("- Insertando peliculas...");
 
             // Se recorren los clientes y se insertan uno a uno
             for (Pelicula p : peliculas) {
-                int Valoracion = (int) p.getValoracion ();
                 if (1 == stmt
-                        .executeUpdate (String.format (sql, p.getId ().toString (), p.getNombre (), p.getRutaImagen (),
-                                (int) Valoracion, p.getFecha (), p.getDirector (), (int) p.getDuracion ().toMinutes (),
+                        .executeUpdate (String.format (
+                                "INSERT INTO PELICULA (ID_PELICULA, NOMBRE_PELICULA, RUTA_IMAGEN, VALORACION, FECHA, DIRECTOR, DURACION, EDAD_RECOMENDADA, GENEROS) VALUES ('%s', '%s', '%s', %s, %d,'%s', %d, %d, %d);",
+                                p.getId ().toString (), p.getNombre (), p.getRutaImagen (),
+                                Double.toString (p.getValoracion ()).replace (",", "."), p.getFecha ().getValue (),
+                                p.getDirector (), p.getDuracion ().toMinutes (),
                                 p.getEdad ().getValue (), Genero.Nombre.toValor (p.getGeneros ())))) {
                     System.out.println (String.format (" - Pelicula insertada: %s", p.toString ()));
                 }
@@ -428,7 +429,7 @@ public class GestorBD {
 
             for (Administrador a : administrador) {
                 if (1 == stmt.executeUpdate (String.format (sql, a.getId (), a.getNombre (), a.getContrasena ()))) {
-                    System.out.println (String.format (" - Administrador insertada: %s", a.toString ()));
+                    System.out.println (String.format (" - Administrador insertado: %s", a.toString ()));
                 }
                 else {
                     System.out.println (String.format (" - No se ha insertado el administrador: %s", a.toString ()));
@@ -448,15 +449,15 @@ public class GestorBD {
             // Se define la plantilla de la sentencia SQL
             String sql = "INSERT INTO ESPECTADOR (ID_ESPECTADOR, NOMBRE_ESPECTADOR, CONTRASENA_ESPECTADOR, EDAD) VALUES ('%s', '%s', '%s', %d);";
 
-            System.out.println ("- Insertando usuarios...");
+            System.out.println ("- Insertando espectadores...");
 
             for (Espectador e : espectador) {
                 if (1 == stmt.executeUpdate (
                         String.format (sql, e.getId (), e.getNombre (), e.getContrasena (), e.getEdad ()))) {
-                    System.out.println (String.format (" - Usuario insertada: %s", e.toString ()));
+                    System.out.println (String.format (" - Espectador insertado: %s", e.toString ()));
                 }
                 else {
-                    System.out.println (String.format (" - No se ha insertado el usuario: %s", e.toString ()));
+                    System.out.println (String.format (" - No se ha insertado el espectador: %s", e.toString ()));
                 }
             }
         }
@@ -586,140 +587,209 @@ public class GestorBD {
         }
     }
 
-    public void update (HasID o) {
+    public void update (Collection <? extends HasID>... data) {
+        List <HasID> l = new ArrayList <HasID> ();
+
+        for (int i = 0; i < data.length; l.addAll (data [i++]))
+            ;
+
+        this.update (l.toArray (new HasID [0]));
+    }
+
+    public void update (HasID []... data) {
+        List <HasID> l = new ArrayList <HasID> ();
+
+        for (int i = 0; i < data.length; i++)
+            for (int j = 0; j < data [i].length; l.add (data [i] [j]))
+                ;
+
+        this.insert (l.toArray (new HasID [0]));
+    }
+
+    public void update (HasID... data) {
         GestorBD.unlock ();
 
-        String strs[] = new String [] [] {
-                new String [] {
-                        "ADMINISTRADOR", "administrador", "administradores", "el administrador", String.format (
-                                "UPDATE ADMINISTRADOR SET NOMBRE_ADMINISTRADOR = '%s', CONTRASENA_ADMINISTRADOR = '%s' WHERE ID_ADMINISTRADOR = '%s'",
-                                o instanceof Administrador ? ((Administrador) o).getNombre () : "",
-                                o instanceof Administrador ? ((Administrador) o).getContrasena () : "",
-                                o.getId ())
-                },
-                new String [] {
-                        "COMPLEMENTO", "complemento", "complementos", "el complemento", String.format (
-                                "UPDATE COMPLEMENTO SET NOMBRE_COMPLEMENTO = '%s', PRECIO = '%.2f', DESCUENTO = %d WHERE ID_COMPLEMENTO = '%s'",
-                                o instanceof Complemento ? ((Complemento) o).getNombre () : "",
-                                o instanceof Complemento ? ((Complemento) o).getPrecio ().doubleValue () : 0.0f,
-                                o instanceof Complemento ? ((Complemento) o).getDescuento () : 0,
-                                o.getId ())
-                },
-                new String [] {
-                        "ESPECTADOR", "espectador", "espectadores", "el espectador", String.format (
-                                "UPDATE ESPECTADOR SET NOMBRE_ESPECTADOR = '%s', CONTRASENA_ESPECTADOR = '%s', EDAD = %d WHERE ID_ESPECTADOR = '%s'",
-                                o instanceof Espectador ? ((Espectador) o).getNombre () : "",
-                                o instanceof Espectador ? ((Espectador) o).getContrasena () : "",
-                                o instanceof Espectador ? ((Espectador) o).getEdad () : 0,
-                                o.getId ())
-                },
-                new String [] {
-                        "PELICULA", "película", "películas", "la película", String.format (
-                                "UPDATE PELICULA SET NOMBRE_PELICULA = '%s', RUTA_IMAGEN = '%s', VALORACION = %.1f, FECHA = %d, DIRECTOR = '%s', DURACION = %d, EDAD_RECOMENDAD = %d, GENEROS = %d WHERE ID_PELICULA = '%s'",
-                                o instanceof Pelicula ? ((Pelicula) o).getNombre () : "",
-                                o instanceof Pelicula ? ((Pelicula) o).getRutaImagen () : "",
-                                o instanceof Pelicula ? ((Pelicula) o).getValoracion () : 0.0,
-                                o instanceof Pelicula ? ((Pelicula) o).getFecha ().getValue () : 0,
-                                o instanceof Pelicula ? ((Pelicula) o).getDirector () : "",
-                                o instanceof Pelicula ? ((Pelicula) o).getDuracion ().toMinutes () : 0,
-                                o instanceof Pelicula ? ((Pelicula) o).getEdad ().getValue () : 0,
-                                o instanceof Pelicula ? Genero.Nombre.toValor (((Pelicula) o).getGeneros ()) : 0,
-                                o.getId ())
-                },
-                new String [] {
-                        "SETS_PELICULAS", "set de peliculas", "sets de películas", "el set de películas",
-                        String.format (
-                                "UPDATE SET_PELICULA SET NOMBRE_SETPELICULA = '%s', NOMBRE_ADMINISTRADOR = '%s' WHERE ID_COMPLEMENTO = '%s'",
-                                o instanceof SetPeliculas ? ((SetPeliculas) o).getNombre () : "",
-                                o instanceof SetPeliculas ? ((SetPeliculas) o).getAdministrador ().getNombre () : "",
-                                o.getId ())
+        for (int i[] = new int [1]; i [0] < data.length; i [0]++) {
+            String strs[] = new String [] [] {
+                    new String [] {
+                            "ADMINISTRADOR", "administrador", "administradores", "el administrador", String.format (
+                                    "UPDATE ADMINISTRADOR SET NOMBRE_ADMINISTRADOR = '%s', CONTRASENA_ADMINISTRADOR = '%s' WHERE ID_ADMINISTRADOR = '%s'",
+                                    data [i [0]] instanceof Administrador ? ((Administrador) data [i [0]]).getNombre ()
+                                            : "",
+                                    data [i [0]] instanceof Administrador
+                                            ? ((Administrador) data [i [0]]).getContrasena ()
+                                            : "",
+                                    data [i [0]].getId ())
+                    },
+                    new String [] {
+                            "COMPLEMENTO", "complemento", "complementos", "el complemento", String.format (
+                                    "UPDATE COMPLEMENTO SET NOMBRE_COMPLEMENTO = '%s', PRECIO = '%.2f', DESCUENTO = %d WHERE ID_COMPLEMENTO = '%s'",
+                                    data [i [0]] instanceof Complemento ? ((Complemento) data [i [0]]).getNombre ()
+                                            : "",
+                                    data [i [0]] instanceof Complemento
+                                            ? ((Complemento) data [i [0]]).getPrecio ().doubleValue ()
+                                            : 0.0f,
+                                    data [i [0]] instanceof Complemento ? ((Complemento) data [i [0]]).getDescuento ()
+                                            : 0,
+                                    data [i [0]].getId ())
+                    },
+                    new String [] {
+                            "ESPECTADOR", "espectador", "espectadores", "el espectador", String.format (
+                                    "UPDATE ESPECTADOR SET NOMBRE_ESPECTADOR = '%s', CONTRASENA_ESPECTADOR = '%s', EDAD = %d WHERE ID_ESPECTADOR = '%s'",
+                                    data [i [0]] instanceof Espectador ? ((Espectador) data [i [0]]).getNombre () : "",
+                                    data [i [0]] instanceof Espectador ? ((Espectador) data [i [0]]).getContrasena ()
+                                            : "",
+                                    data [i [0]] instanceof Espectador ? ((Espectador) data [i [0]]).getEdad () : 0,
+                                    data [i [0]].getId ())
+                    },
+                    new String [] {
+                            "PELICULA", "película", "películas", "la película", String.format (
+                                    "UPDATE PELICULA SET NOMBRE_PELICULA = '%s', RUTA_IMAGEN = '%s', VALORACION = %s, FECHA = %d, DIRECTOR = '%s', DURACION = %d, EDAD_RECOMENDAD = %d, GENEROS = %d WHERE ID_PELICULA = '%s'",
+                                    data [i [0]] instanceof Pelicula ? ((Pelicula) data [i [0]]).getNombre () : "",
+                                    data [i [0]] instanceof Pelicula ? ((Pelicula) data [i [0]]).getRutaImagen () : "",
+                                    data [i [0]] instanceof Pelicula
+                                            ? ((Double) ((Pelicula) data [i [0]]).getValoracion ()).toString ()
+                                                    .replace (",", ".")
+                                            : "0.0",
+                                    data [i [0]] instanceof Pelicula ? ((Pelicula) data [i [0]]).getFecha ().getValue ()
+                                            : 0,
+                                    data [i [0]] instanceof Pelicula ? ((Pelicula) data [i [0]]).getDirector () : "",
+                                    data [i [0]] instanceof Pelicula
+                                            ? ((Pelicula) data [i [0]]).getDuracion ().toMinutes ()
+                                            : 0,
+                                    data [i [0]] instanceof Pelicula ? ((Pelicula) data [i [0]]).getEdad ().getValue ()
+                                            : 0,
+                                    data [i [0]] instanceof Pelicula
+                                            ? Genero.Nombre.toValor (((Pelicula) data [i [0]]).getGeneros ())
+                                            : 0,
+                                    data [i [0]].getId ())
+                    },
+                    new String [] {
+                            "SETS_PELICULAS", "set de peliculas", "sets de películas", "el set de películas",
+                            String.format (
+                                    "UPDATE SET_PELICULA SET NOMBRE_SETPELICULA = '%s', NOMBRE_ADMINISTRADOR = '%s' WHERE ID_COMPLEMENTO = '%s'",
+                                    data [i [0]] instanceof SetPeliculas ? ((SetPeliculas) data [i [0]]).getNombre ()
+                                            : "",
+                                    data [i [0]] instanceof SetPeliculas
+                                            ? ((SetPeliculas) data [i [0]]).getAdministrador ().getNombre ()
+                                            : "",
+                                    data [i [0]].getId ())
+                    }
+            } [Arrays
+                    .asList (Administrador.class, Complemento.class, Espectador.class, Pelicula.class,
+                            SetPeliculas.class)
+                    .indexOf (data [i [0]].getClass ())];
+
+            try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                    Statement stmt = con.createStatement ()) {
+                ResultSet rs;
+                if ((rs = stmt.executeQuery (
+                        String.format ("SELECT COUNT(*) FROM %s WHERE ID_%s = '%s'",
+                                strs [0], strs [0], data [i [0]].getId ())))
+                                        .getInt ("COUNT(*)") == 0) {
+                    rs.close ();
+                    this.insert (data [i [0]]);
+
+                    continue;
                 }
-        } [Arrays.asList (Administrador.class, Complemento.class, Espectador.class, Pelicula.class, SetPeliculas.class)
-                .indexOf (o.getClass ())];
 
-        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
-                Statement stmt = con.createStatement ()) {
-            if (stmt.executeQuery (
-                    String.format ("SELECT COUNT(*) FROM %s WHERE ID_%s = '%s'",
-                            strs [0], strs [0], o.getId ()))
-                    .getInt ("COUNT(*)") == 0) {
-                this.insert (o);
+                int result = stmt.executeUpdate (strs [4]);
 
-                return;
+                Logger.getLogger (GestorBD.class.getName ()).log (result == 1 ? Level.INFO : Level.WARNING,
+                        String.format ("%s %s con ID %s.",
+                                result == 1 ? "Se actualizó con éxito" : "No se pudo actualizar", strs [3],
+                                data [i [0]].getId ().toString ()));
             }
 
-            int result = stmt.executeUpdate (strs [4]);
-
-            Logger.getLogger (GestorBD.class.getName ()).log (result == 1 ? Level.INFO : Level.WARNING,
-                    String.format ("%s %s con ID %s.",
-                            result == 1 ? "Se actualizó con éxito" : "No se pudo actualizar", strs [3],
-                            o.getId ().toString ()));
-        }
-
-        catch (Exception e) {
-            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
-                    String.format ("Error al actualizar %s con ID %s en la BBDD: %s",
-                            strs [3], o.getId ().toString (), e.getMessage ()));
-            e.printStackTrace ();
+            catch (Exception e) {
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                        String.format ("Error al actualizar %s con ID %s en la BBDD: %s",
+                                strs [3], data [i [0]].getId ().toString (), e.getMessage ()));
+                e.printStackTrace ();
+            }
         }
 
         GestorBD.lock ();
     }
 
-    public void delete (HasID o) {
+    public void delete (Collection <? extends HasID>... data) {
+        List <HasID> l = new ArrayList <HasID> ();
+
+        for (int i = 0; i < data.length; l.addAll (data [i++]))
+            ;
+
+        this.delete (l.toArray (new HasID [0]));
+    }
+
+    public void delete (HasID []... data) {
+        List <HasID> l = new ArrayList <HasID> ();
+
+        for (int i = 0; i < data.length; i++)
+            for (int j = 0; j < data [i].length; l.add (data [i] [j]))
+                ;
+
+        this.delete (l.toArray (new HasID [0]));
+    }
+
+    public void delete (HasID... data) {
         GestorBD.unlock ();
 
-        Object delete[] = new Object [] [] {
-                new Object [] {
-                        "ADMINISTRADOR", "administrador", "administradores", "el administrador", (Runnable) () -> {
-                            try {
-                                this.deleteAdminData ((Administrador) o);
-                            }
+        for (int i[] = new int [1]; i [0] < data.length; i [0]++) {
+            Object delete[] = new Object [] [] {
+                    new Object [] {
+                            "ADMINISTRADOR", "administrador", "administradores", "el administrador", (Runnable) () -> {
+                                try {
+                                    this.deleteAdminData ((Administrador) data [i [0]]);
+                                }
 
-                            catch (ClassCastException e) {
+                                catch (ClassCastException e) {
+                                }
                             }
-                        }
-                },
-                new Object [] {
-                        "COMPLEMENTO", "complemento", "complementos", "el complemento", null
-                },
-                new Object [] {
-                        "ESPECTADOR", "espectador", "espectadores", "el espectador", (Runnable) () -> {
-                            try {
-                                this.deleteEspectadorData ((Espectador) o);
+                    },
+                    new Object [] {
+                            "COMPLEMENTO", "complemento", "complementos", "el complemento", null
+                    },
+                    new Object [] {
+                            "ESPECTADOR", "espectador", "espectadores", "el espectador", (Runnable) () -> {
+                                try {
+                                    this.deleteEspectadorData ((Espectador) data [i [0]]);
+                                }
+
+                                catch (ClassCastException e) {
+                                }
                             }
+                    },
+                    new Object [] {
+                            "PELICULA", "película", "películas", "la película", null
+                    },
+                    new Object [] {
+                            "SETS_PELICULAS", "set de peliculas", "sets de películas", "el set de películas", null
+                    }
+            } [Arrays
+                    .asList (Administrador.class, Complemento.class, Espectador.class, Pelicula.class,
+                            SetPeliculas.class)
+                    .indexOf (data [i [0]].getClass ())];
 
-                            catch (ClassCastException e) {
-                            }
-                        }
-                },
-                new Object [] {
-                        "PELICULA", "película", "películas", "la película", null
-                },
-                new Object [] {
-                        "SETS_PELICULAS", "set de peliculas", "sets de películas", "el set de películas", null
-                }
-        } [Arrays.asList (Administrador.class, Complemento.class, Espectador.class, Pelicula.class, SetPeliculas.class)
-                .indexOf (o.getClass ())];
+            try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                    Statement stmt = con.createStatement ()) {
 
-        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
-                Statement stmt = con.createStatement ()) {
+                int deleted = stmt.executeUpdate (
+                        String.format ("DELETE FROM %s WHERE ID_%s = '%s'", delete [0], delete [0],
+                                data [i [0]].getId ()));
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO, String.format ("Se ha%s eliminado %d %s.",
+                        deleted == 1 ? "" : "n", deleted, delete [deleted == 1 ? 1 : 2]));
+            }
 
-            int deleted = stmt.executeUpdate (
-                    String.format ("DELETE FROM %s WHERE ID_%s = '%s'", delete [0], delete [0], o.getId ()));
-            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO, String.format ("Se ha%s eliminado %d %s.",
-                    deleted == 1 ? "" : "n", deleted, delete [deleted == 1 ? 1 : 2]));
+            catch (Exception e) {
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                        String.format ("Error al eliminar %s con ID %s de la BBDD: %s",
+                                delete [3], data [i [0]].getId ().toString (), e.getMessage ()));
+                e.printStackTrace ();
+            }
+
+            if (delete [4] != null)
+                ((Runnable) delete [4]).run ();
         }
-
-        catch (Exception e) {
-            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
-                    String.format ("Error al eliminar %s con ID %s de la BBDD: %s",
-                            delete [3], o.getId ().toString (), e.getMessage ()));
-            e.printStackTrace ();
-        }
-
-        if (delete [4] != null)
-            ((Runnable) delete [4]).run ();
 
         GestorBD.lock ();
     }
@@ -753,7 +823,7 @@ public class GestorBD {
             while (rs.next ()) {
 
                 UUID id = UUID.fromString (rs.getString ("ID_PELICULA"));
-                double Valoracion = (double) rs.getInt ("VALORACION");
+                double Valoracion = rs.getDouble ("VALORACION");
                 Year fecha = Year.of (rs.getInt ("FECHA"));
                 Set <Genero.Nombre> genero = (Set <Genero.Nombre>) Genero.Nombre
                         .toGeneros ((short) rs.getInt ("GENEROS"));

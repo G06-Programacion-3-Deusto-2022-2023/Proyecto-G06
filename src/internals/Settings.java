@@ -146,7 +146,7 @@ public final class Settings {
         if (nombre == null)
             throw new NullPointerException ("No se puede cambiar el nombre del cine usando un string nulo.");
 
-        if (nombre.replace (" ", "").equals (""))
+        if (nombre.strip ().equals (""))
             throw new IllegalArgumentException ("No se puede cambiar el nombre del cine por el de un string vacío");
 
         Settings.properties.setProperty ("nombre", nombre);

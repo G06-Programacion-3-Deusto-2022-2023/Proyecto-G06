@@ -20,6 +20,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
@@ -82,7 +83,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
         Pelicula pelicula[] = new Pelicula [1];
         SetPeliculas setpeliculas[] = new SetPeliculas [1];
-        Runnable filters[] = new Runnable [2];
+        final AtomicReferenceArray <Runnable> filters = new AtomicReferenceArray <Runnable> (2);
 
         this.addComponentListener (new ComponentAdapter () {
             @Override
@@ -101,12 +102,12 @@ public class GestionarPeliculasWindow extends JFrame {
                                 nuevas == 0 ? "" : String.format (" #%d", nuevas + 1)));
                     }
 
-                    db.insert (pelicula);
+                    db.update (pelicula [0]);
                     pelicula [0] = null;
-
-                    if (filters [0] != null)
-                        filters [0].run ();
                 }
+
+                if (filters.get (0) != null)
+                    filters.get (0).run ();
             }
         });
 
@@ -343,7 +344,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                     JCheckBox desc = new JCheckBox ("Orden descendente");
 
-                    ActionListener filterAL = e -> (filters [0] = () -> {
+                    filters.set (0, () -> {
                         if (((SpinnerNumberModel) minVal.getModel ()).getNumber ()
                                 .doubleValue () < 1
                                 || ((SpinnerNumberModel) minVal.getModel ()).getNumber ()
@@ -404,7 +405,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                         ? (Comparator <Pelicula>) ((new Comparator [] {
                                                 (Object x, Object y) -> ((Pelicula) y)
                                                         .getNombre ()
-                                                        .compareTo (
+                                                        .compareToIgnoreCase (
                                                                 ((Pelicula) x).getNombre ()),
                                                 (Object x,
                                                         Object y) -> ((Double) ((Pelicula) y)
@@ -470,7 +471,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                                                             return 0;
                                                                         })).getAsInt ()]),
                                 (Filter <Pelicula>) ( (Pelicula x) -> x.getNombre ().toLowerCase (Locale.ROOT)
-                                        .contains (nombre.getText ().toLowerCase (Locale.ROOT))
+                                        .contains (nombre.getText ().replace ("'", "").replace ("\"", "").replace ("`", "").toLowerCase (Locale.ROOT))
                                         && x.getValoracion () >= ((SpinnerNumberModel) minVal
                                                 .getModel ()).getNumber ().doubleValue ()
                                         && x.getValoracion () <= ((SpinnerNumberModel) maxVal
@@ -513,8 +514,11 @@ public class GestionarPeliculasWindow extends JFrame {
 
                         for (int i = 0; i < list.size (); peliculas.addItem (list.get (i++)))
                             ;
-                    }).run ();
-                    ChangeListener filterCL = e -> filters [0].run ();
+
+                        peliculas.repaint ();
+                    });
+                    ActionListener filterAL = e -> filters.get (0).run ();
+                    ChangeListener filterCL = e -> filters.get (0).run ();
                     DocumentListener filterDL = new DocumentListener () {
                         @Override
                         public void insertUpdate (DocumentEvent e) {
@@ -584,6 +588,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                                     pelicula [0] = (Pelicula) peliculas.getSelectedItem ();
                                     new PeliculaWindow (pelicula, f);
+                                    db.update (pelicula);
                                 });
 
                                 return b;
@@ -1058,7 +1063,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                     JCheckBox desc = new JCheckBox ("Orden descendente");
 
-                    ActionListener filterAL = e -> filters [1] = () -> {
+                    filters.set (1, () -> {
                         if (((SpinnerNumberModel) minSize.getModel ()).getNumber ().intValue () < SetPeliculas
                                 .minSize ()
                                 || ((SpinnerNumberModel) minSize.getModel ()).getNumber ()
@@ -1096,7 +1101,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                                 ? (desc.isSelected ()
                                                         ? (Comparator <SetPeliculas>) ( (SetPeliculas x,
                                                                 SetPeliculas y) -> y.getNombre ()
-                                                                        .compareTo (x.getNombre ()))
+                                                                        .compareToIgnoreCase (x.getNombre ()))
                                                         : (Comparator <SetPeliculas>) ( (SetPeliculas x,
                                                                 SetPeliculas y) -> x.getNombre ()
                                                                         .compareTo (y.getNombre ())))
@@ -1109,7 +1114,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                                                         .compareTo ((Integer) y.size ()))),
                                 (Filter <SetPeliculas>) ( (SetPeliculas x) -> x.getNombre ()
                                         .toLowerCase (Locale.ROOT)
-                                        .contains (nombre.getText ().toLowerCase (Locale.ROOT))
+                                        .contains (nombre.getText ().replace ("'", "").replace ("\"", "").replace ("`", "").toLowerCase (Locale.ROOT))
                                         && x.size () >= ((SpinnerNumberModel) minSize.getModel ()).getNumber ()
                                                 .intValue ()
                                         && x.size () <= ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
@@ -1119,8 +1124,9 @@ public class GestionarPeliculasWindow extends JFrame {
                         for (int i = 0; i < list.size (); setspeliculas.addItem (list.get (i++)))
                             ;
                         ;
-                    };
-                    ChangeListener filterCL = e -> filters [1].run ();
+                    });
+                    ActionListener filterAL = e -> filters.get (1).run ();
+                    ChangeListener filterCL = e -> filters.get (1).run ();
 
                     nombre.addActionListener (filterAL);
                     minSize.addChangeListener (filterCL);
@@ -1177,7 +1183,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                             }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
                                         return;
 
-                                    filters [1].run ();
+                                    filters.get (1).run ();
                                 });
 
                                 return b;
@@ -1387,7 +1393,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                             b.addActionListener (e -> {
 
-                                filters [1].run ();
+                                filters.get (1).run ();
                             });
 
                             return b;

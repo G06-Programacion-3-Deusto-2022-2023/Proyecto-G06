@@ -39,8 +39,6 @@ import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import org.sqlite.Function.Window;
-
 import cine.Administrador;
 import cine.Espectador;
 import cine.Usuario;
@@ -195,7 +193,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                                                     Administrador y) -> y
                                                                             .compareTo (x)),
                                                     (Filter <Administrador>) ( (Administrador x) -> x
-                                                            .getNombre ().contains (filter.getText ())))
+                                                            .getNombre ().contains (filter.getText ().replace ("'", "").replace ("\"", "").replace ("`", ""))))
                                             .getValues ());
 
                                 if (bb.get (1).isSelected ())
@@ -207,7 +205,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                                             : (Comparator <Espectador>) ( (Espectador x,
                                                                     Espectador y) -> y.compareTo (x)),
                                                     (Filter <Espectador>) ( (Espectador x) -> x
-                                                            .getNombre ().contains (filter.getText ())))
+                                                            .getNombre ().contains (filter.getText ().replace ("'", "").replace ("\"", "").replace ("`", ""))))
                                             .getValues ());
 
                                 return u;
@@ -234,7 +232,8 @@ public class GestionarUsuariosWindow extends JFrame {
 
                             @Override
                             public void changedUpdate (DocumentEvent e) {
-                                filter.postActionEvent ();
+                                if (filter.getText ().strip ().length () > 0)
+                                    filter.postActionEvent ();
                             }
                         });
                         bb.get (0).addActionListener (filterAL);
@@ -318,14 +317,14 @@ public class GestionarUsuariosWindow extends JFrame {
                                             JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
                                         return;
 
-                                    if (new String (passwd.getPassword ()).replace (" ", "").equals ("")) {
+                                    if (new String (passwd.getPassword ()).strip ().equals ("")) {
                                         JOptionPane.showMessageDialog (f, "No puede introducirse una contraseña vacía.",
                                                 "Error al cambiar la contraseña", JOptionPane.ERROR_MESSAGE);
 
                                         continue;
                                     }
 
-                                    if (new String (passwd.getPassword ()).replace (" ", "").length () < 4) {
+                                    if (new String (passwd.getPassword ()).strip ().length () < 4) {
                                         JOptionPane.showMessageDialog (f,
                                                 "La contraseña debe tener 4 o más carácteres.",
                                                 "Error al cambiar la contraseña", JOptionPane.ERROR_MESSAGE);
@@ -341,7 +340,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                     }
 
                                     if (new String (passwd.getPassword ()).contains ("\"")
-                                            || new String (passwd.getPassword ()).contains ("'")) {
+                                            || new String (passwd.getPassword ()).contains ("'") || new String (passwd.getPassword ()).contains ("`")) {
                                         JOptionPane.showMessageDialog (f, "La contraseña no puede contener comillas.",
                                                 "Error al cambiar la contraseña", JOptionPane.ERROR_MESSAGE);
 
@@ -404,11 +403,19 @@ public class GestionarUsuariosWindow extends JFrame {
                                         }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
                                     return;
 
-                                db.deleteEspectadorData (db.obtenerDatosEspectadores ().stream ()
-                                        .filter (x -> x.getNombre ().equals (((String) users.getSelectedItem ())
-                                                .substring (0,
-                                                        ((String) users.getSelectedItem ()).length () - 4)))
-                                        .findFirst ().get ());
+                                if (((String) users.getSelectedItem ()).endsWith (" (E)")) {
+                                    db.deleteEspectadorData (db.obtenerDatosEspectadores ().stream ()
+                                            .filter (x -> x.getNombre ().equals (((String) users.getSelectedItem ())
+                                                    .substring (0,
+                                                            ((String) users.getSelectedItem ()).length () - 4)))
+                                            .findFirst ().get ());
+
+                                    return;
+                                }
+
+                                db.deleteAdminData (
+                                        db.obtenerDatosAdministradorPorNombre (((String) users.getSelectedItem ())
+                                                .substring (0, ((String) users.getSelectedItem ()).length () - 4)));
                             });
 
                             return bbb [1];
@@ -556,7 +563,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                         }
 
                                         if (!new String (pass.getPassword ()).equals ("")
-                                                && new String (pass.getPassword ()).replace (" ", "").length () < 4) {
+                                                && new String (pass.getPassword ()).strip ().length () < 4) {
                                             JOptionPane.showMessageDialog (f,
                                                     "La contraseña del usuario debe ser de al menos 4 carácteres.",
                                                     "Error en el registro",
@@ -574,7 +581,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                         }
 
                                         if (new String (pass.getPassword ()).contains ("\"")
-                                                || new String (pass.getPassword ()).contains ("'")) {
+                                                || new String (pass.getPassword ()).contains ("'") || new String (pass.getPassword ()).contains ("`")) {
                                             JOptionPane.showMessageDialog (f,
                                                     "La contraseña no puede contener comillas.",
                                                     "Error en el registro", JOptionPane.ERROR_MESSAGE);
@@ -721,7 +728,16 @@ public class GestionarUsuariosWindow extends JFrame {
                             JButton b = new JButton ("Eliminar todos los espectadores");
 
                             b.addActionListener (e -> {
+                                if (JOptionPane.showOptionDialog (f,
+                                        "Lo que estás a punto de hacer es una acción irreversible.\n¿Estás seguro de querer continuar?",
+                                        "Eliminar película", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+                                        null, new String [] {
+                                                "Confirmar",
+                                                "Cancelar"
+                                        }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
+                                    return;
 
+                                db.delete (db.obtenerDatosEspectadores ());
                             });
 
                             return b;

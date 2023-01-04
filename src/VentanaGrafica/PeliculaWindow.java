@@ -593,6 +593,9 @@ public class PeliculaWindow extends JFrame {
                             fecha.setValue (np.getFecha ().getValue ());
                             horas.setValue (np.getDuracion ().toHours ());
                             minutos.setValue (np.getDuracion ().toMinutesPart ());
+                            for (; Genero.Nombre.toValor (np.getGeneros ()) == 0; np
+                                    .setGeneros (Genero.randomGeneros ()))
+                                ;
 
                             List <AbstractButton> l = Collections.list (edad.getElements ());
                             for (int i = 0; i < l.size (); i++) {

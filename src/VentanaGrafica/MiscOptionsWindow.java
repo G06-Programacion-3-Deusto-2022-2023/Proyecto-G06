@@ -163,8 +163,7 @@ public class MiscOptionsWindow extends JFrame {
                             @Override
                             public void changedUpdate (DocumentEvent e) {
                                 try {
-                                    b [0].setEnabled (e.getDocument ().getText (0, e.getLength ())
-                                            .equals (Settings.getNombre ()));
+                                    b [0].setEnabled (t [0].getText ().strip ().length () != 0 && !t [0].getText ().equals (Settings.getNombre ()));
 
                                     b [4].setEnabled (!(t [0].getText ()
                                             .equals (Settings.defaults ().getProperty ("nombre"))
@@ -179,9 +178,6 @@ public class MiscOptionsWindow extends JFrame {
                                                                     Settings.defaults ()
                                                                             .getProperty ("precioentrada")).setScale (2,
                                                                                     RoundingMode.HALF_EVEN))));
-                                }
-
-                                catch (BadLocationException e1) {
                                 }
 
                                 catch (IOException e1) {
@@ -199,7 +195,7 @@ public class MiscOptionsWindow extends JFrame {
                         b [0].setEnabled (false);
 
                         b [0].addActionListener (e -> {
-                            Settings.setNombre (t [0].getText ());
+                            Settings.setNombre (t [0].getText ().strip ());
                             Settings.save ();
 
                             b [0].setEnabled (false);
@@ -631,12 +627,12 @@ public class MiscOptionsWindow extends JFrame {
 
                             rs.setComparator (0, (Comparator <String>) ( (String x, String y) -> x.compareTo (y)));
                             rs.setComparator (1, (Comparator <String>) ( (String x,
-                                    String y) -> new BigDecimal (x.replace (" ", "").replace ("€", ""))
-                                            .compareTo (new BigDecimal (y.replace (" ", "").replace ("€", "")))));
+                                    String y) -> new BigDecimal (x.strip ().replace ("€", ""))
+                                            .compareTo (new BigDecimal (y.strip ().replace ("€", "")))));
                             rs.setComparator (2,
                                     (Comparator <String>) ( (String x, String y) -> Integer
-                                            .valueOf (x.replace (" ", "").replace ("%", ""))
-                                            .compareTo (Integer.valueOf (y.replace (" ", "").replace ("%", "")))));
+                                            .valueOf (x.strip ().replace ("%", ""))
+                                            .compareTo (Integer.valueOf (y.strip ().replace ("%", "")))));
 
                             return rs;
                         })).get ()));
@@ -802,7 +798,7 @@ public class MiscOptionsWindow extends JFrame {
                                                     null, null, null)))
                                         return;
 
-                                    if (fields [0].getText ().replace (" ", "").equals ("")) {
+                                    if (fields [0].getText ().strip ().equals ("")) {
                                         JOptionPane.showMessageDialog (f,
                                                 "El complemento debe tener un nombre.",
                                                 "Error en la creación de complemento",
@@ -998,7 +994,8 @@ public class MiscOptionsWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle ("Opciones");
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("FileView.floppyDriveIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
+                ((ImageIcon) UIManager.getIcon ("FileView.floppyDriveIcon", new Locale ("es-ES"))).getImage ()
+                        .getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (w);

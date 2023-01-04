@@ -606,8 +606,8 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
         this.duracion = duracion == null || duracion.isNegative () || duracion.isZero ()
                 ? (this.duracion == null ? Pelicula.DEFAULT_DURACION : this.duracion)
                 : (Utils.isAmongstCallers ("cine.Pelicula")
-                        ? Pelicula.DEFAULT_DURACION
-                        : Duration.ofMinutes (duracion.toMinutes ()));
+                        ? Duration.ofMinutes (duracion.toMinutes ())
+                        : Pelicula.DEFAULT_DURACION);
     }
 
     public EdadRecomendada getEdad () {
