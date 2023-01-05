@@ -16,6 +16,9 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
@@ -193,5 +196,10 @@ public class Espectador extends Usuario implements Treeable <Espectador>, Compar
     public static BST <Espectador> tree (Collection <Espectador> values, Comparator <Espectador> comp,
             Filter <Espectador> filter) {
         return new Espectador ().bst (values, comp, filter);
+    }
+
+    @Override
+    protected JSONObject toJSONObject (boolean extra) {
+        return super.toJSONObject ().put ("administrador", false).put ("historial", new JSONArray (Entrada.toJSON (this.historial)));
     }
 }

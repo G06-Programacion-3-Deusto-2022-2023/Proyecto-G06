@@ -69,10 +69,10 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
         super ();
 
         this.id = id != null && ((SetPeliculas.isDefault (id)
-                && Utils.isAmongstCallers ("cine.SetPeliculas")
                 && (!SetPeliculas.DEFAULT_SET
                         || (SetPeliculas.DEFAULT_SET
-                                && Utils.isAmongstCallers ("internals.GestorBD"))))
+                                && (Utils.isAmongstCallers ("cine.SetPeliculas")
+                                        || Utils.isAmongstCallers ("internals.GestorBD")))))
                 || !SetPeliculas.isDefault (id))
                         ? id
                         : UUID.randomUUID ();
@@ -201,12 +201,12 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
                 + (this.isDefault () ? " (set predeterminado)" : "") + "\n\tNombre: " + this.nombre + "\n\tTamaño: "
                 + this.size ()
                 + "\n\tAdministrador: "
-                + (this.administrador == null ? ""
+                + (this.administrador == null ? "-"
                         : String.format ("%s (ID: %s)", this.administrador.getNombre (),
                                 this.administrador.getId ().toString ()))
                 + "\n\tPelículas: "
                 + this.peliculas.toString ().replace ("\n", "\n\t\t").replace ("[", "{\n\t\t").replace ("]", "\n\t\t}");
-                
+
         return str.substring (0, str.length () - 2).concat ("}\n}");
     }
 
@@ -415,7 +415,7 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
                 errors.add (i);
             }
 
-        Logger.getLogger (Pelicula.class.getName ()).log (errors.isEmpty () ? Level.INFO : Level.WARNING,
+        Logger.getLogger (SetPeliculas.class.getName ()).log (errors.isEmpty () ? Level.INFO : Level.WARNING,
                 errors.isEmpty () ? "Se importaron todos los sets de películas."
                         : String.format (
                                 "Hubo errores tratando de importar %d de los sets de películas (con índice %s).",
@@ -437,10 +437,6 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     }
 
     private static SetPeliculas fromJSONObject (JSONObject o) throws NullPointerException, JSONException {
-        return SetPeliculas.fromJSONObject (o, null);
-    }
-
-    private static SetPeliculas fromJSONObject (JSONObject o, GestorBD bd) throws NullPointerException, JSONException {
         if (o == null)
             throw new NullPointerException (String.format ("No se puede pasar un JSONObject nulo al método %s.",
                     Thread.currentThread ().getStackTrace () [0].getMethodName ()));
@@ -453,26 +449,27 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
                 throw new JSONException (String.format ("JSONObject inválido: clave %s desconocida.", keys [i]));
 
         UUID id = UUID.randomUUID ();
-        Administrador administrador = null;
+        String administrador = null;
         String nombre = "";
         SortedSet <Pelicula> peliculas = new TreeSet <Pelicula> ();
 
-        try {
-            id = UUID.fromString (o.getString ("id"));
-        }
+        if (o.has ("id"))
+            try {
+                id = UUID.fromString (o.getString ("id"));
+            }
 
-        catch (JSONException | IllegalArgumentException e) {
-            Logger.getLogger ("No se pudo encontrar un ID válido para el set.");
-        }
+            catch (JSONException | IllegalArgumentException e) {
+                Logger.getLogger (SetPeliculas.class.getName ()).log (Level.WARNING,
+                        "No se pudo encontrar un ID válido para el set.");
+            }
 
         try {
-            if (bd != null)
-                administrador = bd.obtenerDatosAdministradorPorNombre (o.getString ("administrador"));
+            administrador = o.getString ("administrador");
         }
 
         catch (JSONException e) {
             Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
-                    "No se pudo encontrar un nombre válido para el set de películas.");
+                    "No se pudo encontrar un nombre de administrador válido para el set de películas.");
         }
 
         try {
@@ -485,25 +482,16 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
         }
 
         try {
-            JSONArray peliculasjson = o.getJSONArray ("peliculas");
-
-            String str;
-            for (int i = 0; i < peliculasjson.length (); i++)
-                try {
-                    peliculas.add (Pelicula.fromJSONObject (peliculasjson.getJSONObject (i)));
-                }
-
-                catch (Exception e) {
-                    String.format ("%s no se puede convertir a una película válida.", peliculasjson.get (i));
-                }
+            peliculas.addAll (Pelicula.fromJSON (o.getJSONArray("peliculas").toString ()));
         }
 
         catch (JSONException e) {
             Logger.getLogger (Pelicula.class.getName ()).log (Level.WARNING,
                     "No se pudo encontrar una lista de películas válida para el set de películas.");
+            peliculas.clear ();
         }
 
-        return new SetPeliculas (nombre, peliculas);
+        return new SetPeliculas (id, new Administrador (administrador), nombre, peliculas);
     }
 
     public static String toJSON (SetPeliculas set) {
@@ -532,11 +520,12 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
                                     || (array [i].nombre != null && !array [i].nombre.equals (""))
                                     || (array [i].peliculas != null && !array [i].peliculas.isEmpty ())
                                             ? ("{\n" + (extra && array [i].id != null
-                                                    ? "\"id\" : " + array [i].id.toString ()
+                                                    ? "    \"id\" : " + "\"" + array [i].id.toString () + "\"" + ",\n"
                                                     : "")
                                                     + (extra && array [i].administrador != null
                                                             ? "\"administrador\" : "
                                                                     + array [i].administrador.getNombre ().toString ()
+                                                                    + ",\n"
                                                             : "")
                                                     + (array [i].nombre != null && !array [i].nombre.equals ("")
                                                             ? "    \"nombre\" : " + "\"" + array [i].nombre + "\""
@@ -546,16 +535,23 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
                                                             : "")
                                                     + (array [i].peliculas != null && !array [i].peliculas.isEmpty ()
                                                             ? ("    \"peliculas\" : "
-                                                                    + Pelicula.toJSON (array [i].peliculas).indent (4))
-                                                                            .replace ("\"peliculas\" :     [",
-                                                                                    "\"peliculas\" : [")
+                                                                    + Pelicula.toJSON (array [i].peliculas, extra)
+                                                                            .indent (4))
+                                                                                    .replace ("\"peliculas\" :     [",
+                                                                                            "\"peliculas\" : [")
                                                             : "")
-                                                    + "}")
+                                                    + "\n}")
                                             : ""));
 
         for (int i = 0; (i = str.indexOf ("}{", i)) != -1;)
-            str.insert (i + 1, ",\n    ");
+            str.insert (i + 1, ",\n");
 
-        return "[\n" + str.toString ().indent (4) + "]";
+        return "[\n" + str.toString ().indent (4).replace (",\n\n}", "\n}") + "]";
+    }
+    
+    public static void main (String args[]) {
+        System.out.println (SetPeliculas.toJSON (SetPeliculas.getDefault (), true));
+        System.out.println (SetPeliculas.fromJSON (SetPeliculas.toJSON (SetPeliculas.getDefault (), true)));
+        // System.out.println (Pelicula.fromJSON (Pelicula.toJSON (Pelicula.getDefault (0), true)));
     }
 }

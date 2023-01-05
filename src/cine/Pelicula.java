@@ -452,10 +452,10 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
         super ();
 
         this.id = id != null && ((Pelicula.isDefault (id)
-                && Utils.isAmongstCallers ("cine.Pelicula")
                 && (!Pelicula.isDefaultSet (id.getLeastSignificantBits ())
                         || (Pelicula.isDefaultSet (id.getLeastSignificantBits ())
-                                && Utils.isAmongstCallers ("internals.GestorBD"))))
+                                && (Utils.isAmongstCallers ("cine.Pelicula")
+                                        || Utils.isAmongstCallers ("internals.GestorBD")))))
                 || !Pelicula.isDefault (id))
                         ? id
                         : UUID.randomUUID ();
@@ -518,7 +518,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setNombre (String nombre) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Utils.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.nombre = nombre == null || nombre.equals ("") ? this.id.toString ()
@@ -531,7 +531,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setRutaImagen (String rutaImagen) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Utils.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.rutaImagen = rutaImagen == null ? "" : rutaImagen;
@@ -543,7 +543,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setValoracion (double valoracion) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Utils.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.valoracion = ((Double) valoracion).isNaN () || valoracion < 1
@@ -572,7 +572,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setFecha (Year fecha) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Utils.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.fecha = fecha == null || fecha.compareTo (MIN_FECHA) < 0 || fecha.compareTo (MAX_FECHA) > 0 ? null
@@ -585,7 +585,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setDirector (String director) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Utils.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.director = director == null ? "" : director;
@@ -600,7 +600,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
         // C
 
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Utils.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.duracion = duracion == null || duracion.isNegative () || duracion.isZero ()
@@ -616,7 +616,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setEdad (EdadRecomendada edad) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Utils.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.edad = edad == null ? EdadRecomendada.TODOS : edad;
@@ -628,7 +628,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
 
     public void setGeneros (Collection <Genero.Nombre> generos) {
         if (this.isDefault () && Pelicula.isDefaultSet (this.id.getLeastSignificantBits ())
-                && !Utils.isAmongstCallers ("internals.GestorBD"))
+                && !Utils.isAmongstCallers ("cine.Pelicula") && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
         this.generos = generos == null || generos.isEmpty () || generos.contains (Genero.Nombre.NADA)
@@ -1124,7 +1124,7 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
         UUID id = null;
         String nombre = "";
         String rutaImagen = "";
-        double valoracion = 0;
+        double valoracion = 0.0f;
         Year fecha = null;
         String director = "";
         Duration duracion = null;
@@ -1282,11 +1282,11 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
         return str.toString ();
     }
 
-    private JSONObject toJSONObject () {
+    protected JSONObject toJSONObject () {
         return this.toJSONObject (false);
     }
 
-    private JSONObject toJSONObject (boolean extra) {
+    protected JSONObject toJSONObject (boolean extra) {
         JSONObject o = new JSONObject ().put ("nombre", this.nombre).put ("rutaimagen", this.rutaImagen)
                 .put ("valoracion", this.valoracion).put ("fecha", this.fecha.getValue ())
                 .put ("director", this.director).put ("duracion", this.duracion.toMinutes ())

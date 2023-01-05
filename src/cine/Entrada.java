@@ -1,18 +1,36 @@
 package cine;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import internals.Utils;
 import internals.HasID;
@@ -62,11 +80,16 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
 
     public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca,
             Map <Complemento, Integer> complementos, double valoracion) {
-        this (UUID.randomUUID (), espectador, pelicula, fecha, sala, butaca, complementos, valoracion);
+        this (espectador, pelicula, fecha, sala, butaca, complementos, valoracion, null);
+    }
+
+    public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca,
+            Map <Complemento, Integer> complementos, double valoracion, BigDecimal precio) {
+        this (UUID.randomUUID (), espectador, pelicula, fecha, sala, butaca, complementos, valoracion, precio);
     }
 
     public Entrada (UUID id, Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca,
-            Map <Complemento, Integer> complementos, double valoracion) {
+            Map <Complemento, Integer> complementos, double valoracion, BigDecimal precio) {
         super ();
 
         this.id = id;
@@ -77,12 +100,12 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
         this.setButaca (butaca);
         this.setComplementos (complementos);
         this.setValoracion (valoracion);
-        this.setPrecio ();
+        this.setPrecio (precio);
     }
 
     public Entrada (Entrada entrada) {
         this (entrada.id, entrada.espectador, entrada.pelicula, entrada.fecha, entrada.sala, entrada.butaca,
-                entrada.complementos, entrada.valoracion);
+                entrada.complementos, entrada.valoracion, entrada.precio);
     }
 
     public UUID getId () {
@@ -169,6 +192,18 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
                 .setScale (2, RoundingMode.HALF_EVEN);
     }
 
+    public void setPrecio (BigDecimal precio) {
+        if (precio == null || precio.signum () != 1
+                || precio.compareTo (new BigDecimal ("9".repeat (63) + ".99")) == 1) {
+            if (this.precio == null)
+                this.setPrecio ();
+
+            return;
+        }
+
+        this.precio = new BigDecimal (precio.toString ().replace (",", ".")).setScale (2, RoundingMode.HALF_EVEN);
+    }
+
     @Override
     public int compareTo (Entrada entrada) {
         if (entrada == null)
@@ -245,7 +280,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
     }
 
     public BigDecimal total () {
-        BigDecimal p = new BigDecimal (this.precio.doubleValue ());
+        BigDecimal p = BigDecimal.valueOf (this.precio.doubleValue ());
 
         ArrayList <Map.Entry <Complemento, Integer>> keyValueArray = new ArrayList <Map.Entry <Complemento, Integer>> (
                 complementos.entrySet ());
@@ -270,5 +305,340 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
 
     public static BST <Entrada> tree (Collection <Entrada> values, Comparator <Entrada> comp, Filter <Entrada> filter) {
         return new Entrada ().bst (values, comp, filter);
+    }
+
+    public static List <Usuario> fromJSON (File file) throws NullPointerException, IOException, JSONException {
+        if (file == null)
+            throw new NullPointerException (String.format ("No se puede pasar un archivo nulo al método %s.",
+                    Thread.currentThread ().getStackTrace () [0].getMethodName ()));
+
+        if (!file.exists ())
+            throw new IOException (
+                    String.format ("No se pudo encontrar el archivo especificado (%s).", file.getAbsolutePath ()));
+
+        if (!Files.probeContentType (file.toPath ()).equals ("application/json"))
+            throw new JSONException (
+                    String.format ("El archivo especificado, %s, no es un archivo JSON válido.",
+                            file.getAbsolutePath ()));
+
+        try {
+            return Usuario.fromJSON (Files.readString (file.toPath ()));
+        }
+
+        catch (IOException e) {
+            throw new IOException (
+                    String.format ("No se pudo abrir el archivo %s para recoger los datos.", file.getAbsolutePath ()));
+        }
+
+        catch (JSONException e) {
+            throw new JSONException (String.format (
+                    "El archivo especificado, %s, no es un archivo JSON válido que contenga un JSON Array.",
+                    file.getAbsolutePath ()));
+        }
+    }
+
+    public static List <Entrada> fromJSON (String jstr) throws NullPointerException, JSONException {
+        if (jstr == null)
+            throw new NullPointerException (String.format ("No se puede pasar un string nulo al método %s.",
+                    Thread.currentThread ().getStackTrace () [0].getMethodName ()));
+
+        JSONArray json;
+        try {
+            json = new JSONArray (jstr);
+        }
+
+        catch (JSONException e) {
+            throw new JSONException (Utils.isAmongstCallers ("cine.Entrada.fromJSON") ? ""
+                    : "No se puede extraer un JSONArray válido de esta cadena de carácteres");
+        }
+
+        List <Entrada> list = new ArrayList <Entrada> ();
+        SortedSet <Integer> errors = new TreeSet <Integer> ();
+        for (int i = 0; i < json.length (); i++)
+            try {
+                list.add (Entrada.fromJSONObject (json.getJSONObject (i)));
+            }
+
+            catch (JSONException e) {
+                errors.add (i);
+            }
+
+        Logger.getLogger (Usuario.class.getName ()).log (errors.isEmpty () ? Level.INFO : Level.WARNING,
+                errors.isEmpty () ? "Se importaron todas las entradas."
+                        : String.format ("Hubo errores tratando de importar %d de las entradas (con índice %s).",
+                                errors.size (), ((Supplier <String>) ( () -> {
+                                    StringBuilder str = new StringBuilder ();
+
+                                    Integer errorsArray[] = errors.toArray (new Integer [0]);
+                                    for (int i = 0; i < errorsArray.length; i++) {
+                                        str.append (errorsArray [i]);
+
+                                        if (i != errorsArray.length - 1)
+                                            str.append (", ");
+                                    }
+
+                                    return str.toString ();
+                                })).get ()));
+
+        return list;
+    }
+
+    private static Entrada fromJSONObject (JSONObject o) throws NullPointerException, JSONException {
+        if (o == null)
+            throw new NullPointerException ("No se puede obtener una entrada a partir de un JSONObject nulo.");
+
+        final Set <String> fields = Arrays.asList (new String [] {
+                "id", "espectador", "pelicula", "fecha", "butaca", "complementos", "valoracion", "precio"
+        }).stream ().collect (Collectors.toSet ());
+
+        String keys[] = o.keySet ().toArray (new String [0]);
+        for (int i = 0; i < keys.length; i++)
+            if (!fields.contains (keys [i]))
+                throw new JSONException (String.format ("JSONObject inválido: clave %s desconocida", keys [i]));
+
+        UUID id = null;
+        UUID espectador = null;
+        Pelicula pelicula = null;
+        Date fecha = null;
+        Sala sala = null;
+        Butaca butaca = null;
+        Map <Complemento, Integer> complementos = new HashMap <Complemento, Integer> ();
+        double valoracion = 0.0f;
+        BigDecimal precio = null;
+
+        if (o.has ("id"))
+            try {
+                id = UUID.fromString (o.getString ("id"));
+            }
+
+            catch (IllegalArgumentException e) {
+                Logger.getLogger (Entrada.class.getName ()).log (Level.WARNING,
+                        "No se pudo obtener un ID válido a partir del JSONObject.");
+            }
+
+        try {
+            espectador = UUID.fromString (o.getString ("espectador"));
+        }
+
+        catch (IllegalArgumentException | JSONException e) {
+            Logger.getLogger (Entrada.class.getName ()).log (Level.WARNING,
+                    "No se pudo obtener un ID de espectador válido del JSONObject.");
+        }
+
+        try {
+            pelicula = Pelicula.fromJSONObject (o.getJSONObject ("pelicula"));
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Entrada.class.getName ()).log (Level.WARNING,
+                    "No se pudo obtener una película válida del JSONObject.");
+        }
+
+        try {
+            fecha = new SimpleDateFormat ("yyyy-MM-dd").parse (o.getString ("fecha"), new ParsePosition (0));
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Entrada.class.getName ()).log (Level.WARNING,
+                    "No se pudo obtener una fecha válida del JSONObject.");
+        }
+
+        try {
+            sala = Sala.getSalas ().get ((o.getJSONObject ("butaca").getInt ("sala")));
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Entrada.class.getName ()).log (Level.WARNING,
+                    "No se pudo obtener una sala válida del JSONObject.");
+        }
+
+        if (sala != null)
+            try {
+                butaca = sala.getButacas ().get (o.getJSONObject ("butaca").getInt ("fila") * Sala.getColumnas ()
+                        + o.getJSONObject ("sala").getInt ("butaca"));
+            }
+
+            catch (JSONException e) {
+                Logger.getLogger (Entrada.class.getName ()).log (Level.WARNING,
+                        "No se pudo obtener una butaca válida del JSONObject.");
+            }
+
+        try {
+            JSONArray jsonarray = o.getJSONArray ("complementos");
+            for (int i = 0; i < jsonarray.length (); i++)
+                complementos.put (
+                        Complemento.fromJSONObject (jsonarray.getJSONObject (i).getJSONObject ("complemento")),
+                        jsonarray.getJSONObject (i).getInt ("cantidad"));
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Entrada.class.getName ()).log (Level.WARNING,
+                    "No se pudo obtener una lista de complementos válida del JSONObject.");
+            complementos.clear ();
+        }
+
+        try {
+            valoracion = o.getDouble ("valoracion");
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Entrada.class.getName ()).log (Level.WARNING,
+                    "No se pudo obtener una valoración personal válida del JSONObject.");
+        }
+
+        try {
+            precio = o.getBigDecimal ("precio");
+        }
+
+        catch (JSONException e) {
+            Logger.getLogger (Entrada.class.getName ()).log (Level.WARNING,
+                    "No se pudo obtener un precio del JSONObject.");
+        }
+
+        return new Entrada (id, new Espectador (id, "", "", Espectador.getDefaultEdad (), null, null, null), pelicula,
+                new Calendar.Builder ().setCalendarType ("gregorian").setInstant (fecha).build (), sala, butaca,
+                complementos, valoracion, precio);
+    }
+
+    public static String toJSON (Entrada entrada) throws NullPointerException {
+        return Entrada.toJSON (Collections.singleton (entrada), false);
+    }
+
+    public static String toJSON (Entrada entrada, boolean extra) throws NullPointerException {
+        return Entrada.toJSON (Collections.singleton (entrada), extra);
+    }
+
+    public static String toJSON (Collection <Entrada> entradas) throws NullPointerException {
+        return Entrada.toJSON (entradas, false);
+    }
+
+    public static String toJSON (Collection <Entrada> entradas, boolean extra) throws NullPointerException {
+        if (entradas == null)
+            throw new NullPointerException ("No se puede exportar a JSON una colección nula de entradas.");
+
+        JSONArray json = new JSONArray ();
+
+        Entrada array[] = new TreeSet <Entrada> (entradas).toArray (new Entrada [0]);
+        StringBuilder str = new StringBuilder ();
+        for (int i[] = new int [1]; i [0] < array.length; i [0]++)
+            str.append (array [i [0]] == null ? ""
+                    : new StringBuilder ((extra && array [i [0]].id != null) || (array [i [0]].espectador != null)
+                            || (array [i [0]].fecha != null) || (array [i [0]].sala != null)
+                            || (array [i [0]].butaca != null) || (array [i [0]].complementos != null)
+                            || (!((Double) array [i [0]].valoracion).isNaN () && array [i [0]].valoracion < 1
+                                    && array [i [0]].valoracion > 10)
+                            || (array [i [0]].precio != null && array [i [0]].precio.signum () == 1)
+                                    ? ("{\n" + (extra && array [i [0]].id != null
+                                            ? "    \"id\" : " + array [i [0]].id.toString () + ",\n"
+                                            : "")
+                                            + (array [i [0]].espectador != null
+                                                    ? "    \"espectador\" : "
+                                                            + array [i [0]].espectador.getId ().toString ()
+                                                            + ",\n"
+                                                    : "")
+                                            + (array [i [0]].pelicula != null
+                                                    ? "    \"pelicula\" : " + array [i [0]].pelicula.toJSONObject ()
+                                                            .toString (8).indent (4).replace ("}\n", "}")
+                                                            .replace ("    {", "{") + ",\n"
+                                                    : "")
+                                            + (array [i [0]].fecha != null
+                                                    ? "    \"fecha\" : " + new SimpleDateFormat ("yyyy-MM-dd")
+                                                            .format (array [i [0]].fecha.getTime ()) + ",\n"
+                                                    : "")
+                                            + (array [i [0]].sala != null ? "\"butaca\" : {\n    \"sala\" : "
+                                                    + Sala.indexOf (array [i [0]].sala) + ((Supplier <String>) ( () -> {
+                                                        Pair <Integer, Integer> index = array [i [0]].sala
+                                                                .indexOf (array [i [0]].butaca);
+
+                                                        return ",\n    \"fila\" : " + index.x + ",\n    \"butaca\" : "
+                                                                + index.y + "\n}";
+                                                    })).get () + ",\n" : "")
+                                            + (array [i [0]].complementos != null
+                                                    && !array [i [0]].complementos.isEmpty ()
+                                                            ? ("\"complementos\" : "
+                                                                    + ((Supplier <JSONArray>) ( () -> {
+                                                                        JSONArray jsonar = new JSONArray ();
+
+                                                                        List <Map.Entry <Complemento, Integer>> entries = array [i [0]].complementos
+                                                                                .entrySet ()
+                                                                                .stream ()
+                                                                                .collect (Collectors.toList ());
+
+                                                                        for (int j = 0; j < entries.size (); j++)
+                                                                            jsonar.put (new JSONObject ()
+                                                                                    .put ("complemento",
+                                                                                            entries.get (j).getKey ()
+                                                                                                    .toJSONObject (
+                                                                                                            true))
+                                                                                    .put ("cantidad", entries.get (j)
+                                                                                            .getValue ().intValue ()));
+
+                                                                        return jsonar;
+                                                                    })).get ().toString (4).replace (
+                                                                            "\"complementos\" :     [",
+                                                                            "\"complementos\" : [")
+                                                                    + ",\n").indent (4)
+                                                            : "")
+                                            + (!((Double) array [i [0]].valoracion).isNaN ()
+                                                    && array [i [0]].valoracion >= 1 && array [i [0]].valoracion <= 10
+                                                            ? "\"valoracion: \"" + array [i [0]].valoracion + ",\n"
+                                                            : "")
+                                            + (array [i [0]].precio != null && array [i [0]].precio.signum () == 1
+                                                    && array [i [0]].precio
+                                                            .compareTo (new BigDecimal ("9".repeat (63) + ".99")) != 1
+                                                                    ? "    \"precio\" : " + array [i [0]].precio
+                                                                    : "")
+                                            + "\n}")
+                                    : ""));
+
+        for (int i = 0; (i = str.indexOf ("}{", i)) != -1;)
+            str.insert (i + 1, ",\n");
+
+        return "[\n" + str.toString ().indent (4).replace (",\n\n}", "\n}") + "]";
+    }
+
+    private JSONObject toJSONObject () {
+        return toJSONObject (false);
+    }
+
+    private JSONObject toJSONObject (boolean extra) {
+        JSONObject o = new JSONObject ().put ("espectador", this.espectador.toJSONObject (true)).put ("pelicula",
+                this.pelicula.toJSONObject (true))
+                .put ("fecha", new SimpleDateFormat ("yyyy-MM-dd").format (this.fecha.getTime ()))
+                .put ("butaca",
+                        this.sala == null ? new JSONObject ().put ("sala", -1).put ("fila", -1).put ("butaca", -1)
+                                : ((Supplier <JSONObject>) ( () -> {
+                                    Pair <Integer, Integer> i = this.sala.indexOf (this.butaca);
+                                    return new JSONObject ().put ("sala", Sala.indexOf (this.sala)).put ("fila", i.x)
+                                            .put ("butaca",
+                                                    i.y);
+                                })).get ())
+                .put ("complementos", ((Supplier <JSONArray>) ( () -> {
+                    JSONArray array = new JSONArray ();
+
+                    List <Map.Entry <Complemento, Integer>> entries = this.complementos.entrySet ()
+                            .stream ().collect (Collectors.toList ());
+
+                    for (int i = 0; i < entries.size (); i++)
+                        array.put (new JSONObject ()
+                                .put ("complemento", entries.get (i).getKey ().toJSONObject (true))
+                                .put ("cantidad", entries.get (i).getValue ().intValue ()));
+
+                    return array;
+                })).get ()).put ("valoracion", this.valoracion).put ("precio", this.precio);
+
+        if (extra)
+            o.put ("id", this.id.toString ());
+
+        return o;
+    }
+
+    public static void main (String args[]) {
+        Entrada entrada = new Entrada (new Espectador (), Pelicula.getDefault (0));
+        entrada.setPrecio (BigDecimal.valueOf (1000.69));
+        entrada.setComplementos (Complemento.getDefault ().stream ().limit (2)
+                .collect (Collectors.toMap (Function.identity (), e -> e.getNombre ().length (), (k1, k2) -> k1)));
+        System.out.println (
+                Entrada.toJSON (Arrays.asList (entrada, new Entrada (Espectador.random (), Pelicula.getDefault (1)))));
     }
 }

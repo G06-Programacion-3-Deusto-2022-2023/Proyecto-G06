@@ -145,7 +145,7 @@ public class LoadingWindow {
                 e.printStackTrace ();
             }
 
-            w.setVisible (false);
+            w.dispose ();
         }
     }
 

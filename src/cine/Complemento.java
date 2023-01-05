@@ -258,7 +258,7 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
         }
 
         catch (JSONException e) {
-            throw new JSONException (Utils.isAmongstCallers ("cine.SetPeliculas.fromJSON") ? ""
+            throw new JSONException (Utils.isAmongstCallers ("cine.Complemento.fromJSON") ? ""
                     : "No se puede extraer un JSONArray válido de esta cadena de carácteres");
         }
 
@@ -273,9 +273,9 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
                 errors.add (i);
             }
 
-        Logger.getLogger (Pelicula.class.getName ()).log (errors.isEmpty () ? Level.INFO : Level.WARNING,
-                errors.isEmpty () ? "Se importaron todas las películas."
-                        : String.format ("Hubo errores tratando de importar %d de las películas (con índice %s).",
+        Logger.getLogger (Complemento.class.getName ()).log (errors.isEmpty () ? Level.INFO : Level.WARNING,
+                errors.isEmpty () ? "Se importaron todos los complementos."
+                        : String.format ("Hubo errores tratando de importar %d de los complementos (con índice %s).",
                                 errors.size (), ((Supplier <String>) ( () -> {
                                     StringBuilder str = new StringBuilder ();
 
@@ -293,7 +293,7 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
         return list;
     }
 
-    private static Complemento fromJSONObject (JSONObject o) throws NullPointerException, JSONException {
+    static Complemento fromJSONObject (JSONObject o) throws NullPointerException, JSONException {
         if (o == null)
             throw new NullPointerException (String.format ("No se puede pasar un JSONObject nulo al método %s.",
                     Thread.currentThread ().getStackTrace () [0].getMethodName ()));
@@ -393,7 +393,7 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
         return this.toJSONObject (false);
     }
 
-    private JSONObject toJSONObject (boolean extra) {
+    JSONObject toJSONObject (boolean extra) {
         JSONObject o = new JSONObject ().put ("nombre", this.nombre)
                 .put ("precio", this.precio.setScale (2, RoundingMode.HALF_EVEN))
                 .put ("descuento", this.descuento);

@@ -6,6 +6,9 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
@@ -53,7 +56,7 @@ public class Administrador extends Usuario implements Treeable <Administrador>, 
     }
 
     public int compareTo (Administrador o) {
-        return super.compareTo(o);
+        return super.compareTo (o);
     }
 
     @Override
@@ -76,5 +79,11 @@ public class Administrador extends Usuario implements Treeable <Administrador>, 
     public static BST <Administrador> tree (Collection <Administrador> values, Comparator <Administrador> comp,
             Filter <Administrador> filter) {
         return new Administrador ().bst (values, comp, filter);
+    }
+
+    @Override
+    protected JSONObject toJSONObject (boolean extra) {
+        return super.toJSONObject ().put ("administrador", true).put ("sets",
+                new JSONArray (SetPeliculas.toJSON (this.setsPeliculas)));
     }
 }
