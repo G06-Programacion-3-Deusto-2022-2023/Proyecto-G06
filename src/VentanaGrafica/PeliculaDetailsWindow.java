@@ -29,18 +29,21 @@ import cine.Genero;
 import cine.Pelicula;
 
 public class PeliculaDetailsWindow extends JFrame {
-    public PeliculaDetailsWindow (Pelicula pelicula) {
+    private Pelicula pelicula;
+
+    public PeliculaDetailsWindow (final Pelicula pelicula) {
         this (pelicula, null);
     }
 
-    public PeliculaDetailsWindow (Pelicula pelicula, JFrame w) throws NullPointerException {
+    public PeliculaDetailsWindow (final Pelicula pelicula, final JFrame w) throws NullPointerException {
         super ();
 
         if (pelicula == null)
             throw new NullPointerException (
                     "No es posible pasar una película nula a la ventana de ver detalles de una película.");
 
-        PeliculaDetailsWindow f = this;
+        this.pelicula = pelicula;
+        final PeliculaDetailsWindow f = this;
 
         this.addWindowListener (new WindowAdapter () {
             @Override
@@ -250,5 +253,9 @@ public class PeliculaDetailsWindow extends JFrame {
         this.setResizable (false);
         this.setLocationRelativeTo (w);
         this.setVisible (true);
+    }
+
+    public Pelicula getPelicula () {
+        return this.pelicula;
     }
 }

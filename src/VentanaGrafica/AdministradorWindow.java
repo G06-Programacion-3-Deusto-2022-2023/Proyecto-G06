@@ -30,7 +30,7 @@ public class AdministradorWindow extends JFrame {
     }
 
     public AdministradorWindow (GestorBD db, Administrador admin, VentanaInicio w)
-            throws NullPointerException, UnsupportedOperationException {
+            throws NullPointerException, IllegalArgumentException {
         super ();
 
         if (db == null)
@@ -41,10 +41,9 @@ public class AdministradorWindow extends JFrame {
             throw new NullPointerException (
                     "No se puede pasar un administador nulo a la ventana de modo administrador.");
 
-        // if (!db.obtenerDatosAdministradores ().contains (admin))
-        // throw new UnsupportedOperationException (
-        // "El administrador enviado a la ventana de modo administrador no se
-        // encuentra en la base de datos.");
+        if (!db.obtenerDatosAdministradores ().contains (admin))
+            throw new IllegalArgumentException (
+                    "El administrador enviado a la ventana de modo administrador no se encuentra en la base de datos.");
 
         VentanaInicio pw[] = new VentanaInicio [] { w };
         AdministradorWindow f = this;
@@ -147,7 +146,8 @@ public class AdministradorWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle (String.format ("Menú principal de %s", admin.getNombre ()));
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("FileChooser.homeFolderIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
+                ((ImageIcon) UIManager.getIcon ("FileChooser.homeFolderIcon", new Locale ("es-ES"))).getImage ()
+                        .getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (null);

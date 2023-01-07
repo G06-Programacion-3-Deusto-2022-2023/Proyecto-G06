@@ -243,7 +243,7 @@ public class GestorBD {
                 Statement stmt = con.createStatement ()) {
 
             String sql1 = "CREATE TABLE IF NOT EXISTS PELICULA (\n"
-                    + " ID_PELICULA STRING PRIMARY KEY NOT NULL,\n"
+                    + " ID_PELICULA VARCHAR(36) PRIMARY KEY NOT NULL,\n"
                     + " NOMBRE_PELICULA STRING,\n"
                     + " RUTA_IMAGEN STRING, \n"
                     + " VALORACION DECIMAL(3, 1) NOT NULL,\n"
@@ -254,30 +254,30 @@ public class GestorBD {
                     + " GENEROS INTEGER NOT NULL\n"
                     + ");";
             String sql2 = "CREATE TABLE IF NOT EXISTS ADMINISTRADOR (\n"
-                    + " ID_ADMINISTRADOR STRING PRIMARY KEY NOT NULL,\n"
+                    + " ID_ADMINISTRADOR VARCHAR(36) PRIMARY KEY NOT NULL,\n"
                     + " NOMBRE_ADMINISTRADOR STRING,\n"
                     + " CONTRASENA_ADMINISTRADOR STRING \n"
                     + ");";
             String sql3 = "CREATE TABLE IF NOT EXISTS ESPECTADOR (\n"
-                    + " ID_ESPECTADOR STRING ,\n"
+                    + " ID_ESPECTADOR VARCHAR(36),\n"
                     + " NOMBRE_ESPECTADOR STRING PRIMARY KEY NOT NULL ,\n"
                     + " CONTRASENA_ESPECTADOR STRING, \n"
                     + " EDAD INTEGER \n"
                     + ");";
             String sql4 = "CREATE TABLE IF NOT EXISTS COMPLEMENTO (\n"
-                    + " ID_COMPLEMENTO STRING ,\n"
+                    + " ID_COMPLEMENTO VARCHAR(36),\n"
                     + " NOMBRE_COMPLEMENTO STRING PRIMARY KEY NOT NULL ,\n"
                     + " PRECIO DECIMAL(65,2), \n"
                     + " DESCUENTO INTEGER \n"
                     + ");";
             String sql5 = "CREATE TABLE IF NOT EXISTS SET_PELICULA (\n"
-                    + "ID_SET_PELICULA STRING PRIMARY KEY NOT NULL, "
+                    + "ID_SET_PELICULA VARCHAR(36) PRIMARY KEY NOT NULL, "
                     + "NOMBRE_ADMINISTRADOR STRING, \n"
                     + "NOMBRE_SET_PELICULA STRING \n"
                     + ");";
             String sql6 = "CREATE TABLE IF NOT EXISTS ARRAY_SETPELICULA (\n"
-                    + " NOMBRE_SETPELICULA STRING,\n"
-                    + " NOMBRE_PELICULA STRING \n"
+                    + " ID_PELICULA VARCHAR(36) NOT NULL,\n"
+                    + " ID_SETPELICULA VARCHAR(36) NOT NULL \n"
                     + ");";
             String sql7 = "CREATE TABLE IF NOT EXISTS LLAVES (\n"
                     + " LLAVE STRING \n"
@@ -513,7 +513,7 @@ public class GestorBD {
                 if (!(s.getAdministrador () == null)) {
                     if (1 == stmt.executeUpdate (
                             String.format (sql, s.getId (), s.getAdministrador ().getNombre (), s.getNombre ()))) {
-                        this.insertarDatosAdministrador (s.getAdministrador ());
+                        this.update (s.getAdministrador ());
                         System.out.println (String.format (" - set_Peliculas insertadas: %s", s.toString ()));
                     }
                     else {
@@ -569,8 +569,8 @@ public class GestorBD {
             // Se recorren los clientes y se insertan uno a uno
             for (SetPeliculas s : setPeliculas) {
                 for (Pelicula p : s.getPeliculas ()) {
-                    String sql = "INSERT INTO ARRAY_SETPELICULA (NOMBRE_SETPELICULA, NOMBRE_PELICULA) VALUES ('%s', '%s');";
-                    if (1 == stmt.executeUpdate (String.format (sql, s.getNombre (), p.getNombre ()))) {
+                    String sql = "INSERT INTO ARRAY_SETPELICULA (ID_SETPELICULA, ID_PELICULA) VALUES ('%s', '%s');";
+                    if (1 == stmt.executeUpdate (String.format (sql, s.getId ().toString (), p.getId ().toString ()))) {
                         System.out.println (String.format (" - array_set_Peliculas insertadas: %s", s.toString ()));
                     }
                     else {
@@ -665,9 +665,9 @@ public class GestorBD {
                                     data [i [0]].getId ())
                     },
                     new String [] {
-                            "SETS_PELICULAS", "set de peliculas", "sets de películas", "el set de películas",
+                            "SET_PELICULA", "set de peliculas", "sets de películas", "el set de películas",
                             String.format (
-                                    "UPDATE SET_PELICULA SET NOMBRE_SETPELICULA = '%s', NOMBRE_ADMINISTRADOR = '%s' WHERE ID_COMPLEMENTO = '%s'",
+                                    "UPDATE SET_PELICULA SET NOMBRE_SET_PELICULA = '%s', NOMBRE_ADMINISTRADOR = '%s' WHERE ID_COMPLEMENTO = '%s'",
                                     data [i [0]] instanceof SetPeliculas ? ((SetPeliculas) data [i [0]]).getNombre ()
                                             : "",
                                     data [i [0]] instanceof SetPeliculas
@@ -691,6 +691,13 @@ public class GestorBD {
                     this.insert (data [i [0]]);
 
                     continue;
+                }
+                rs.close ();
+
+                if (data [i [0]] instanceof SetPeliculas) {
+                    stmt.executeUpdate (String.format ("DELETE FROM ARRAY_SETPELICULA WHERE ID_SETPELICULA = '%s'",
+                            data [i [0]].getId ()));
+                    this.insertarDatosArraySetPelicula ((SetPeliculas) (data [i [0]]));
                 }
 
                 int result = stmt.executeUpdate (strs [4]);
@@ -763,7 +770,7 @@ public class GestorBD {
                             "PELICULA", "película", "películas", "la película", null
                     },
                     new Object [] {
-                            "SETS_PELICULAS", "set de peliculas", "sets de películas", "el set de películas", null
+                            "SET_PELICULAS", "set de peliculas", "sets de películas", "el set de películas", null
                     }
             } [Arrays
                     .asList (Administrador.class, Complemento.class, Espectador.class, Pelicula.class,
@@ -821,18 +828,13 @@ public class GestorBD {
 
             // Se recorre el ResultSet y se crean objetos Cliente
             while (rs.next ()) {
-
-                UUID id = UUID.fromString (rs.getString ("ID_PELICULA"));
-                double Valoracion = rs.getDouble ("VALORACION");
-                Year fecha = Year.of (rs.getInt ("FECHA"));
-                Set <Genero.Nombre> genero = (Set <Genero.Nombre>) Genero.Nombre
-                        .toGeneros ((short) rs.getInt ("GENEROS"));
-
-                pelicula = new Pelicula (id, rs.getString ("NOMBRE_PELICULA"), rs.getString ("RUTA_IMAGEN"), Valoracion,
-                        fecha, rs.getString ("DIRECTOR"), Duration.ofMinutes (rs.getInt ("DURACION")),
-                        EdadRecomendada.fromValue (rs.getByte ("EDAD_RECOMENDADA")), genero, null);
-
-                peliculas.add (pelicula);
+                peliculas.add (new Pelicula (UUID.fromString (rs.getString ("ID_PELICULA")),
+                        rs.getString ("NOMBRE_PELICULA"), rs.getString ("RUTA_IMAGEN"), rs.getDouble ("VALORACION"),
+                        Year.of (rs.getInt ("FECHA")), rs.getString ("DIRECTOR"),
+                        Duration.ofMinutes (rs.getInt ("DURACION")),
+                        EdadRecomendada.fromValue (rs.getByte ("EDAD_RECOMENDADA")), Genero.Nombre
+                                .toGeneros ((short) rs.getInt ("GENEROS")),
+                        null));
 
             }
 
@@ -969,24 +971,18 @@ public class GestorBD {
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            String sql = "SELECT * FROM SET_PELICULA";
-
             // Se ejecuta la sentencia y se obtiene el ResultSet con los
             // resutlados
-            ResultSet rs = stmt.executeQuery (sql);
-            SetPeliculas setPeliculas;
+            ResultSet rs = stmt.executeQuery ("SELECT * FROM SET_PELICULA");
 
             // Se recorre el ResultSet y se crean objetos Cliente
             while (rs.next ()) {
-
                 UUID id = UUID.fromString (rs.getString ("ID_SET_PELICULA"));
                 String nombre = rs.getString ("NOMBRE_SET_PELICULA");
 
-                setPeliculas = new SetPeliculas (id,
+                setsPeliculas.add (new SetPeliculas (id,
                         obtenerDatosAdministradorPorNombre (rs.getString ("NOMBRE_ADMINISTRADOR")), nombre,
-                        this.obtenerDatosArraySetPeliculas (nombre));
-
-                setsPeliculas.add (setPeliculas);
+                        this.obtenerDatosArraySetPeliculas (id)));
             }
 
             // Se cierra el ResultSet
@@ -1002,39 +998,54 @@ public class GestorBD {
         return setsPeliculas;
     }
 
-    public List <Pelicula> obtenerDatosArraySetPeliculas (String nombre) {
+    private List <Pelicula> obtenerDatosArraySetPeliculas (UUID id) {
         List <Pelicula> peliculas = new ArrayList <Pelicula> ();
 
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
-                Statement stmt = con.createStatement ()) {
-            String sql = "SELECT NOMBRE_PELICULA FROM ARRAY_SETPELICULA WHERE NOMBRE_SETPELICULA = " + nombre;
-
+                Statement stmt = con.createStatement ();
+                Statement stmt2 = con.createStatement ()) {
             // Se ejecuta la sentencia y se obtiene el ResultSet con los
             // resutlados
-            ResultSet rs = stmt.executeQuery (sql);
-            Pelicula pelicula;
+            ResultSet rs[] = new ResultSet [] { stmt.executeQuery (
+                    String.format ("SELECT ID_PELICULA FROM ARRAY_SETPELICULA WHERE ID_SETPELICULA = '%s'",
+                            id.toString ())),
+                    null };
 
             // Se recorre el ResultSet y se crean objetos Cliente
-            while (rs.next ()) {
+            while (rs [0].next ()) {
+                rs [1] = stmt2.executeQuery (String.format ("SELECT * FROM PELICULA WHERE ID_PELICULA = '%s'",
+                        rs [0].getString ("ID_PELICULA")));
 
-                pelicula = new Pelicula (rs.getString ("NOMBRE_PELICULA"));
-                peliculas.add (pelicula);
+                peliculas.add (new Pelicula (UUID.fromString (rs [1].getString ("ID_PELICULA")),
+                        rs [1].getString ("NOMBRE_PELICULA"), rs [1].getString ("RUTA_IMAGEN"),
+                        rs [1].getDouble ("VALORACION"),
+                        Year.of (rs [1].getInt ("FECHA")), rs [1].getString ("DIRECTOR"),
+                        Duration.ofMinutes (rs [1].getInt ("DURACION")),
+                        EdadRecomendada.fromValue (rs [1].getByte ("EDAD_RECOMENDADA")), Genero.Nombre
+                                .toGeneros ((short) rs [1].getInt ("GENEROS")),
+                        null));
+
+                rs [1].close ();
             }
 
             // Se cierra el ResultSet
-            rs.close ();
+            rs [0].close ();
 
             System.out.println (String.format ("- Se han recuperado %d array_sets_peliculas...", peliculas.size ()));
         }
+
         catch (Exception ex) {
             System.err.println (String.format ("* Error al obtener datos de la BBDD : %s", ex.getMessage ()));
             ex.printStackTrace ();
         }
-        return peliculas;
 
+        return peliculas;
     }
 
     public Administrador obtenerDatosAdministradorPorNombre (String NombreAdministrador) {
+        if (NombreAdministrador.length () == 0)
+            return null;
+
         Administrador administrador = new Administrador ();
 
         // Se abre la conexión y se obtiene el Statement

@@ -87,10 +87,10 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
         super ();
 
         this.id = id != null && ((Complemento.isDefault (id)
-                && Utils.isAmongstCallers ("cine.Complemento")
                 && ((Complemento.DEFAULT_SET & (short) (1 << id.getLeastSignificantBits ())) == 0
                         || ((Complemento.DEFAULT_SET & (short) (1 << id.getLeastSignificantBits ())) != 0
-                                && (Utils.isAmongstCallers ("internals.GestorBD")
+                                && (Utils.isAmongstCallers ("cine.Complemento")
+                                        || Utils.isAmongstCallers ("internals.GestorBD")
                                         || Utils.isAmongstCallers ("internals.swing.ComplementosTableModel")))))
                 || !Complemento.isDefault (id))
                         ? id
@@ -116,6 +116,11 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
     }
 
     public void setNombre (String nombre) {
+        if (this.isDefault ()
+                && !(Utils.isAmongstCallers ("cine.Complemento") || Utils.isAmongstCallers ("internals.GestorBD")
+                        || Utils.isAmongstCallers ("internals.swing.ComplementosTableModel")))
+            return;
+
         this.nombre = nombre == null || nombre.equals ("") ? this.id.toString () : nombre;
     }
 
@@ -124,9 +129,16 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
     }
 
     public void setPrecio (BigDecimal precio) {
+        if (this.isDefault ()
+                && !(Utils.isAmongstCallers ("cine.Complemento") || Utils.isAmongstCallers ("internals.GestorBD")
+                        || Utils.isAmongstCallers ("internals.swing.ComplementosTableModel")))
+            return;
+
         this.precio = precio == null || precio.signum () != 1
-                ? this.precio == null ? Complemento.DEFAULT_PRECIO : this.precio
-                : precio;
+                || precio.compareTo (new BigDecimal ("9".repeat (63) + ".99")) > 0
+                        ? this.precio == null ? Complemento.DEFAULT_PRECIO.setScale (2, RoundingMode.HALF_EVEN)
+                                : this.precio
+                        : precio.setScale (2, RoundingMode.HALF_EVEN);
     }
 
     public int getDescuento () {
@@ -134,7 +146,9 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
     }
 
     public void setDescuento (int descuento) {
-        if (descuento < 0 || descuento >= 100)
+        if (descuento < 0 || descuento >= 100 || this.isDefault ()
+                && !(Utils.isAmongstCallers ("cine.Complemento") || Utils.isAmongstCallers ("internals.GestorBD")
+                        || Utils.isAmongstCallers ("internals.swing.ComplementosTableModel")))
             return;
 
         this.descuento = descuento;
@@ -178,8 +192,8 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
 
     @Override
     public String toString () {
-        return String.format ("Complemento (%d) {%n\tID: %s%n\tNombre: %s%n\tPrecio: %.2f €%n\tDescuento: %d %%%n}",
-                this.hashCode (), this.id.toString (), this.nombre, this.precio.doubleValue (), this.descuento);
+        return String.format ("Complemento (%d) {%n\tID: %s%s%n\tNombre: %s%n\tPrecio: %.2f €%n\tDescuento: %d %%%n}",
+                this.hashCode (), this.id.toString (), this.isDefault() ? " (complemento predeterminado)" : "", this.nombre, this.precio.doubleValue (), this.descuento);
     }
 
     public BigDecimal aplicarDescuento (int descuento) {

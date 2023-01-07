@@ -113,7 +113,7 @@ public class SetPeliculasDetailsWindow extends JFrame {
                         return l;
                     })).get ());
 
-                    r.add (((Supplier <JComboBox>) ( () -> {
+                    r.add (((Supplier <JComboBox <Pelicula>>) ( () -> {
                         JComboBox <Pelicula> peliculas = new JComboBox <Pelicula> (
                                 new Vector <Pelicula> (set.getPeliculas ()));
 

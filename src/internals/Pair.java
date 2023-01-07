@@ -9,9 +9,8 @@ public class Pair <X, Y> {
         this.y = y;
     }
 
-	@Override
-	public String toString() {
-		return "Pair [Fila=" + x + ", Columna=" + y + "]";
-	}
-    
+    @Override
+    public String toString () {
+        return "Pair [Fila=" + x + ", Columna=" + y + "]";
+    }
 }

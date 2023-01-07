@@ -194,7 +194,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
 
     public void setPrecio (BigDecimal precio) {
         if (precio == null || precio.signum () != 1
-                || precio.compareTo (new BigDecimal ("9".repeat (63) + ".99")) == 1) {
+                || precio.compareTo (new BigDecimal ("9".repeat (63) + ".99")) > 0) {
             if (this.precio == null)
                 this.setPrecio ();
 
@@ -279,7 +279,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
                 this.total ().doubleValue ());
     }
 
-    public BigDecimal total () {
+    public BigDecimal total () throws ArithmeticException {
         BigDecimal p = BigDecimal.valueOf (this.precio.doubleValue ());
 
         ArrayList <Map.Entry <Complemento, Integer>> keyValueArray = new ArrayList <Map.Entry <Complemento, Integer>> (
@@ -288,7 +288,11 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
             p = p.add (keyValueArray.get (i).getKey ().getPrecio ()
                     .multiply (new BigDecimal (keyValueArray.get (i).getValue ())));
 
-        return p.setScale (2, RoundingMode.HALF_EVEN);
+        if ((p = p.setScale (2, RoundingMode.HALF_EVEN)).compareTo (new BigDecimal ("9".repeat (63) + ".99")) > 0)
+            throw new ArithmeticException (
+                    "Se ha sobrepasado el precio de entrada máximo almacenable en la base de datos");
+
+        return p;
     }
 
     public static BST <Entrada> tree (Collection <Entrada> values) {
@@ -631,14 +635,5 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
             o.put ("id", this.id.toString ());
 
         return o;
-    }
-
-    public static void main (String args[]) {
-        Entrada entrada = new Entrada (new Espectador (), Pelicula.getDefault (0));
-        entrada.setPrecio (BigDecimal.valueOf (1000.69));
-        entrada.setComplementos (Complemento.getDefault ().stream ().limit (2)
-                .collect (Collectors.toMap (Function.identity (), e -> e.getNombre ().length (), (k1, k2) -> k1)));
-        System.out.println (
-                Entrada.toJSON (Arrays.asList (entrada, new Entrada (Espectador.random (), Pelicula.getDefault (1)))));
     }
 }

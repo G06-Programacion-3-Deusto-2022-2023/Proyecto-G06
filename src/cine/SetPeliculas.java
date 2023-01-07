@@ -25,7 +25,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import internals.Utils;
-import internals.GestorBD;
 import internals.HasID;
 import internals.bst.BST;
 import internals.bst.Filter;
@@ -149,18 +148,23 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
                 && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
+        SortedSet <Pelicula> oldpeliculas = this.peliculas == null ? new TreeSet <Pelicula> () : this.peliculas;
+
         this.peliculas = new TreeSet <Pelicula> (
                 peliculas == null || peliculas.size () < SetPeliculas.MIN_SIZE
                         || peliculas.size () > SetPeliculas.MAX_SIZE
                                 ? Collections.emptySet ()
                                 : peliculas);
 
-        if (peliculas == null)
-            return;
+        oldpeliculas.removeAll (this.peliculas);
 
-        Pelicula array[] = peliculas.toArray (new Pelicula [0]);
+        Pelicula array[] = this.peliculas.toArray (new Pelicula [0]);
 
         for (int i = 0; i < array.length; array [i++].addSet (this))
+            ;
+
+        array = oldpeliculas.toArray (new Pelicula [0]);
+        for (int i = 0; i < array.length; array [i++].removeSet (this))
             ;
     }
 
@@ -547,11 +551,5 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
             str.insert (i + 1, ",\n");
 
         return "[\n" + str.toString ().indent (4).replace (",\n\n}", "\n}") + "]";
-    }
-    
-    public static void main (String args[]) {
-        System.out.println (SetPeliculas.toJSON (SetPeliculas.getDefault (), true));
-        System.out.println (SetPeliculas.fromJSON (SetPeliculas.toJSON (SetPeliculas.getDefault (), true)));
-        // System.out.println (Pelicula.fromJSON (Pelicula.toJSON (Pelicula.getDefault (0), true)));
     }
 }

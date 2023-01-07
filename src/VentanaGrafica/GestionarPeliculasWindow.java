@@ -11,6 +11,10 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Year;
 import java.util.ArrayList;
@@ -24,6 +28,8 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javax.swing.AbstractButton;
@@ -34,6 +40,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -50,6 +57,8 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import org.json.JSONException;
+
 import cine.Administrador;
 import cine.EdadRecomendada;
 import cine.Genero;
@@ -57,6 +66,7 @@ import cine.Pelicula;
 import cine.SetPeliculas;
 import internals.GestorBD;
 import internals.bst.Filter;
+import internals.swing.JSONChooser;
 import internals.swing.JTextFieldLimit;
 import internals.swing.PeliculasComboBoxRenderer;
 import internals.swing.SetsPeliculasComboBoxRenderer;
@@ -106,8 +116,29 @@ public class GestionarPeliculasWindow extends JFrame {
                     pelicula [0] = null;
                 }
 
+                if (setpeliculas [0] != null) {
+                    if (setpeliculas [0].getNombre ().equals (setpeliculas [0].getId ().toString ())) {
+                        SetPeliculas array[] = db.obtenerDatosSetPeliculas ().toArray (new SetPeliculas [0]);
+
+                        int nuevas = 0;
+                        for (int i = 0; i < array.length; nuevas += array [i++].getNombre ()
+                                .toLowerCase ()
+                                .contains ("nuevo set de películas") ? 1 : 0)
+                            ;
+
+                        setpeliculas [0].setNombre (String.format ("Nuevo set de películas%s",
+                                nuevas == 0 ? "" : String.format (" #%d", nuevas + 1)));
+                    }
+
+                    db.update (setpeliculas [0]);
+                    setpeliculas [0] = null;
+                }
+
                 if (filters.get (0) != null)
                     filters.get (0).run ();
+
+                if (filters.get (1) != null)
+                    filters.get (1).run ();
             }
         });
 
@@ -471,7 +502,8 @@ public class GestionarPeliculasWindow extends JFrame {
                                                                             return 0;
                                                                         })).getAsInt ()]),
                                 (Filter <Pelicula>) ( (Pelicula x) -> x.getNombre ().toLowerCase (Locale.ROOT)
-                                        .contains (nombre.getText ().replace ("'", "").replace ("\"", "").replace ("`", "").toLowerCase (Locale.ROOT))
+                                        .contains (nombre.getText ().replace ("'", "").replace ("\"", "")
+                                                .replace ("`", "").toLowerCase (Locale.ROOT))
                                         && x.getValoracion () >= ((SpinnerNumberModel) minVal
                                                 .getModel ()).getNumber ().doubleValue ()
                                         && x.getValoracion () <= ((SpinnerNumberModel) maxVal
@@ -588,7 +620,6 @@ public class GestionarPeliculasWindow extends JFrame {
 
                                     pelicula [0] = (Pelicula) peliculas.getSelectedItem ();
                                     new PeliculaWindow (pelicula, f);
-                                    db.update (pelicula);
                                 });
 
                                 return b;
@@ -607,6 +638,9 @@ public class GestionarPeliculasWindow extends JFrame {
                                                     "Cancelar"
                                             }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
                                         return;
+
+                                    db.delete ((Pelicula) (peliculas.getSelectedItem ()));
+                                    filters.get (0).run ();
                                 });
 
                                 return b;
@@ -999,7 +1033,33 @@ public class GestionarPeliculasWindow extends JFrame {
                             JButton b = new JButton ("Importar");
 
                             b.addActionListener (e -> {
+                                JSONChooser fc;
+                                if ((fc = new JSONChooser ()).showOpenDialog (f) != JFileChooser.APPROVE_OPTION)
+                                    return;
 
+                                new LoadingWindow ( () -> {
+                                    List <Pelicula> l;
+                                    try {
+                                        l = Pelicula.fromJSON (fc.getSelectedFile ());
+                                    }
+
+                                    catch (NullPointerException | IOException ex) {
+                                        JOptionPane.showMessageDialog (f,
+                                                "No pudo abrirse el archivo especificado.");
+
+                                        return;
+                                    }
+
+                                    catch (JSONException ex) {
+                                        JOptionPane.showMessageDialog (f,
+                                                "El archivo especificado no es un archivo JSON válido.");
+
+                                        return;
+                                    }
+
+                                    l.removeAll (Pelicula.getDefault ());
+                                    db.update (l);
+                                });
                             });
 
                             return b;
@@ -1009,7 +1069,52 @@ public class GestionarPeliculasWindow extends JFrame {
                             JButton b = new JButton ("Exportar");
 
                             b.addActionListener (e -> {
+                                JSONChooser fc;
+                                if ((fc = new JSONChooser ()).showSaveDialog (f) != JFileChooser.APPROVE_OPTION)
+                                    return;
 
+                                String str;
+                                try {
+                                    str = Pelicula.toJSON (db.obtenerDatosPeliculas (), true);
+                                }
+
+                                catch (NullPointerException | JSONException ex) {
+                                    JOptionPane.showMessageDialog (f,
+                                            "Las películas no pudieron ser exportados a JSON.");
+
+                                    try {
+                                        Files.delete (fc.getSelectedFile ().toPath ());
+                                    }
+
+                                    catch (IOException e1) {
+                                        Logger.getLogger (GestionarPeliculasWindow.class.getName ()).log (Level.WARNING,
+                                                String.format ("No se pudo eliminar el archivo %s.",
+                                                        fc.getSelectedFile ().getAbsolutePath ()));
+                                    }
+
+                                    return;
+                                }
+
+                                try (BufferedWriter bw = new BufferedWriter (new FileWriter (fc.getSelectedFile ()))) {
+                                    bw.write (str);
+                                }
+
+                                catch (IOException ex) {
+                                    JOptionPane.showMessageDialog (f,
+                                            "No pudo abrirse el archivo especificado.");
+
+                                    try {
+                                        Files.delete (fc.getSelectedFile ().toPath ());
+                                    }
+
+                                    catch (IOException e1) {
+                                        Logger.getLogger (GestionarPeliculasWindow.class.getName ()).log (Level.WARNING,
+                                                String.format ("No se pudo eliminar el archivo %s.",
+                                                        fc.getSelectedFile ().getAbsolutePath ()));
+                                    }
+
+                                    return;
+                                }
                             });
 
                             return b;
@@ -1021,7 +1126,23 @@ public class GestionarPeliculasWindow extends JFrame {
                             JButton b = new JButton ("Eliminar todas las películas");
 
                             b.addActionListener (e -> {
+                                if (JOptionPane.showOptionDialog (f,
+                                        "Lo que estás a punto de hacer es una acción irreversible.\n¿Estás seguro de querer continuar?",
+                                        "Eliminar todas las películas", JOptionPane.YES_NO_OPTION,
+                                        JOptionPane.WARNING_MESSAGE,
+                                        null, new String [] {
+                                                "Confirmar",
+                                                "Cancelar"
+                                        }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
+                                    return;
 
+                                new LoadingWindow ( () -> {
+                                    List <Pelicula> l = db.obtenerDatosPeliculas ();
+                                    l.removeAll (Pelicula.getDefault ());
+                                    db.delete (l);
+
+                                    filters.get (0).run ();
+                                });
                             });
 
                             return b;
@@ -1114,7 +1235,8 @@ public class GestionarPeliculasWindow extends JFrame {
                                                                         .compareTo ((Integer) y.size ()))),
                                 (Filter <SetPeliculas>) ( (SetPeliculas x) -> x.getNombre ()
                                         .toLowerCase (Locale.ROOT)
-                                        .contains (nombre.getText ().replace ("'", "").replace ("\"", "").replace ("`", "").toLowerCase (Locale.ROOT))
+                                        .contains (nombre.getText ().replace ("'", "").replace ("\"", "")
+                                                .replace ("`", "").toLowerCase (Locale.ROOT))
                                         && x.size () >= ((SpinnerNumberModel) minSize.getModel ()).getNumber ()
                                                 .intValue ()
                                         && x.size () <= ((SpinnerNumberModel) maxSize.getModel ()).getNumber ()
@@ -1164,7 +1286,24 @@ public class GestionarPeliculasWindow extends JFrame {
                                 JButton b = new JButton ("Modificar");
 
                                 b.setEnabled (false);
-                                b.addActionListener (filterAL);
+                                b.addActionListener (e -> {
+                                    try {
+                                        pw [0] = null;
+                                        f.setVisible (false);
+                                        pw [0] = w;
+
+                                        setpeliculas [0] = (SetPeliculas) setspeliculas.getSelectedItem ();
+                                        new SetPeliculasWindow (setpeliculas, db.obtenerDatosPeliculas (), admin, f);
+                                    }
+
+                                    catch (NullPointerException e1) {
+                                        f.setVisible (false);
+                                        JOptionPane.showMessageDialog (f,
+                                                "El set de películas seleccionado es nulo por lo que no puede modificarse.",
+                                                "Error al modificar el set de películas", JOptionPane.ERROR_MESSAGE);
+                                        f.setVisible (true);
+                                    }
+                                });
 
                                 return b;
                             })).get (),
@@ -1183,6 +1322,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                             }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
                                         return;
 
+                                    db.delete ((SetPeliculas) setspeliculas.getSelectedItem ());
                                     filters.get (1).run ();
                                 });
 
@@ -1392,8 +1532,11 @@ public class GestionarPeliculasWindow extends JFrame {
                             JButton b = new JButton ("Crear");
 
                             b.addActionListener (e -> {
+                                pw [0] = null;
+                                f.setVisible (false);
+                                pw [0] = w;
 
-                                filters.get (1).run ();
+                                new SetPeliculasWindow (setpeliculas, db.obtenerDatosPeliculas (), admin, f);
                             });
 
                             return b;
@@ -1403,7 +1546,35 @@ public class GestionarPeliculasWindow extends JFrame {
                             JButton b = new JButton ("Importar");
 
                             b.addActionListener (e -> {
+                                JSONChooser fc;
+                                if ((fc = new JSONChooser ()).showOpenDialog (f) != JFileChooser.APPROVE_OPTION)
+                                    return;
 
+                                new LoadingWindow ( () -> {
+                                    List <SetPeliculas> l;
+                                    try {
+                                        l = SetPeliculas.fromJSON (fc.getSelectedFile ());
+                                    }
+
+                                    catch (NullPointerException | IOException ex) {
+                                        JOptionPane.showMessageDialog (f,
+                                                "No pudo abrirse el archivo especificado.");
+
+                                        return;
+                                    }
+
+                                    catch (JSONException ex) {
+                                        JOptionPane.showMessageDialog (f,
+                                                "El archivo especificado no es un archivo JSON válido.");
+
+                                        return;
+                                    }
+
+                                    l.remove (SetPeliculas.getDefault ());
+                                    db.update (l);
+
+                                    filters.get (1).run ();
+                                });
                             });
 
                             return b;
@@ -1413,7 +1584,52 @@ public class GestionarPeliculasWindow extends JFrame {
                             JButton b = new JButton ("Exportar");
 
                             b.addActionListener (e -> {
+                                JSONChooser fc;
+                                if ((fc = new JSONChooser ()).showSaveDialog (f) != JFileChooser.APPROVE_OPTION)
+                                    return;
 
+                                String str;
+                                try {
+                                    str = SetPeliculas.toJSON (db.obtenerDatosSetPeliculas (), true);
+                                }
+
+                                catch (NullPointerException | JSONException ex) {
+                                    JOptionPane.showMessageDialog (f,
+                                            "Los sets de películas no pudieron ser exportados a JSON.");
+
+                                    try {
+                                        Files.delete (fc.getSelectedFile ().toPath ());
+                                    }
+
+                                    catch (IOException e1) {
+                                        Logger.getLogger (GestionarPeliculasWindow.class.getName ()).log (Level.WARNING,
+                                                String.format ("No se pudo eliminar el archivo %s.",
+                                                        fc.getSelectedFile ().getAbsolutePath ()));
+                                    }
+
+                                    return;
+                                }
+
+                                try (BufferedWriter bw = new BufferedWriter (new FileWriter (fc.getSelectedFile ()))) {
+                                    bw.write (str);
+                                }
+
+                                catch (IOException ex) {
+                                    JOptionPane.showMessageDialog (f,
+                                            "No pudo abrirse el archivo especificado.");
+
+                                    try {
+                                        Files.delete (fc.getSelectedFile ().toPath ());
+                                    }
+
+                                    catch (IOException e1) {
+                                        Logger.getLogger (GestionarPeliculasWindow.class.getName ()).log (Level.WARNING,
+                                                String.format ("No se pudo eliminar el archivo %s.",
+                                                        fc.getSelectedFile ().getAbsolutePath ()));
+                                    }
+
+                                    return;
+                                }
                             });
 
                             return b;
@@ -1425,7 +1641,23 @@ public class GestionarPeliculasWindow extends JFrame {
                             JButton b = new JButton ("Eliminar todos los sets");
 
                             b.addActionListener (e -> {
+                                if (JOptionPane.showOptionDialog (f,
+                                        "Lo que estás a punto de hacer es una acción irreversible.\n¿Estás seguro de querer continuar?",
+                                        "Eliminar todos los set de películas", JOptionPane.YES_NO_OPTION,
+                                        JOptionPane.WARNING_MESSAGE,
+                                        null, new String [] {
+                                                "Confirmar",
+                                                "Cancelar"
+                                        }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
+                                    return;
 
+                                new LoadingWindow ( () -> {
+                                    List <SetPeliculas> l = db.obtenerDatosSetPeliculas ();
+                                    l.remove (SetPeliculas.getDefault ());
+                                    db.delete (l);
+
+                                    filters.get (1).run ();
+                                });
                             });
 
                             return b;

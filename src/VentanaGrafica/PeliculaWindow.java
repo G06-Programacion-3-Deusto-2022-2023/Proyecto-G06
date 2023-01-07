@@ -53,11 +53,11 @@ import internals.swing.JTextFieldLimit;
  */
 
 public class PeliculaWindow extends JFrame {
-    public PeliculaWindow (Pelicula pelicula[]) {
+    public PeliculaWindow (final Pelicula pelicula[]) {
         this (pelicula, null);
     }
 
-    public PeliculaWindow (Pelicula pelicula[], GestionarPeliculasWindow w)
+    public PeliculaWindow (final Pelicula pelicula[], final GestionarPeliculasWindow w)
             throws NullPointerException, UnsupportedOperationException {
         super ();
 

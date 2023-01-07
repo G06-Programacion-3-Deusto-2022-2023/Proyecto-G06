@@ -41,6 +41,7 @@ import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
@@ -163,7 +164,8 @@ public class MiscOptionsWindow extends JFrame {
                             @Override
                             public void changedUpdate (DocumentEvent e) {
                                 try {
-                                    b [0].setEnabled (t [0].getText ().strip ().length () != 0 && !t [0].getText ().equals (Settings.getNombre ()));
+                                    b [0].setEnabled (t [0].getText ().strip ().length () != 0
+                                            && !t [0].getText ().equals (Settings.getNombre ()));
 
                                     b [4].setEnabled (!(t [0].getText ()
                                             .equals (Settings.defaults ().getProperty ("nombre"))
@@ -605,6 +607,7 @@ public class MiscOptionsWindow extends JFrame {
 
                         t.setModel (new ComplementosTableModel (db));
 
+                        t.setSelectionMode (ListSelectionModel.SINGLE_SELECTION);
                         t.getSelectionModel ()
                                 .addListSelectionListener (e -> b [1].setEnabled ((((BooleanSupplier) ( () -> {
                                     int i = t.getSelectionModel ().getMinSelectionIndex ();
@@ -905,7 +908,8 @@ public class MiscOptionsWindow extends JFrame {
                                     return;
                                 }
 
-                                db.insert (l);
+                                l.removeAll (Complemento.getDefault ());
+                                db.update (l);
                                 ((ComplementosTableModel) t.getModel ()).update ();
                             });
 
@@ -922,7 +926,7 @@ public class MiscOptionsWindow extends JFrame {
 
                                 String str;
                                 try {
-                                    str = Complemento.toJSON (db.obtenerDatosComplementos ());
+                                    str = Complemento.toJSON (db.obtenerDatosComplementos (), true);
                                 }
 
                                 catch (NullPointerException | JSONException ex) {

@@ -53,8 +53,8 @@ public class ComplementosTableModel extends DefaultTableModel {
     public Complemento get (int row) {
         return new Complemento (this.values.get (row).getId (),
                 (String) this.dataVector.get (row).get (0),
-                new BigDecimal (((String) this.dataVector.get (row).get (1)).replace (",", ".").strip ()
-                        .replace ("€", "")),
+                new BigDecimal (((String) this.dataVector.get (row).get (1)).replace (",", ".")
+                        .replace ("€", "").strip ()),
                 Integer.parseInt (((String) this.dataVector.get (row).get (2)).replace (" %", "")));
     }
 
@@ -158,7 +158,7 @@ public class ComplementosTableModel extends DefaultTableModel {
         else if (col == 1)
             try {
                 BigDecimal p;
-                if ((p = new BigDecimal (((String) aValue).replace (",", ".").strip ().replace ("€", "")))
+                if ((p = new BigDecimal (((String) aValue).replace (",", ".").replace ("€", "").strip ()))
                         .signum () != 1)
                     throw new ArithmeticException ("El precio debe ser un número positivo.");
 
@@ -170,7 +170,7 @@ public class ComplementosTableModel extends DefaultTableModel {
                 Logger.getLogger (ComplementosTableModel.class.getName ()).log (Level.WARNING,
                         String.format (
                                 "Formato incorrecto: no pudo cambiarse el precio porque %s no es un número válido.",
-                                ((String) aValue).strip ().replace ("€", "")));
+                                ((String) aValue).replace ("€", "").strip ()));
 
                 return;
             }
@@ -277,7 +277,7 @@ public class ComplementosTableModel extends DefaultTableModel {
             Logger.getLogger (ComplementosTableModel.class.getName ()).log (Level.WARNING,
                     String.format (
                             "Formato incorrecto: no pudo establecerse un precio porque %s no es un número válido.",
-                            ((String) rowData [1]).strip ().replace ("€", "")));
+                            ((String) rowData [1]).replace ("€", "").strip ()));
 
             return;
         }
@@ -302,7 +302,7 @@ public class ComplementosTableModel extends DefaultTableModel {
             Logger.getLogger (ComplementosTableModel.class.getName ()).log (Level.WARNING,
                     String.format (
                             "Formato incorrecto: no pudo establecerse un precio porque %s no es un número válido.",
-                            ((String) rowData [2]).strip ().replace ("€", "")));
+                            ((String) rowData [2]).replace ("€", "").strip ()));
 
             return;
         }
