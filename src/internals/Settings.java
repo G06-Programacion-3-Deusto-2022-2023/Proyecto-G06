@@ -31,6 +31,7 @@ public final class Settings {
         p.setProperty ("precioentrada", "7.9");
         p.setProperty ("diaespectador", "2");
         p.setProperty ("descuentoespectador", "20");
+        p.setProperty ("fallbackseatrenderer", Boolean.FALSE.toString ());
 
         Settings.properties = new Properties (p);
 
@@ -191,7 +192,8 @@ public final class Settings {
         }
 
         try {
-            Files.copy (f.toPath (), new File (Settings.defaults.getProperty ("logo")).toPath (), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy (f.toPath (), new File (Settings.defaults.getProperty ("logo")).toPath (),
+                    StandardCopyOption.REPLACE_EXISTING);
         }
 
         catch (IOException e) {
@@ -273,5 +275,13 @@ public final class Settings {
             throw new IllegalArgumentException ("El descuento debe ser un número entero en el intervalo [0, 100).");
 
         Settings.properties.setProperty ("descuentoespectador", Integer.toString (d));
+    }
+
+    public static boolean usingFallbackRenderer () {
+        return Boolean.parseBoolean (Settings.properties.getProperty ("fallbackseatrenderer"));
+    }
+
+    public static void useFallbackRenderer (boolean fallbackrenderer) {
+        Settings.properties.setProperty ("fallbackseatrenderer", Boolean.toString (fallbackrenderer));
     }
 }

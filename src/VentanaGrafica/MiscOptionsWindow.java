@@ -24,6 +24,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -126,7 +127,12 @@ public class MiscOptionsWindow extends JFrame {
 
                 JSpinner sp = new JSpinner (new SpinnerNumberModel ());
 
+                JComboBox <String> cb = new JComboBox <String> (
+                        Arrays.asList ("Asientos", "Tabla").stream ().collect (Collectors.toCollection (Vector::new)));
+
                 JButton b[] = new JButton [] {
+                        new JButton (new ImageIcon (
+                                MiscOptionsWindow.class.getResource ("/toolbarButtonGraphics/general/Save24.gif"))),
                         new JButton (new ImageIcon (
                                 MiscOptionsWindow.class.getResource ("/toolbarButtonGraphics/general/Save24.gif"))),
                         new JButton (new ImageIcon (
@@ -167,7 +173,7 @@ public class MiscOptionsWindow extends JFrame {
                                     b [0].setEnabled (t [0].getText ().strip ().length () != 0
                                             && !t [0].getText ().equals (Settings.getNombre ()));
 
-                                    b [4].setEnabled (!(t [0].getText ()
+                                    b [5].setEnabled (!(t [0].getText ()
                                             .equals (Settings.defaults ().getProperty ("nombre"))
                                             && new File (t [1].getText ()).getCanonicalPath ()
                                                     .equals (new File (Settings.defaults ().getProperty ("logo"))
@@ -179,7 +185,11 @@ public class MiscOptionsWindow extends JFrame {
                                                             .equals (new BigDecimal (
                                                                     Settings.defaults ()
                                                                             .getProperty ("precioentrada")).setScale (2,
-                                                                                    RoundingMode.HALF_EVEN))));
+                                                                                    RoundingMode.HALF_EVEN))
+                                            && Boolean.parseBoolean (
+                                                    Settings.defaults ().getProperty ("fallbackseatrenderer"))
+                                                            ? cb.getSelectedIndex () == 0
+                                                            : cb.getSelectedIndex () == 1));
                                 }
 
                                 catch (IOException e1) {
@@ -240,7 +250,7 @@ public class MiscOptionsWindow extends JFrame {
                                             !new File (t [1].getText ()).getCanonicalFile ()
                                                     .equals (new File (Settings.getLogo ()).getCanonicalFile ()));
 
-                                    b [4].setEnabled (!(t [0].getText ()
+                                    b [5].setEnabled (!(t [0].getText ()
                                             .equals (Settings.defaults ().getProperty ("nombre"))
                                             && new File (t [1].getText ()).getCanonicalPath ()
                                                     .equals (new File (Settings.defaults ().getProperty ("logo"))
@@ -252,7 +262,11 @@ public class MiscOptionsWindow extends JFrame {
                                                             .equals (new BigDecimal (
                                                                     Settings.defaults ()
                                                                             .getProperty ("precioentrada")).setScale (2,
-                                                                                    RoundingMode.HALF_EVEN))));
+                                                                                    RoundingMode.HALF_EVEN))
+                                            && Boolean.parseBoolean (
+                                                    Settings.defaults ().getProperty ("fallbackseatrenderer"))
+                                                            ? cb.getSelectedIndex () == 0
+                                                            : cb.getSelectedIndex () == 1));
                                 }
 
                                 catch (IOException e1) {
@@ -267,7 +281,7 @@ public class MiscOptionsWindow extends JFrame {
                     r.add (Box.createRigidArea (new Dimension (3, 0)));
 
                     r.add (((Supplier <JButton>) ( () -> {
-                        b [3].addActionListener (e -> {
+                        b [4].addActionListener (e -> {
                             PNGChooser ic;
                             if ((ic = new PNGChooser ()).showOpenDialog (f) != JFileChooser.APPROVE_OPTION)
                                 return;
@@ -275,7 +289,7 @@ public class MiscOptionsWindow extends JFrame {
                             t [1].setText (ic.getSelectedFile ().getAbsolutePath ());
                         });
 
-                        return b [3];
+                        return b [4];
                     })).get ());
 
                     r.add (Box.createRigidArea (new Dimension (13, 0)));
@@ -332,7 +346,7 @@ public class MiscOptionsWindow extends JFrame {
                                     || !n.equals (Settings.getPrecioEntrada ()));
 
                             try {
-                                b [4].setEnabled (!(t [0].getText ()
+                                b [5].setEnabled (!(t [0].getText ()
                                         .equals (Settings.defaults ().getProperty ("nombre"))
                                         && new File (t [1].getText ()).getCanonicalPath ()
                                                 .equals (new File (Settings.defaults ().getProperty ("logo"))
@@ -344,7 +358,11 @@ public class MiscOptionsWindow extends JFrame {
                                                         .equals (new BigDecimal (
                                                                 Settings.defaults ()
                                                                         .getProperty ("precioentrada")).setScale (2,
-                                                                                RoundingMode.HALF_EVEN))));
+                                                                                RoundingMode.HALF_EVEN))
+                                        && Boolean.parseBoolean (
+                                                Settings.defaults ().getProperty ("fallbackseatrenderer"))
+                                                        ? cb.getSelectedIndex () == 0
+                                                        : cb.getSelectedIndex () == 1));
                             }
 
                             catch (IOException e1) {
@@ -385,31 +403,114 @@ public class MiscOptionsWindow extends JFrame {
                     return r;
                 })).get ());
 
-                q.add (((Supplier <JButton>) ( () -> {
-                    b [4].setEnabled (!(Settings.getNombre ().equals (Settings.defaults ().getProperty ("nombre"))
-                            && Settings.getLogo ().equals (Settings.defaults ().getProperty ("logo"))
-                            && Settings.getPrecioEntrada ().setScale (2, RoundingMode.HALF_EVEN)
-                                    .equals (new BigDecimal (
-                                            Settings.defaults ().getProperty ("precioentrada").replace (",", "."))
-                                                    .setScale (2, RoundingMode.HALF_EVEN))));
+                q.add (((Supplier <JPanel>) ( () -> {
+                    JPanel r = new JPanel (new FlowLayout (FlowLayout.LEADING, 1, 0));
 
-                    b [4].addActionListener (e -> {
+                    r.add (((Supplier <JLabel>) ( () -> {
+                        JLabel l = new JLabel ("Precio de las entradas:");
+                        l.setFont (l.getFont ().deriveFont (Font.BOLD, 14f));
+
+                        return l;
+                    })).get ());
+
+                    r.add (Box.createRigidArea (new Dimension (2, 0)));
+
+                    r.add (((Supplier <JComboBox <String>>) ( () -> {
+                        cb.addActionListener (e -> {
+                            b [3].setEnabled (Settings.usingFallbackRenderer () ? cb.getSelectedIndex () == 0
+                                    : cb.getSelectedIndex () == 1);
+
+                            try {
+                                b [5].setEnabled (!(t [0].getText ()
+                                        .equals (Settings.defaults ().getProperty ("nombre"))
+                                        && new File (t [1].getText ()).getCanonicalPath ()
+                                                .equals (new File (Settings.defaults ().getProperty ("logo"))
+                                                        .getCanonicalPath ())
+                                        && new BigDecimal (String.format ("%.2f",
+                                                ((SpinnerNumberModel) sp.getModel ()).getNumber ().doubleValue ())
+                                                .replace (",", "."))
+                                                        .setScale (2, RoundingMode.HALF_EVEN)
+                                                        .equals (new BigDecimal (
+                                                                Settings.defaults ()
+                                                                        .getProperty ("precioentrada")).setScale (2,
+                                                                                RoundingMode.HALF_EVEN))
+                                        && Boolean.parseBoolean (
+                                                Settings.defaults ().getProperty ("fallbackseatrenderer"))
+                                                        ? cb.getSelectedIndex () == 0
+                                                        : cb.getSelectedIndex () == 1));
+                            }
+
+                            catch (IOException e1) {
+                                e1.printStackTrace ();
+                            }
+                        });
+
+                        return cb;
+                    })).get ());
+
+                    r.add (Box.createRigidArea (new Dimension (13, 0)));
+
+                    r.add (((Supplier <JButton>) ( () -> {
+                        b [3].setEnabled (false);
+
+                        b [3].addActionListener (e -> {
+                            Settings.useFallbackRenderer (cb.getSelectedIndex () == 1);
+                            Settings.save ();
+
+                            b [3].setEnabled (false);
+                        });
+
+                        return b [3];
+                    })).get ());
+
+                    return r;
+                })).get ());
+
+                q.add (((Supplier <JButton>) ( () -> {
+                    try {
+                        b [5].setEnabled (!(t [0].getText ()
+                                .equals (Settings.defaults ().getProperty ("nombre"))
+                                && new File (t [1].getText ()).getCanonicalPath ()
+                                        .equals (new File (Settings.defaults ().getProperty ("logo"))
+                                                .getCanonicalPath ())
+                                && new BigDecimal (String.format ("%.2f",
+                                        ((SpinnerNumberModel) sp.getModel ()).getNumber ().doubleValue ())
+                                        .replace (",", "."))
+                                                .setScale (2, RoundingMode.HALF_EVEN)
+                                                .equals (new BigDecimal (
+                                                        Settings.defaults ()
+                                                                .getProperty ("precioentrada")).setScale (2,
+                                                                        RoundingMode.HALF_EVEN))
+                                && Boolean.parseBoolean (
+                                        Settings.defaults ().getProperty ("fallbackseatrenderer"))
+                                                ? cb.getSelectedIndex () == 0
+                                                : cb.getSelectedIndex () == 1));
+                    }
+
+                    catch (IOException e1) {
+                        e1.printStackTrace ();
+                    }
+
+                    b [5].addActionListener (e -> {
                         Settings.setNombre ();
                         Settings.setLogo ();
                         Settings.setPrecioEntrada ();
+                        Settings.useFallbackRenderer (
+                                Boolean.parseBoolean (Settings.defaults ().getProperty ("fallbackseatrenderer")));
                         Settings.save ();
 
                         t [0].setText (Settings.getNombre ());
                         t [1].setText (new File (Settings.getLogo ()).getAbsolutePath ());
                         ((SpinnerNumberModel) sp.getModel ()).setValue (Settings.getPrecioEntrada ());
+                        cb.setSelectedIndex (Settings.usingFallbackRenderer () ? 1 : 0);
 
                         b [0].setEnabled (false);
                         b [1].setEnabled (false);
                         b [2].setEnabled (false);
-                        b [4].setEnabled (false);
+                        b [5].setEnabled (false);
                     });
 
-                    return b [4];
+                    return b [5];
                 })).get ());
 
                 return q;

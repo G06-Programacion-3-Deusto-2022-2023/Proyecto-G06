@@ -1,6 +1,7 @@
 package VentanaGrafica;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.BorderLayout;
@@ -31,7 +32,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -39,14 +44,19 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
+
+import org.jdesktop.swingx.JXTable;
 
 import cine.Espectador;
 import cine.Pelicula;
 import cine.Sala;
 import internals.GestorBD;
 import internals.Pair;
+import internals.Settings;
 import internals.Utils;
 import internals.swing.ImageDisplayer;
 
@@ -99,7 +109,8 @@ public class VentanaSalaCine extends JFrame {
                     return l;
                 })).get ());
                 JButton sb[] = { new JButton ("Confirmar"), new JButton ("Limpiar selección") };
-                List <ImageDisplayer> id = new ArrayList <ImageDisplayer> (Sala.getFilas () * Sala.getColumnas ());
+                JXTable t[] = new JXTable [1];
+                List <ImageDisplayer> id[] = new List [1];
                 Image img[] = new Image [4];
                 boolean usingid[] = new boolean [1];
 
@@ -110,7 +121,7 @@ public class VentanaSalaCine extends JFrame {
                     gbc.gridwidth = GridBagConstraints.REMAINDER;
                     gbc.fill = GridBagConstraints.NONE;
                     gbc.anchor = GridBagConstraints.NORTH;
-                    gbc.insets = new Insets (50, 0, 0, 0);
+                    gbc.insets = new Insets (25, 0, 0, 25);
 
                     q.add (((Supplier <JLabel>) ( () -> {
                         JLabel l = new JLabel ("Selecciona un asiento");
@@ -123,14 +134,115 @@ public class VentanaSalaCine extends JFrame {
                     gbc.fill = GridBagConstraints.NONE;
                     gbc.anchor = GridBagConstraints.CENTER;
 
-                    Runnable func = () -> {
-
-                    };
-
                     final String SEAT_IMAGE_PATH = "data/assets/seat.png";
                     final String SEAT_IMAGE_URL = "https://cdn3.iconfinder.com/data/icons/movie-entertainment-flat-style/64/13_seat-movie-cinema-chair-theater-512.png";
                     final int SEAT_IMAGE_WIDTH = 25;
                     final int SEAT_IMAGE_HEIGHT = 25;
+
+                    Runnable func = () -> {
+                        q.add (((Supplier <JXTable>) ( () -> {
+                            t [0] = new JXTable (new DefaultTableModel (Sala.getFilas (), Sala.getColumnas ()) {
+                                @Override
+                                public boolean isCellEditable (int row, int column) {
+                                    return false;
+                                }
+                            }) {
+                                @Override
+                                public Component prepareRenderer (TableCellRenderer renderer, int row, int column) {
+                                    Component c = super.prepareRenderer (renderer, row, column);
+
+                                    c.setBackground (sala.getButacas ().get (Sala.getColumnas () * row + column)
+                                            .ocupada ()
+                                                    ? Color.GRAY
+                                                    : row == t [0].getSelectedRow ()
+                                                            && column == t [0].getSelectedColumn ()
+                                                                    ? new Color (200, 0, 100)
+                                                                    : Color.WHITE);
+
+                                    return c;
+                                }
+
+                                @Override
+                                public void clearSelection () {
+                                    selection [0] = -1;
+                                    super.clearSelection ();
+                                }
+                            };
+
+                            t [0].setSelectionMode (ListSelectionModel.SINGLE_SELECTION);
+                            t [0].setAutoResizeMode (JTable.AUTO_RESIZE_OFF);
+
+                            t [0].setDefaultRenderer (Object.class, new DefaultTableCellRenderer () {
+                                @Override
+                                public Component getTableCellRendererComponent (JTable table, Object value,
+                                        boolean isSelected, boolean hasFocus,
+                                        int row, int column) {
+                                    Component c = super.getTableCellRendererComponent (table,
+                                            value,
+                                            isSelected,
+                                            hasFocus, row, column);
+
+                                    c.setBackground (sala.getButacas ().get (Sala.getColumnas () * row + column)
+                                            .ocupada ()
+                                                    ? Color.GRAY
+                                                    : row == (int) (selection [0] / Sala.getColumnas ())
+                                                            && column == selection [0] % Sala.getColumnas ()
+                                                            && isSelected && selection [0] != -1
+                                                                    ? new Color (200, 0, 100)
+                                                                    : Color.WHITE);
+
+                                    return c;
+                                }
+                            });
+
+                            for (int i = 0; i < t [0].getColumnCount (); t [0].getColumnModel ().getColumn (i++)
+                                    .setPreferredWidth (SEAT_IMAGE_WIDTH))
+                                ;
+
+                            t [0].setRowHeight (SEAT_IMAGE_HEIGHT);
+
+                            t [0].getSelectionModel ().addListSelectionListener (e -> {
+                                if ((selection [0] == -1 && (t [0].getSelectedRow () == -1 || t [0].getSelectedColumn () == -1)) || sala
+                                        .getButacas ().get (
+                                                Sala.getColumnas () * t [0].getSelectedRow ()
+                                                        + t [0].getSelectedColumn ())
+                                        .ocupada ()) {
+                                    if (selection [0] != -1) {
+                                        t [0].setRowSelectionInterval ((int) (selection [0] / Sala.getColumnas ()),
+                                                (int) (selection [0] / Sala.getColumnas ()));
+
+                                        t [0].setColumnSelectionInterval (selection [0] % Sala.getColumnas (),
+                                                selection [0] % Sala.getColumnas ());
+
+                                        selectionLabel.setText (String.format ("Fila %d | Butaca %d",
+                                                (int) (selection [0] / Sala.getColumnas ()) + 1,
+                                                selection [0] % Sala.getColumnas () + 1));
+                                    }
+
+                                    sb [0].setEnabled (selection [0] != -1);
+
+                                    return;
+                                }
+
+                                selection [0] = Sala.getColumnas () * t [0].getSelectedRow ()
+                                        + t [0].getSelectedColumn ();
+
+                                selectionLabel.setText (String.format ("Fila %d | Butaca %d",
+                                        t [0].getSelectedRow () + 1,
+                                        t [0].getSelectedColumn () + 1));
+
+                                sb [0].setEnabled (true);
+                            });
+
+                            return t [0];
+                        })).get (), gbc);
+                    };
+
+                    if (Settings.usingFallbackRenderer ()) {
+                        func.run ();
+
+                        return q;
+                    }
 
                     try {
                         Utils.downloadFile (SEAT_IMAGE_PATH, SEAT_IMAGE_URL);
@@ -191,6 +303,8 @@ public class VentanaSalaCine extends JFrame {
                                 ;
                         img [3] = img [3].getScaledInstance (SEAT_IMAGE_WIDTH, SEAT_IMAGE_HEIGHT, Image.SCALE_SMOOTH);
 
+                        id [0] = new ArrayList <ImageDisplayer> (Sala.getFilas () * Sala.getColumnas ());
+
                         q.add (((Supplier <JPanel>) ( () -> {
                             JPanel r = new JPanel (new GridLayout (Sala.getFilas (), Sala.getColumnas (), 2, 2));
 
@@ -204,29 +318,31 @@ public class VentanaSalaCine extends JFrame {
                                             @Override
                                             public void mouseReleased (MouseEvent e) {
                                                 if (selection [0] != -1)
-                                                    id.get (selection [0]).setImage (img [0]);
+                                                    id [0].get (selection [0]).setImage (img [0]);
 
                                                 disp.setImage (img [3]);
-                                                selection [0] = id.indexOf (disp);
+                                                selection [0] = id [0].indexOf (disp);
                                                 selectionLabel.setText (String.format ("Fila %d | Butaca %d",
-                                                        (int) (selection [0] / Sala.getFilas ()) + 1,
+                                                        (int) (selection [0] / Sala.getColumnas ()) + 1,
                                                         selection [0] % Sala.getColumnas () + 1));
+
+                                                sb [0].setEnabled (true);
                                             }
 
                                             @Override
                                             public void mouseEntered (MouseEvent e) {
-                                                if (id.indexOf (disp) != selection [0])
+                                                if (id [0].indexOf (disp) != selection [0])
                                                     disp.setImage (img [2]);
                                             }
 
                                             @Override
                                             public void mouseExited (MouseEvent e) {
-                                                if (id.indexOf (disp) != selection [0])
+                                                if (id [0].indexOf (disp) != selection [0])
                                                     disp.setImage (img [0]);
                                             }
                                         });
 
-                                    id.add (disp);
+                                    id [0].add (disp);
                                     return disp;
                                 })).get ());
 
@@ -247,6 +363,8 @@ public class VentanaSalaCine extends JFrame {
                     return q;
                 })).get ());
 
+                p.add (Box.createRigidArea (new Dimension (0, 25)));
+
                 p.add (((Supplier <JPanel>) ( () -> {
                     JPanel q = new JPanel (new GridBagLayout ());
 
@@ -262,12 +380,14 @@ public class VentanaSalaCine extends JFrame {
                         JPanel r = new JPanel (new FlowLayout (FlowLayout.CENTER, 10, 0));
 
                         r.add (((Supplier <JButton>) ( () -> {
+                            sb [0].setEnabled (false);
+
                             sb [0].addActionListener (e -> {
                                 f.setVisible (false);
 
                                 new VentanaComplementos (db, f, espectador, pelicula, sala,
                                         new Pair <Integer, Integer> (
-                                                selection [0] / Sala.getFilas (), selection [0] % Sala.getColumnas ()));
+                                                selection [0] / Sala.getColumnas (), selection [0] % Sala.getColumnas ()));
                             });
 
                             return sb [0];
@@ -279,7 +399,7 @@ public class VentanaSalaCine extends JFrame {
                                     if (selection [0] == -1)
                                         return;
 
-                                    id.get (selection [0]).setImage (img [0]);
+                                    id [0].get (selection [0]).setImage (img [0]);
                                     selectionLabel.setText ("Ninguna butaca seleccionada.");
 
                                     selection [0] = -1;
@@ -287,6 +407,16 @@ public class VentanaSalaCine extends JFrame {
 
                                 return sb [1];
                             }
+
+                            sb [1].addActionListener (e -> {
+                                if (selection [0] == -1)
+                                    return;
+
+                                t [0].clearSelection ();
+                                selection [0] = -1;
+                                selectionLabel.setText ("Ninguna butaca seleccionada.");
+                                sb [0].setEnabled (false);
+                            });
 
                             return sb [1];
                         })).get ());
