@@ -78,7 +78,7 @@ public class ImageDisplayer extends JPanel {
 
     @Override
     public Dimension getPreferredSize () {
-        return new Dimension (this.image.getHeight (this), this.image.getWidth (this));
+        return new Dimension (this.image.getWidth (this), this.image.getHeight (this));
     }
 
     @Override

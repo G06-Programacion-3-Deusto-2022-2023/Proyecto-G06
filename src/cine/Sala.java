@@ -44,6 +44,7 @@ public class Sala {
             return v;
         })).get ();
     }
+
     public Pelicula getPelicula () {
         return this.pelicula;
     }

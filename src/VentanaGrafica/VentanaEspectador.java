@@ -37,8 +37,8 @@ public class VentanaEspectador extends JFrame {
             throws NullPointerException {
         super ();
 
-        if (db == null && espectador != null)
-            throw new NullPointerException ("Si la base de datos es nula el espectador debe ser también nulo.");
+        if (db == null)
+            throw new NullPointerException ("La base de datos no puede ser nula.");
 
         final VentanaEspectador f = this;
         final VentanaInicio pw[] = new VentanaInicio [] { w };
@@ -77,7 +77,7 @@ public class VentanaEspectador extends JFrame {
             gbc.anchor = GridBagConstraints.NORTH;
 
             p.add (((Supplier <JButton>) ( () -> {
-                b [0] = new JButton ("Asistir a una película.");
+                b [0] = new JButton ("Asistir a una película");
 
                 b [0].addActionListener (e -> {
                     f.setVisible (false);

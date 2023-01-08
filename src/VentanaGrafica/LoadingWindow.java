@@ -24,7 +24,7 @@ import internals.swing.ImageDisplayer;
 
 public class LoadingWindow {
     private class ILoadingWindow extends JWindow {
-        public ILoadingWindow () {
+        public ILoadingWindow (boolean fast) {
             super ();
 
             this.add (((Supplier <JPanel>) ( () -> {
@@ -37,41 +37,53 @@ public class LoadingWindow {
                     JPanel q = new JPanel ();
                     q.setLayout (new BoxLayout (q, BoxLayout.Y_AXIS));
 
+                    JLabel loadingLabel = ((Supplier <JLabel>) ( () -> {
+                        JLabel l = new JLabel ("Cargando...");
+                        l.setFont (l.getFont ().deriveFont (Font.BOLD, 20f));
+
+                        return l;
+                    })).get ();
+
                     q.add (Box.createRigidArea (new Dimension (0, 15)));
 
-                    q.add (((Supplier <JPanel>) ( () -> {
-                        JPanel r = new JPanel (new FlowLayout (FlowLayout.CENTER, 20, 0));
+                    if (!fast) {
+                        q.add (((Supplier <JPanel>) ( () -> {
+                            JPanel r = new JPanel (new FlowLayout (FlowLayout.CENTER, 20, 0));
 
-                        final String LOADING_GIF_PATH = "data/assets/loading.gif";
-                        final String LOADING_GIF_URL = "https://gifimage.net/wp-content/uploads/2017/08/loading-gif-transparent-10.gif";
+                            final String LOADING_GIF_PATH = "data/assets/loading.gif";
+                            final String LOADING_GIF_URL = "https://gifimage.net/wp-content/uploads/2017/08/loading-gif-transparent-10.gif";
 
-                        try {
-                            Utils.downloadFile (LOADING_GIF_PATH, LOADING_GIF_URL);
-                        }
+                            try {
+                                Utils.downloadFile (LOADING_GIF_PATH, LOADING_GIF_URL);
+                            }
 
-                        catch (Exception e) {
-                            Logger.getLogger (LoadingWindow.class.getName ()).log (Level.WARNING, String.format (
-                                    "No se pudo descargar el archivo %s desde %s.", LOADING_GIF_PATH, LOADING_GIF_URL));
-                        }
+                            catch (Exception e) {
+                                Logger.getLogger (LoadingWindow.class.getName ()).log (Level.WARNING, String.format (
+                                        "No se pudo descargar el archivo %s desde %s.", LOADING_GIF_PATH,
+                                        LOADING_GIF_URL));
+                            }
 
-                        try {
-                            r.add (new ImageDisplayer (new ImageIcon (new File (LOADING_GIF_PATH).toURI ().toURL ()).getImage (), 64));
-                        }
+                            try {
+                                r.add (new ImageDisplayer (
+                                        new ImageIcon (new File (LOADING_GIF_PATH).toURI ().toURL ()).getImage (), 64));
+                            }
 
-                        catch (Exception e) {
-                            Logger.getLogger (LoadingWindow.class.getName ()).log (Level.WARNING,
-                                    String.format ("No se pudo cargar el archivo %s.", LOADING_GIF_PATH));
-                        }
+                            catch (Exception e) {
+                                Logger.getLogger (LoadingWindow.class.getName ()).log (Level.WARNING,
+                                        String.format ("No se pudo cargar el archivo %s.", LOADING_GIF_PATH));
+                            }
 
-                        r.add (((Supplier <JLabel>) ( () -> {
-                            JLabel l = new JLabel ("Cargando...");
-                            l.setFont (l.getFont ().deriveFont (Font.BOLD, 20f));
+                            r.add (loadingLabel);
 
-                            return l;
+                            return r;
                         })).get ());
 
-                        return r;
-                    })).get ());
+                        q.add (Box.createRigidArea (new Dimension (0, 15)));
+
+                        return q;
+                    }
+
+                    q.add (loadingLabel);
 
                     q.add (Box.createRigidArea (new Dimension (0, 15)));
 
@@ -95,34 +107,50 @@ public class LoadingWindow {
         this (r, Thread.currentThread ());
     }
 
+    public LoadingWindow (Runnable r, boolean fast) {
+        this (r, Thread.currentThread (), fast);
+    }
+
     public LoadingWindow (Thread t) {
         this (t, Thread.currentThread ());
+    }
+
+    public LoadingWindow (Thread t, boolean fast) {
+        this (t, Thread.currentThread (), fast);
     }
 
     public LoadingWindow (Runnable r, Thread s) {
         this (new Thread (r), s);
     }
 
-    public LoadingWindow (Thread t, Thread s) throws NullPointerException {
+    public LoadingWindow (Runnable r, Thread s, boolean fast) {
+        this (new Thread (r), s, fast);
+    }
+
+    public LoadingWindow (Thread t, Thread s) {
+        this (t, s, false);
+    }
+
+    public LoadingWindow (Thread t, Thread s, boolean fast) throws NullPointerException {
         super ();
 
         if (t == null || s == null)
             throw new NullPointerException ("No se puede pasar un hilo nulo a la ventana de carga.");
 
         if (SwingUtilities.isEventDispatchThread ()) {
-            new WLoadingWindow (t, javax.swing.FocusManager.getCurrentManager ().getActiveWindow ());
+            new WLoadingWindow (t, javax.swing.FocusManager.getCurrentManager ().getActiveWindow (), fast);
 
             return;
         }
 
-        new TLoadingWindow (t, s);
+        new TLoadingWindow (t, s, fast);
     }
 
     private class TLoadingWindow {
-        public TLoadingWindow (Thread t, Thread s) {
+        public TLoadingWindow (Thread t, Thread s, boolean fast) {
             super ();
 
-            ILoadingWindow w = new ILoadingWindow ();
+            ILoadingWindow w = new ILoadingWindow (fast);
 
             Thread nt;
             (nt = new Thread ( () -> {
@@ -150,16 +178,17 @@ public class LoadingWindow {
     }
 
     private class WLoadingWindow {
-        public WLoadingWindow (Thread t, Window w) {
+        public WLoadingWindow (Thread t, Window w, boolean fast) {
             super ();
 
             ILoadingWindow g[] = new ILoadingWindow [1];
 
             Thread nt;
             (nt = new Thread ( () -> {
-                WLoadingWindow.disableComponents (w);
+                if (!fast)
+                    WLoadingWindow.disableComponents (w);
 
-                g [0] = new ILoadingWindow ();
+                g [0] = new ILoadingWindow (fast);
                 g [0].setLocationRelativeTo (w);
 
                 Thread nt2;
@@ -183,7 +212,8 @@ public class LoadingWindow {
 
                 g [0].dispose ();
 
-                WLoadingWindow.enableComponents (w);
+                if (!fast)
+                    WLoadingWindow.enableComponents (w);
             })).start ();
         }
 
