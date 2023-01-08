@@ -1,79 +1,118 @@
 package VentanaGrafica;
 
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.BorderLayout;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Font;
 
+import java.util.Locale;
+import java.util.function.Supplier;
+
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
 import cine.Espectador;
 import internals.GestorBD;
 
 public class VentanaEspectador extends JFrame {
-    public VentanaEspectador (GestorBD db) {
-        this (db, (Espectador) null);
+    public VentanaEspectador () {
+        this (null, null);
     }
 
-    public VentanaEspectador (GestorBD db, Espectador espectador) {
+    public VentanaEspectador (final GestorBD db, final Espectador espectador) {
         this (db, espectador, null);
     }
 
-    public VentanaEspectador (GestorBD db, VentanaInicio v2) {
-        this (db, null, v2);
-    }
-
-    public VentanaEspectador (GestorBD db, Espectador espectador, VentanaInicio v2)
-            throws NullPointerException, UnsupportedOperationException {
+    public VentanaEspectador (final GestorBD db, final Espectador espectador, final VentanaInicio w)
+            throws NullPointerException {
         super ();
 
-        if (db == null)
-            throw new NullPointerException (
-                    "No se puede pasar un gestor de bases de datos nulo a la ventana de modo espectador.");
+        if (db == null && espectador != null)
+            throw new NullPointerException ("Si la base de datos es nula el espectador debe ser también nulo.");
 
-        VentanaEspectador v = this;
-
-        JButton pelicula = new JButton ("Asistir a una película");
-        JButton historial = new JButton ("Historial");
-
-        this.getContentPane ().setLayout (new GridLayout (2, 1));
-        this.getContentPane ().add (pelicula);
-        this.getContentPane ().add (historial);
-
-        pelicula.addActionListener (new ActionListener () {
-            @Override
-            public void actionPerformed (ActionEvent e) {
-                SwingUtilities.invokeLater ( () -> new VentanaSeleccionarPelicula (db, espectador, v));
-            }
-        });
-
-        historial.addActionListener (new ActionListener () {
-            @Override
-            public void actionPerformed (ActionEvent e) {
-                SwingUtilities.invokeLater ( () -> new HistorialWindow (espectador));
-            }
-        });
+        final VentanaEspectador f = this;
+        final VentanaInicio pw[] = new VentanaInicio [] { w };
+        final JButton b[] = new JButton [2];
 
         this.addWindowListener (new WindowAdapter () {
             @Override
             public void windowOpened (WindowEvent e) {
-                historial.setEnabled (espectador != null && espectador.getHistorial () != null
-                        && !espectador.getHistorial ().isEmpty ());
+                if (b [1] != null && espectador != null && !espectador.getHistorial ().isEmpty ())
+                    b [1].setEnabled (true);
             }
 
             @Override
             public void windowClosed (WindowEvent e) {
-                v2.setVisible (true);
+                if (pw [0] != null)
+                    pw [0].setVisible (true);
             }
         });
 
-        this.setTitle (espectador == null ? "Anónimo" : espectador.getNombre ());
+        this.add (((Supplier <JLabel>) ( () -> {
+            JLabel l = new JLabel (espectador == null ? "Invitado" : espectador.getNombre ());
+
+            l.setFont (l.getFont ().deriveFont (Font.BOLD, 16f));
+
+            return l;
+        })).get (), BorderLayout.PAGE_START);
+
+        this.add (((Supplier <JPanel>) ( () -> {
+            JPanel p = new JPanel ();
+            p.setBorder (BorderFactory.createEmptyBorder (25, 25, 25, 25));
+            p.setLayout (new GridBagLayout ());
+
+            GridBagConstraints gbc = new GridBagConstraints ();
+            gbc.gridwidth = GridBagConstraints.REMAINDER;
+            gbc.fill = GridBagConstraints.NONE;
+            gbc.anchor = GridBagConstraints.NORTH;
+
+            p.add (((Supplier <JButton>) ( () -> {
+                b [0] = new JButton ("Asistir a una película.");
+
+                b [0].addActionListener (e -> {
+                    f.setVisible (false);
+                    new VentanaSeleccionarPelicula (db, espectador, f);
+                });
+
+                return b [0];
+            })).get (), gbc);
+
+            gbc.insets = new Insets (15, 0, 0, 0);
+            gbc.anchor = GridBagConstraints.SOUTH;
+
+            p.add (((Supplier <JButton>) ( () -> {
+                b [1] = new JButton ("Ver historial");
+
+                b [1].setEnabled (espectador != null && !espectador.getHistorial ().isEmpty ());
+                b [1].addActionListener (e -> {
+                    f.setVisible (false);
+                    new HistorialWindow (espectador, f);
+                });
+
+                return b [1];
+            })).get (), gbc);
+
+            return p;
+        })).get (), BorderLayout.CENTER);
+
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
-        this.setSize (800, 600);
+        this.setTitle (
+                String.format ("Menú principal de %s", espectador == null ? "Invitado" : espectador.getNombre ()));
+        this.setIconImage (
+                ((ImageIcon) UIManager.getIcon ("FileChooser.homeFolderIcon", new Locale ("es-ES"))).getImage ()
+                        .getScaledInstance (64, 64, Image.SCALE_SMOOTH));
+        this.pack ();
+        this.setResizable (false);
         this.setLocationRelativeTo (null);
         this.setVisible (true);
     }

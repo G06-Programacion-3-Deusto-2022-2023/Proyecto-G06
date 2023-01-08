@@ -62,7 +62,7 @@ public class VentanaDatosAsistencia extends JFrame {
         this.getContentPane ().add (confirmar, BorderLayout.SOUTH);
         this.getContentPane ().add (central, BorderLayout.CENTER);
 
-        this.setTitle (espectador == null ? "Anónimo" : espectador.getNombre ());
+        this.setTitle (espectador == null ? "Invitado" : espectador.getNombre ());
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setSize (1000, 800);
         this.setLocationRelativeTo (null);

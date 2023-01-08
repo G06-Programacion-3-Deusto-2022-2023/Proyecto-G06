@@ -77,6 +77,8 @@ public class VentanaInicio extends JFrame {
             public void windowClosed (WindowEvent e) {
                 if (db != null)
                     GestorBD.unlock ();
+
+                Settings.save ();
             }
         });
 

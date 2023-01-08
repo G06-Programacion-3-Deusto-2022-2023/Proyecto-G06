@@ -1,5 +1,7 @@
 package VentanaGrafica;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.Image;
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -35,7 +37,11 @@ import cine.Espectador;
 import internals.Pair;
 
 public class HistorialWindow extends JFrame {
-    public HistorialWindow (Espectador espectador) throws NullPointerException, UnsupportedOperationException {
+    public HistorialWindow (Espectador espectador) {
+        this (espectador, null);
+    }
+
+    public HistorialWindow (Espectador espectador, VentanaEspectador w) throws NullPointerException, UnsupportedOperationException {
         super ();
 
         if (espectador == null)
@@ -54,6 +60,14 @@ public class HistorialWindow extends JFrame {
 
         Entrada historial[] = espectador.getHistorial ().toArray (new Entrada [0]);
         int current[] = new int [] { 0 };
+
+        this.addWindowListener (new WindowAdapter () {
+            @Override
+            public void windowClosed (WindowEvent e) {
+                if (w != null)
+                    w.setVisible (true);
+            }
+        });
 
         this.add (((Supplier <JLabel>) ( () -> {
             JLabel l = new JLabel (espectador.getNombre ());
