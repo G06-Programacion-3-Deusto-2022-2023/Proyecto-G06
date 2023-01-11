@@ -104,9 +104,93 @@ public class RegistroWindow extends JFrame {
                                 s.add (Box.createRigidArea (new JTextField (2).getPreferredSize ()));
 
                                 s.add (((Supplier <JButton>) ( () -> {
+                                    JButton b = new JButton (new ImageIcon (new ImageIcon (this.getClass ()
+                                            .getResource ("/toolbarButtonGraphics/general/ZoomIn16.gif"))
+                                                    .getImage ()
+                                                    .getScaledInstance (16, 16, Image.SCALE_SMOOTH)));
+
+                                    b.setToolTipText ("Pulsa este botón para ver la contraseña.");
+
+                                    b.addActionListener (e -> {
+                                        if (((JPasswordField) fields [1] [1]).getEchoChar () == (char) 0) {
+                                            b.setIcon (new ImageIcon (new ImageIcon (this.getClass ()
+                                                    .getResource ("/toolbarButtonGraphics/general/ZoomIn16.gif"))
+                                                            .getImage ()
+                                                            .getScaledInstance (16, 16, Image.SCALE_SMOOTH)));
+
+                                            ((JPasswordField) fields [1] [1])
+                                                    .setEchoChar (new JPasswordField ().getEchoChar ());
+
+                                            return;
+                                        }
+
+                                        b.setIcon (new ImageIcon (new ImageIcon (this.getClass ()
+                                                .getResource ("/toolbarButtonGraphics/general/ZoomOut16.gif"))
+                                                        .getImage ()
+                                                        .getScaledInstance (16, 16, Image.SCALE_SMOOTH)));
+
+                                        ((JPasswordField) fields [1] [1])
+                                                .setEchoChar ((char) 0);
+                                    });
+
+                                    return b;
+                                })).get ());
+
+                                return s;
+                            })).get ());
+                        if (i [0] == 2)
+                            r.add (((Supplier <JPanel>) ( () -> {
+                                JPanel s = new JPanel ();
+                                s.setLayout (new BoxLayout (s, BoxLayout.X_AXIS));
+
+                                s.add (Box.createRigidArea (new JTextField (2).getPreferredSize ()));
+
+                                s.add (((Supplier <JButton>) ( () -> {
+                                    JButton b = new JButton (new ImageIcon (new ImageIcon (this.getClass ()
+                                            .getResource ("/toolbarButtonGraphics/general/ZoomIn16.gif"))
+                                                    .getImage ()
+                                                    .getScaledInstance (16, 16, Image.SCALE_SMOOTH)));
+
+                                    b.setToolTipText ("Pulsa este botón para ver la contraseña.");
+
+                                    b.addActionListener (e -> {
+                                        if (((JPasswordField) fields [2] [1]).getEchoChar () == (char) 0) {
+                                            b.setIcon (new ImageIcon (new ImageIcon (this.getClass ()
+                                                    .getResource ("/toolbarButtonGraphics/general/ZoomIn16.gif"))
+                                                            .getImage ()
+                                                            .getScaledInstance (16, 16, Image.SCALE_SMOOTH)));
+
+                                            ((JPasswordField) fields [2] [1])
+                                                    .setEchoChar (new JPasswordField ().getEchoChar ());
+
+                                            return;
+                                        }
+
+                                        b.setIcon (new ImageIcon (new ImageIcon (this.getClass ()
+                                                .getResource ("/toolbarButtonGraphics/general/ZoomOut16.gif"))
+                                                        .getImage ()
+                                                        .getScaledInstance (16, 16, Image.SCALE_SMOOTH)));
+
+                                        ((JPasswordField) fields [2] [1])
+                                                .setEchoChar ((char) 0);
+                                    });
+
+                                    return b;
+                                })).get ());
+
+                                return s;
+                            })).get ());
+                        if (i [0] == 1)
+                            r.add (((Supplier <JPanel>) ( () -> {
+                                JPanel s = new JPanel ();
+                                s.setLayout (new BoxLayout (s, BoxLayout.X_AXIS));
+
+                                s.add (Box.createRigidArea (new JTextField (2).getPreferredSize ()));
+
+                                s.add (((Supplier <JButton>) ( () -> {
                                     JButton b = new JButton ("Generar contraseña");
 
-                                    b.setToolTipText ("Pulsa este botón para generar una contraseña");
+                                    b.setToolTipText ("Pulsa este botón para generar una contraseña.");
 
                                     b.addActionListener (e -> {
                                         String password = Usuario.generatePassword ();
@@ -154,7 +238,8 @@ public class RegistroWindow extends JFrame {
                         }
 
                         if (((JTextField) fields [0] [1]).getText ().contains ("\"")
-                                || ((JTextField) fields [0] [1]).getText ().contains ("'") || ((JTextField) fields [0] [1]).getText ().contains ("`")) {
+                                || ((JTextField) fields [0] [1]).getText ().contains ("'")
+                                || ((JTextField) fields [0] [1]).getText ().contains ("`")) {
                             JOptionPane.showMessageDialog (f, "El nombre de usuario no puede contener comillas.",
                                     "Error en el registro", JOptionPane.ERROR_MESSAGE);
 
@@ -204,7 +289,8 @@ public class RegistroWindow extends JFrame {
                         }
 
                         if (new String (((JPasswordField) fields [1] [1]).getPassword ()).contains ("\"")
-                                || new String (((JPasswordField) fields [1] [1]).getPassword ()).contains ("'") || ((JTextField) fields [0] [1]).getText ().contains ("`")) {
+                                || new String (((JPasswordField) fields [1] [1]).getPassword ()).contains ("'")
+                                || ((JTextField) fields [0] [1]).getText ().contains ("`")) {
                             JOptionPane.showMessageDialog (f,
                                     "La contraseña del usuario no puede contener comillas.", "Error en el registro",
                                     JOptionPane.ERROR_MESSAGE);

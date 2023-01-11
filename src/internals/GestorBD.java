@@ -828,7 +828,7 @@ public class GestorBD {
 
             String strs[] = new String [] [] {
                     new String [] {
-                            "ADMINISTRADOR", "administrador", "administradores", "el administrador", String.format (
+                            GestorBD.TABLES [1].x, "administrador", "administradores", "el administrador", String.format (
                                     GestorBD.updateStatement (1),
                                     data [i [0]] instanceof Administrador ? ((Administrador) data [i [0]]).getNombre ()
                                             : "",
@@ -838,7 +838,7 @@ public class GestorBD {
                                     data [i [0]].getId ())
                     },
                     new String [] {
-                            "COMPLEMENTO", "complemento", "complementos", "el complemento", String.format (
+                        GestorBD.TABLES [3].x, "complemento", "complementos", "el complemento", String.format (
                                     GestorBD.updateStatement (3),
                                     data [i [0]] instanceof Complemento ? ((Complemento) data [i [0]]).getNombre ()
                                             : "",
@@ -892,7 +892,7 @@ public class GestorBD {
                                             : "0.0")
                     },
                     new String [] {
-                            "ESPECTADOR", "espectador", "espectadores", "el espectador", String.format (
+                        GestorBD.TABLES [2].x, "espectador", "espectadores", "el espectador", String.format (
                                     GestorBD.updateStatement (2),
                                     data [i [0]] instanceof Espectador ? ((Espectador) data [i [0]]).getNombre () : "",
                                     data [i [0]] instanceof Espectador ? ((Espectador) data [i [0]]).getContrasena ()
@@ -901,7 +901,7 @@ public class GestorBD {
                                     data [i [0]].getId ())
                     },
                     new String [] {
-                            "PELICULA", "película", "películas", "la película", String.format (
+                        GestorBD.TABLES [0].x, "película", "películas", "la película", String.format (
                                     GestorBD.updateStatement (0),
                                     data [i [0]] instanceof Pelicula ? ((Pelicula) data [i [0]]).getNombre () : "",
                                     data [i [0]] instanceof Pelicula ? ((Pelicula) data [i [0]]).getRutaImagen () : "",
@@ -923,7 +923,7 @@ public class GestorBD {
                                     data [i [0]].getId ())
                     },
                     new String [] {
-                            "SETPELICULAS", "set de peliculas", "sets de películas", "el set de películas",
+                        GestorBD.TABLES [4].x, "set de peliculas", "sets de películas", "el set de películas",
                             String.format (
                                     GestorBD.updateStatement (4),
                                     data [i [0]] instanceof SetPeliculas ? ((SetPeliculas) data [i [0]]).getNombre ()
@@ -933,8 +933,7 @@ public class GestorBD {
                                             : "",
                                     data [i [0]].getId ())
                     }
-            } [Arrays
-                    .asList (Administrador.class, Complemento.class, Espectador.class, Pelicula.class,
+            } [Arrays.asList (Administrador.class, Complemento.class, Entrada.class, Espectador.class, Pelicula.class,
                             SetPeliculas.class)
                     .indexOf (data [i [0]].getClass ())];
 
@@ -1632,7 +1631,7 @@ public class GestorBD {
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
             int r = stmt.executeUpdate (String.format ("DELETE FROM %s WHERE %s = '%s';", GestorBD.TABLES [8].x,
-                    GestorBD.TABLES [8].y [0], key));
+                    GestorBD.TABLES [8].y [0].x, key));
 
             Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
                     String.format ("Se ha%s eliminado %d llave%s.", r == 1 ? "" : "n", r, r == 1 ? "" : "s"));

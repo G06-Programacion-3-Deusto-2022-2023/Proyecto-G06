@@ -59,6 +59,7 @@ import org.json.JSONException;
 
 import cine.Administrador;
 import cine.Complemento;
+import cine.Consumible;
 import internals.GestorBD;
 import internals.Settings;
 import internals.swing.ComplementosTableModel;
@@ -186,7 +187,7 @@ public class MiscOptionsWindow extends JFrame {
                                                                     Settings.defaults ()
                                                                             .getProperty ("precioentrada")).setScale (2,
                                                                                     RoundingMode.HALF_EVEN))
-                                            && Boolean.parseBoolean (
+                                            && !Boolean.parseBoolean (
                                                     Settings.defaults ().getProperty ("fallbackseatrenderer"))
                                                             ? cb.getSelectedIndex () == 0
                                                             : cb.getSelectedIndex () == 1));
@@ -263,7 +264,7 @@ public class MiscOptionsWindow extends JFrame {
                                                                     Settings.defaults ()
                                                                             .getProperty ("precioentrada")).setScale (2,
                                                                                     RoundingMode.HALF_EVEN))
-                                            && Boolean.parseBoolean (
+                                            && !Boolean.parseBoolean (
                                                     Settings.defaults ().getProperty ("fallbackseatrenderer"))
                                                             ? cb.getSelectedIndex () == 0
                                                             : cb.getSelectedIndex () == 1));
@@ -342,8 +343,9 @@ public class MiscOptionsWindow extends JFrame {
                             BigDecimal n;
                             b [2].setEnabled ((n = new BigDecimal (String.format ("%.2f",
                                     ((SpinnerNumberModel) sp.getModel ()).getNumber ().doubleValue ())
-                                    .replace (",", "."))).signum () != 1
-                                    || !n.equals (Settings.getPrecioEntrada ()));
+                                    .replace (",", "."))).signum () == 1
+                                    && n.compareTo (Consumible.getMaxPrecio ()) <= 0
+                                    && !n.equals (Settings.getPrecioEntrada ()));
 
                             try {
                                 b [5].setEnabled (!(t [0].getText ()
@@ -359,7 +361,7 @@ public class MiscOptionsWindow extends JFrame {
                                                                 Settings.defaults ()
                                                                         .getProperty ("precioentrada")).setScale (2,
                                                                                 RoundingMode.HALF_EVEN))
-                                        && Boolean.parseBoolean (
+                                        && !Boolean.parseBoolean (
                                                 Settings.defaults ().getProperty ("fallbackseatrenderer"))
                                                         ? cb.getSelectedIndex () == 0
                                                         : cb.getSelectedIndex () == 1));
@@ -434,7 +436,7 @@ public class MiscOptionsWindow extends JFrame {
                                                                 Settings.defaults ()
                                                                         .getProperty ("precioentrada")).setScale (2,
                                                                                 RoundingMode.HALF_EVEN))
-                                        && Boolean.parseBoolean (
+                                        && !Boolean.parseBoolean (
                                                 Settings.defaults ().getProperty ("fallbackseatrenderer"))
                                                         ? cb.getSelectedIndex () == 0
                                                         : cb.getSelectedIndex () == 1));
@@ -481,7 +483,7 @@ public class MiscOptionsWindow extends JFrame {
                                                         Settings.defaults ()
                                                                 .getProperty ("precioentrada")).setScale (2,
                                                                         RoundingMode.HALF_EVEN))
-                                && Boolean.parseBoolean (
+                                && !Boolean.parseBoolean (
                                         Settings.defaults ().getProperty ("fallbackseatrenderer"))
                                                 ? cb.getSelectedIndex () == 0
                                                 : cb.getSelectedIndex () == 1));
@@ -931,8 +933,9 @@ public class MiscOptionsWindow extends JFrame {
                                                     .charAt (fields [1].getText ().length () - 1) == '.'))
                                         fields [1].setText (String.format ("%s0", fields [1].getText ()));
 
+                                    BigDecimal bd;
                                     try {
-                                        new BigDecimal (fields [1].getText ().replace (",", "."));
+                                        bd = new BigDecimal (fields [1].getText ().replace (",", "."));
                                     }
 
                                     catch (NumberFormatException ex) {
@@ -940,6 +943,24 @@ public class MiscOptionsWindow extends JFrame {
                                                 "El precio del complemento no está en un formato válido.",
                                                 "Error en la creación de complemento",
                                                 JOptionPane.ERROR_MESSAGE);
+
+                                        continue;
+                                    }
+
+                                    if (bd.signum () != 1) {
+                                        JOptionPane.showMessageDialog (f,
+                                                "El precio del complemento debe ser positivo.",
+                                                "Error en la creación de complemento", JOptionPane.ERROR_MESSAGE);
+
+                                        continue;
+                                    }
+
+                                    if (bd.compareTo (Consumible.getMaxPrecio ()) > 0) {
+                                        JOptionPane.showMessageDialog (f,
+                                                String.format (
+                                                        "El precio del complemento excede el precio máximo de %s €.",
+                                                        Consumible.getMaxPrecio ().toPlainString ()),
+                                                "Error en la creación de complemento", JOptionPane.ERROR_MESSAGE);
 
                                         continue;
                                     }

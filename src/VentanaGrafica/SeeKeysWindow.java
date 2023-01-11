@@ -26,6 +26,7 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
 import internals.GestorBD;
+import internals.Utils;
 
 public class SeeKeysWindow extends JFrame {
     public SeeKeysWindow (GestorBD db) {
@@ -94,8 +95,7 @@ public class SeeKeysWindow extends JFrame {
                             l.addMouseListener (new MouseAdapter () {
                                 @Override
                                 public void mouseClicked (MouseEvent e) {
-                                    StringSelection selection = new StringSelection (l.getText ());
-                                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents (selection, selection);
+                                    Utils.copyToClipboard (l.getText ());
                                 }
                             });
 

@@ -11,6 +11,8 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.awt.datatransfer.StringSelection;
+import java.awt.Toolkit;
 
 public final class Utils {
     private Utils () {
@@ -116,5 +118,13 @@ public final class Utils {
 
     public static boolean isDiaDelEspectador () {
         return Utils.getCurrentDay () == Settings.getDiaEspectador ();
+    }
+
+    public static void copyToClipboard (String s) throws NullPointerException {
+        if (s == null)
+            throw new NullPointerException ("No se puede pasar un string nulo al método Utils.copyToClipboard.");
+
+        StringSelection selection = new StringSelection (s);
+        Toolkit.getDefaultToolkit ().getSystemClipboard ().setContents (selection, selection);
     }
 }

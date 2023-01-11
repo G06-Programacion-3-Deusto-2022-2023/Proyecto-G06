@@ -193,7 +193,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
 
     public void setPrecio (BigDecimal precio) {
         if (precio == null || precio.signum () != 1
-                || precio.compareTo (new BigDecimal ("9".repeat (63) + ".99")) > 0) {
+                || precio.compareTo (Consumible.getMaxPrecio ()) > 0) {
             if (this.precio == null)
                 this.setPrecio ();
 
@@ -287,7 +287,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
             p = p.add (keyValueArray.get (i).getKey ().getPrecio ()
                     .multiply (new BigDecimal (keyValueArray.get (i).getValue ())));
 
-        if ((p = p.setScale (2, RoundingMode.HALF_EVEN)).compareTo (new BigDecimal ("9".repeat (63) + ".99")) > 0)
+        if ((p = p.setScale (2, RoundingMode.HALF_EVEN)).compareTo (Consumible.getMaxPrecio ()) > 0)
             throw new ArithmeticException (
                     "Se ha sobrepasado el precio de entrada máximo almacenable en la base de datos");
 
@@ -588,7 +588,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
                                                             : "")
                                             + (array [i [0]].precio != null && array [i [0]].precio.signum () == 1
                                                     && array [i [0]].precio
-                                                            .compareTo (new BigDecimal ("9".repeat (63) + ".99")) != 1
+                                                            .compareTo (Consumible.getMaxPrecio ()) != 1
                                                                     ? "    \"precio\" : " + array [i [0]].precio
                                                                     : "")
                                             + "\n}")

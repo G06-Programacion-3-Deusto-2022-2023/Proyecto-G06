@@ -31,7 +31,7 @@ import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
 
-public class Complemento implements Treeable <Complemento>, Comparable <Complemento>, HasID {
+public class Complemento implements Treeable <Complemento>, Comparable <Complemento>, HasID, Consumible {
     private static final BigDecimal DEFAULT_PRECIO = BigDecimal.ONE;
 
     private static short DEFAULT_SET;
@@ -135,7 +135,7 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
             return;
 
         this.precio = precio == null || precio.signum () != 1
-                || precio.compareTo (new BigDecimal ("9".repeat (63) + ".99")) > 0
+                || precio.compareTo (Consumible.getMaxPrecio ()) > 0
                         ? this.precio == null ? Complemento.DEFAULT_PRECIO.setScale (2, RoundingMode.HALF_EVEN)
                                 : this.precio
                         : precio.setScale (2, RoundingMode.HALF_EVEN);
@@ -193,7 +193,8 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
     @Override
     public String toString () {
         return String.format ("Complemento (%d) {%n\tID: %s%s%n\tNombre: %s%n\tPrecio: %.2f €%n\tDescuento: %d %%%n}",
-                this.hashCode (), this.id.toString (), this.isDefault() ? " (complemento predeterminado)" : "", this.nombre, this.precio.doubleValue (), this.descuento);
+                this.hashCode (), this.id.toString (), this.isDefault () ? " (complemento predeterminado)" : "",
+                this.nombre, this.precio.doubleValue (), this.descuento);
     }
 
     public BigDecimal aplicarDescuento (int descuento) {

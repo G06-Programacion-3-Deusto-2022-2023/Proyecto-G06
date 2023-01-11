@@ -10,6 +10,10 @@ import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,7 +22,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -26,6 +33,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -39,11 +47,16 @@ import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import org.json.JSONException;
+
 import cine.Administrador;
 import cine.Espectador;
+import cine.Pelicula;
 import cine.Usuario;
 import internals.GestorBD;
+import internals.Utils;
 import internals.bst.Filter;
+import internals.swing.JSONChooser;
 import internals.swing.JTextFieldLimit;
 
 public class GestionarUsuariosWindow extends JFrame {
@@ -113,29 +126,32 @@ public class GestionarUsuariosWindow extends JFrame {
                         new JButton ("Eliminar")
                 };
 
-                JComboBox <String> users = new JComboBox <String> (((Supplier <Vector <String>>) ( () -> {
-                    Vector <String> v = new Vector <String> ();
+                Supplier <Vector <String>> usersupplier;
 
-                    v.addAll ((((Supplier <List <String>>) ( () -> {
-                        List <String> l = db.getAdministradores ().stream ()
-                                .map (Administrador::getNombre)
-                                .collect (Collectors.toList ());
-                        Collections.sort (l);
+                JComboBox <String> users = new JComboBox <String> (
+                        (usersupplier = (Supplier <Vector <String>>) ( () -> {
+                            Vector <String> v = new Vector <String> ();
 
-                        return l.stream ().map (e -> e + " (A)").collect (Collectors.toList ());
-                    }))).get ());
+                            v.addAll ((((Supplier <List <String>>) ( () -> {
+                                List <String> l = db.getAdministradores ().stream ()
+                                        .map (Administrador::getNombre)
+                                        .collect (Collectors.toList ());
+                                Collections.sort (l);
 
-                    v.addAll ((((Supplier <List <String>>) ( () -> {
-                        List <String> l = db.getEspectadores ().stream ()
-                                .map (Espectador::getNombre)
-                                .collect (Collectors.toList ());
-                        Collections.sort (l);
+                                return l.stream ().map (e -> e + " (A)").collect (Collectors.toList ());
+                            }))).get ());
 
-                        return l.stream ().map (e -> e + " (E)").collect (Collectors.toList ());
-                    }))).get ());
+                            v.addAll ((((Supplier <List <String>>) ( () -> {
+                                List <String> l = db.getEspectadores ().stream ()
+                                        .map (Espectador::getNombre)
+                                        .collect (Collectors.toList ());
+                                Collections.sort (l);
 
-                    return v;
-                })).get ());
+                                return l.stream ().map (e -> e + " (E)").collect (Collectors.toList ());
+                            }))).get ());
+
+                            return v;
+                        })).get ());
                 users.addActionListener (e -> {
                     bbb [0].setEnabled (users.getItemCount () != 0);
                     bbb [1].setEnabled (users.getItemCount () != 0);
@@ -193,7 +209,9 @@ public class GestionarUsuariosWindow extends JFrame {
                                                                     Administrador y) -> y
                                                                             .compareTo (x)),
                                                     (Filter <Administrador>) ( (Administrador x) -> x
-                                                            .getNombre ().contains (filter.getText ().replace ("'", "").replace ("\"", "").replace ("`", ""))))
+                                                            .getNombre ()
+                                                            .contains (filter.getText ().replace ("'", "")
+                                                                    .replace ("\"", "").replace ("`", ""))))
                                             .getValues ());
 
                                 if (bb.get (1).isSelected ())
@@ -205,7 +223,9 @@ public class GestionarUsuariosWindow extends JFrame {
                                                             : (Comparator <Espectador>) ( (Espectador x,
                                                                     Espectador y) -> y.compareTo (x)),
                                                     (Filter <Espectador>) ( (Espectador x) -> x
-                                                            .getNombre ().contains (filter.getText ().replace ("'", "").replace ("\"", "").replace ("`", ""))))
+                                                            .getNombre ()
+                                                            .contains (filter.getText ().replace ("'", "")
+                                                                    .replace ("\"", "").replace ("`", ""))))
                                             .getValues ());
 
                                 return u;
@@ -340,7 +360,8 @@ public class GestionarUsuariosWindow extends JFrame {
                                     }
 
                                     if (new String (passwd.getPassword ()).contains ("\"")
-                                            || new String (passwd.getPassword ()).contains ("'") || new String (passwd.getPassword ()).contains ("`")) {
+                                            || new String (passwd.getPassword ()).contains ("'")
+                                            || new String (passwd.getPassword ()).contains ("`")) {
                                         JOptionPane.showMessageDialog (f, "La contraseña no puede contener comillas.",
                                                 "Error al cambiar la contraseña", JOptionPane.ERROR_MESSAGE);
 
@@ -396,7 +417,7 @@ public class GestionarUsuariosWindow extends JFrame {
                             bbb [1].addActionListener (e -> {
                                 if (JOptionPane.showOptionDialog (f,
                                         "Lo que estás a punto de hacer es una acción irreversible.\n¿Estás seguro de querer continuar?",
-                                        "Eliminar película", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+                                        "Eliminar datos de usuario", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
                                         null, new String [] {
                                                 "Confirmar",
                                                 "Cancelar"
@@ -427,7 +448,7 @@ public class GestionarUsuariosWindow extends JFrame {
                             bbb [2].addActionListener (e -> {
                                 if (JOptionPane.showOptionDialog (f,
                                         "Lo que estás a punto de hacer es una acción irreversible.\n¿Estás seguro de querer continuar?",
-                                        "Eliminar película", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+                                        "Eliminar usuario", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
                                         null, new String [] {
                                                 "Confirmar",
                                                 "Cancelar"
@@ -440,6 +461,9 @@ public class GestionarUsuariosWindow extends JFrame {
                                 if (((String) users.getSelectedItem ()).endsWith (" (E)")) {
                                     db.delete (db.getEspectadores ().stream ()
                                             .filter (x -> x.getNombre ().equals (username)).findFirst ().get ());
+
+                                    users.removeItem (users.getSelectedItem ());
+                                    users.repaint ();
 
                                     return;
                                 }
@@ -581,7 +605,8 @@ public class GestionarUsuariosWindow extends JFrame {
                                         }
 
                                         if (new String (pass.getPassword ()).contains ("\"")
-                                                || new String (pass.getPassword ()).contains ("'") || new String (pass.getPassword ()).contains ("`")) {
+                                                || new String (pass.getPassword ()).contains ("'")
+                                                || new String (pass.getPassword ()).contains ("`")) {
                                             JOptionPane.showMessageDialog (f,
                                                     "La contraseña no puede contener comillas.",
                                                     "Error en el registro", JOptionPane.ERROR_MESSAGE);
@@ -590,10 +615,26 @@ public class GestionarUsuariosWindow extends JFrame {
                                         }
 
                                         if (role.getSelectedIndex () == 0) {
+                                            String str = "";
+
                                             db.insert (new Espectador (user.getText (),
                                                     new String (pass.getPassword ()).equals ("")
-                                                            ? Usuario.generatePassword ()
+                                                            ? str = Usuario.generatePassword ()
                                                             : new String (pass.getPassword ())));
+
+                                            if (new String (pass.getPassword ()).equals ("")) {
+                                                JOptionPane.showMessageDialog (f,
+                                                        "La contraseña generada aleatoriamente para el usuario ha sido copiada al portapapeles.",
+                                                        "Contraseña aleatoria generada",
+                                                        JOptionPane.INFORMATION_MESSAGE);
+                                                Utils.copyToClipboard (str);
+                                            }
+
+                                            users.removeAllItems ();
+                                            Vector <String> usernames = usersupplier.get ();
+                                            for (int i = 0; i < usernames.size (); users.addItem (usernames.get (i++)))
+                                                ;
+                                            users.repaint ();
 
                                             return;
                                         }
@@ -624,11 +665,25 @@ public class GestionarUsuariosWindow extends JFrame {
 
                                             break;
                                         }
+                                        String str = "";
 
                                         db.insert (new Administrador (user.getText (),
                                                 new String (pass.getPassword ()).equals ("")
-                                                        ? Usuario.generatePassword ()
+                                                        ? str = Usuario.generatePassword ()
                                                         : new String (pass.getPassword ())));
+
+                                        if (new String (pass.getPassword ()).equals ("")) {
+                                            JOptionPane.showMessageDialog (f,
+                                                    "La contraseña generada aleatoriamente para el usuario ha sido copiada al portapapeles.",
+                                                    "Contraseña aleatoria generada", JOptionPane.INFORMATION_MESSAGE);
+                                            Utils.copyToClipboard (str);
+                                        }
+
+                                        users.removeAllItems ();
+                                        Vector <String> usernames = usersupplier.get ();
+                                        for (int i = 0; i < usernames.size (); users.addItem (usernames.get (i++)))
+                                            ;
+                                        users.repaint ();
 
                                         return;
                                     }
@@ -688,7 +743,38 @@ public class GestionarUsuariosWindow extends JFrame {
                                 JButton b = new JButton ("Importar usuarios");
 
                                 b.addActionListener (e -> {
+                                    JSONChooser fc;
+                                    if ((fc = new JSONChooser ()).showOpenDialog (f) != JFileChooser.APPROVE_OPTION)
+                                        return;
 
+                                    new LoadingWindow ( () -> {
+                                        List <Usuario> u;
+                                        try {
+                                            u = Usuario.fromJSON (fc.getSelectedFile ());
+                                        }
+
+                                        catch (NullPointerException | IOException ex) {
+                                            JOptionPane.showMessageDialog (f,
+                                                    "No pudo abrirse el archivo especificado.");
+
+                                            return;
+                                        }
+
+                                        catch (JSONException ex) {
+                                            JOptionPane.showMessageDialog (f,
+                                                    "El archivo especificado no es un archivo JSON válido.");
+
+                                            return;
+                                        }
+
+                                        db.update (u);
+                                    });
+
+                                    users.removeAllItems ();
+                                    Vector <String> usernames = usersupplier.get ();
+                                    for (int i = 0; i < usernames.size (); users.addItem (usernames.get (i++)))
+                                        ;
+                                    users.repaint ();
                                 });
 
                                 return b;
@@ -707,7 +793,62 @@ public class GestionarUsuariosWindow extends JFrame {
                                 JButton b = new JButton ("Exportar usuarios");
 
                                 b.addActionListener (e -> {
+                                    JSONChooser fc;
+                                    if ((fc = new JSONChooser ()).showSaveDialog (f) != JFileChooser.APPROVE_OPTION)
+                                        return;
 
+                                    String str;
+                                    try {
+                                        str = Usuario.toJSON (((Supplier <List <Usuario>>) ( () -> {
+                                            List <Usuario> u = new ArrayList <Usuario> ();
+
+                                            u.addAll (db.getAdministradores ());
+                                            u.addAll (db.getEspectadores ());
+
+                                            return u;
+                                        })).get (), true);
+                                    }
+
+                                    catch (NullPointerException | JSONException ex) {
+                                        JOptionPane.showMessageDialog (f,
+                                                "Las películas no pudieron ser exportados a JSON.");
+
+                                        try {
+                                            Files.delete (fc.getSelectedFile ().toPath ());
+                                        }
+
+                                        catch (IOException e1) {
+                                            Logger.getLogger (GestionarPeliculasWindow.class.getName ()).log (
+                                                    Level.WARNING,
+                                                    String.format ("No se pudo eliminar el archivo %s.",
+                                                            fc.getSelectedFile ().getAbsolutePath ()));
+                                        }
+
+                                        return;
+                                    }
+
+                                    try (BufferedWriter bw = new BufferedWriter (
+                                            new FileWriter (fc.getSelectedFile ()))) {
+                                        bw.write (str);
+                                    }
+
+                                    catch (IOException ex) {
+                                        JOptionPane.showMessageDialog (f,
+                                                "No pudo abrirse el archivo especificado.");
+
+                                        try {
+                                            Files.delete (fc.getSelectedFile ().toPath ());
+                                        }
+
+                                        catch (IOException e1) {
+                                            Logger.getLogger (GestionarPeliculasWindow.class.getName ()).log (
+                                                    Level.WARNING,
+                                                    String.format ("No se pudo eliminar el archivo %s.",
+                                                            fc.getSelectedFile ().getAbsolutePath ()));
+                                        }
+
+                                        return;
+                                    }
                                 });
 
                                 return b;
@@ -730,7 +871,8 @@ public class GestionarUsuariosWindow extends JFrame {
                             b.addActionListener (e -> {
                                 if (JOptionPane.showOptionDialog (f,
                                         "Lo que estás a punto de hacer es una acción irreversible.\n¿Estás seguro de querer continuar?",
-                                        "Eliminar película", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+                                        "Eliminar todos los espectadores", JOptionPane.YES_NO_OPTION,
+                                        JOptionPane.WARNING_MESSAGE,
                                         null, new String [] {
                                                 "Confirmar",
                                                 "Cancelar"
@@ -738,6 +880,13 @@ public class GestionarUsuariosWindow extends JFrame {
                                     return;
 
                                 db.delete (db.getEspectadores ());
+                                users.removeAllItems ();
+                                Vector <String> usernames = db.getAdministradores ().stream ()
+                                        .map (x -> x.getNombre () + " (A)")
+                                        .collect (Collectors.toCollection (Vector::new));
+                                for (int i = 0; i < usernames.size (); users.addItem (usernames.get (i++)))
+                                    ;
+                                users.repaint ();
                             });
 
                             return b;

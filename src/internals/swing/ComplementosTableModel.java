@@ -13,6 +13,7 @@ import javax.swing.table.DefaultTableModel;
 
 import VentanaGrafica.LoadingWindow;
 import cine.Complemento;
+import cine.Consumible;
 import internals.GestorBD;
 import internals.Pair;
 
@@ -159,8 +160,9 @@ public class ComplementosTableModel extends DefaultTableModel {
             try {
                 BigDecimal p;
                 if ((p = new BigDecimal (((String) aValue).replace (",", ".").replace ("€", "").strip ()))
-                        .signum () != 1)
-                    throw new ArithmeticException ("El precio debe ser un número positivo.");
+                        .signum () != 1 || p.compareTo (Consumible.getMaxPrecio ()) > 0)
+                    throw new ArithmeticException (String.format ("El precio debe ser un número positivo menor que %s.",
+                            Consumible.getMaxPrecio ().toPlainString ()));
 
                 this.dataVector.get (row).set (1,
                         String.format ("%.2f €", p.doubleValue ()));
@@ -178,8 +180,12 @@ public class ComplementosTableModel extends DefaultTableModel {
             catch (ArithmeticException e) {
                 Logger.getLogger (ComplementosTableModel.class.getName ()).log (Level.WARNING,
                         String.format (
-                                "Precio no válido: el precio especificado, %s €, no es positivo.",
-                                (String) aValue));
+                                "Precio no válido: el precio especificado, %s €, %s.",
+                                ((String) aValue).replace (",", ".").replace ("€", "").strip (),
+                                new BigDecimal (((String) aValue).replace (",", ".").replace ("€", "").strip ())
+                                        .signum () != 1 ? "no es positivo."
+                                                : String.format ("es superior a %s €",
+                                                        Consumible.getMaxPrecio ().toPlainString ())));
 
                 return;
             }
