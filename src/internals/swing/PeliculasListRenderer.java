@@ -1,11 +1,11 @@
 package internals.swing;
 
+import java.awt.Component;
+
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
-
-import java.awt.Component;
 
 import cine.Pelicula;
 

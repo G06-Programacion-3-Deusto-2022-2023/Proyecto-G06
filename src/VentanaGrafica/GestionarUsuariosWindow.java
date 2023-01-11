@@ -1,12 +1,12 @@
 package VentanaGrafica;
 
-import java.awt.Image;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -63,7 +63,7 @@ public class GestionarUsuariosWindow extends JFrame {
             throw new NullPointerException (
                     "No se puede pasar un administador nulo a la ventana de gestión de usuarios.");
 
-        if (!db.obtenerDatosAdministradores ().contains (admin))
+        if (!db.getAdministradores ().contains (admin))
             throw new UnsupportedOperationException (
                     "El administrador enviado a la ventana de gestión de usuarios no se encuentra en la base de datos.");
 
@@ -117,7 +117,7 @@ public class GestionarUsuariosWindow extends JFrame {
                     Vector <String> v = new Vector <String> ();
 
                     v.addAll ((((Supplier <List <String>>) ( () -> {
-                        List <String> l = db.obtenerDatosAdministradores ().stream ()
+                        List <String> l = db.getAdministradores ().stream ()
                                 .map (Administrador::getNombre)
                                 .collect (Collectors.toList ());
                         Collections.sort (l);
@@ -126,7 +126,7 @@ public class GestionarUsuariosWindow extends JFrame {
                     }))).get ());
 
                     v.addAll ((((Supplier <List <String>>) ( () -> {
-                        List <String> l = db.obtenerDatosEspectadores ().stream ()
+                        List <String> l = db.getEspectadores ().stream ()
                                 .map (Espectador::getNombre)
                                 .collect (Collectors.toList ());
                         Collections.sort (l);
@@ -183,7 +183,7 @@ public class GestionarUsuariosWindow extends JFrame {
 
                                 if (bb.get (0).isSelected ())
                                     u.addAll (Administrador
-                                            .tree (db.obtenerDatosAdministradores (),
+                                            .tree (db.getAdministradores (),
                                                     !bb.get (2).isSelected ()
                                                             ? (Comparator <Administrador>) ( (
                                                                     Administrador x,
@@ -198,7 +198,7 @@ public class GestionarUsuariosWindow extends JFrame {
 
                                 if (bb.get (1).isSelected ())
                                     u.addAll (Espectador
-                                            .tree (db.obtenerDatosEspectadores (),
+                                            .tree (db.getEspectadores (),
                                                     !bb.get (2).isSelected ()
                                                             ? (Comparator <Espectador>) ( (Espectador x,
                                                                     Espectador y) -> x.compareTo (y))
@@ -351,8 +351,8 @@ public class GestionarUsuariosWindow extends JFrame {
                                             ((String) users.getSelectedItem ()).length () - 4);
 
                                     Usuario user = ((String) users.getSelectedItem ()).endsWith ((" (A)"))
-                                            ? db.obtenerDatosAdministradorPorNombre (username)
-                                            : db.obtenerDatosEspectadores ().stream ()
+                                            ? db.getAdministradorPorNombre (username)
+                                            : db.getEspectadores ().stream ()
                                                     .filter (x -> x.getNombre ().equals (username)).findFirst ().get ();
 
                                     if (new String (passwd.getPassword ()).equals (user.getContrasena ())) {
@@ -404,7 +404,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                     return;
 
                                 if (((String) users.getSelectedItem ()).endsWith (" (E)")) {
-                                    db.deleteEspectadorData (db.obtenerDatosEspectadores ().stream ()
+                                    db.deleteEspectadorData (db.getEspectadores ().stream ()
                                             .filter (x -> x.getNombre ().equals (((String) users.getSelectedItem ())
                                                     .substring (0,
                                                             ((String) users.getSelectedItem ()).length () - 4)))
@@ -414,7 +414,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                 }
 
                                 db.deleteAdminData (
-                                        db.obtenerDatosAdministradorPorNombre (((String) users.getSelectedItem ())
+                                        db.getAdministradorPorNombre (((String) users.getSelectedItem ())
                                                 .substring (0, ((String) users.getSelectedItem ()).length () - 4)));
                             });
 
@@ -438,13 +438,13 @@ public class GestionarUsuariosWindow extends JFrame {
                                         ((String) users.getSelectedItem ()).length () - 4);
 
                                 if (((String) users.getSelectedItem ()).endsWith (" (E)")) {
-                                    db.delete (db.obtenerDatosEspectadores ().stream ()
+                                    db.delete (db.getEspectadores ().stream ()
                                             .filter (x -> x.getNombre ().equals (username)).findFirst ().get ());
 
                                     return;
                                 }
 
-                                db.delete (db.obtenerDatosAdministradorPorNombre (username));
+                                db.delete (db.getAdministradorPorNombre (username));
 
                                 if (((String) users.getSelectedItem ())
                                         .substring (0, ((String) users.getSelectedItem ()).length () - 4)
@@ -548,9 +548,9 @@ public class GestionarUsuariosWindow extends JFrame {
                                             continue;
                                         }
 
-                                        if (db.obtenerDatosEspectadores ().stream ().map (Espectador::getNombre)
+                                        if (db.getEspectadores ().stream ().map (Espectador::getNombre)
                                                 .collect (Collectors.toList ()).contains (user.getText ())
-                                                || db.obtenerDatosAdministradores ().stream ()
+                                                || db.getAdministradores ().stream ()
                                                         .map (Administrador::getNombre)
                                                         .collect (Collectors.toList ())
                                                         .contains (user.getText ())) {
@@ -737,7 +737,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                         }, JOptionPane.NO_OPTION) != JOptionPane.YES_OPTION)
                                     return;
 
-                                db.delete (db.obtenerDatosEspectadores ());
+                                db.delete (db.getEspectadores ());
                             });
 
                             return b;

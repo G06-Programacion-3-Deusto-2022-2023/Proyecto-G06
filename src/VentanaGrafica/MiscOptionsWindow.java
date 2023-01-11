@@ -1,11 +1,11 @@
 package VentanaGrafica;
 
-import java.awt.Image;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
@@ -93,7 +93,7 @@ public class MiscOptionsWindow extends JFrame {
             }
         });
 
-        if (admin != null && db.obtenerDatosAdministradores ().contains (admin))
+        if (admin != null && db.getAdministradores ().contains (admin))
             this.add (((Supplier <JPanel>) ( () -> {
                 JPanel p = new JPanel ();
                 p.setLayout (new BoxLayout (p, BoxLayout.Y_AXIS));
@@ -911,7 +911,7 @@ public class MiscOptionsWindow extends JFrame {
                                         continue;
                                     }
 
-                                    if (db.obtenerDatosComplementos ().stream ()
+                                    if (db.getComplementos ().stream ()
                                             .anyMatch (x -> x.getNombre ().equals (fields [0].getText ()))) {
                                         JOptionPane.showMessageDialog (f,
                                                 "Ya hay un complemento con el mismo nombre en la base de datos.",
@@ -1027,7 +1027,7 @@ public class MiscOptionsWindow extends JFrame {
 
                                 String str;
                                 try {
-                                    str = Complemento.toJSON (db.obtenerDatosComplementos (), true);
+                                    str = Complemento.toJSON (db.getComplementos (), true);
                                 }
 
                                 catch (NullPointerException | JSONException ex) {
@@ -1086,7 +1086,7 @@ public class MiscOptionsWindow extends JFrame {
             return p;
         })).get (), BorderLayout.CENTER);
 
-        if (admin != null && db.obtenerDatosAdministradores ().contains (admin))
+        if (admin != null && db.getAdministradores ().contains (admin))
             this.add (((Supplier <JLabel>) ( () ->
 
             {

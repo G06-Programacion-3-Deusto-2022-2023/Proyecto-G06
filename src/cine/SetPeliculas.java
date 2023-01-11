@@ -24,8 +24,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import internals.Utils;
 import internals.HasID;
+import internals.Utils;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;
@@ -279,6 +279,10 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
             ;
 
         return all;
+    }
+
+    public boolean removeAll () {
+        return this.remove (this.peliculas);
     }
 
     public boolean contains (Pelicula pelicula) {

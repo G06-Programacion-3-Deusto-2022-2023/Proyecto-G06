@@ -22,6 +22,7 @@ public final class Settings {
     private static final String COMMENT = "AVISO: ESTE ARCHIVO SOLO DEBE SER MODIFICADO DESDE EL PROGRAMA.";
     private static final String DEFAULT_LOGO_PATH = "data/assets/logo.png";
     private static final String DEFAULT_LOGO_URL = "https://clipartmag.com/images/movie-reel-logo-17.png";
+    private static final String ADMIN_KEY = "proyecto06";
     private static Properties properties;
     private static final Properties defaults = ((Supplier <Properties>) ( () -> {
         Properties p = new Properties ();
@@ -133,6 +134,10 @@ public final class Settings {
             Logger.getLogger (Settings.class.getName ()).log (Level.WARNING,
                     String.format ("La configuración no pudo guardarse en el archivo %s.", file));
         }
+    }
+
+    public static String getAdminKey () {
+        return Settings.ADMIN_KEY;
     }
 
     public static String getNombre () {

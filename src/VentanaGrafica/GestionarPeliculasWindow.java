@@ -1,11 +1,11 @@
 package VentanaGrafica;
 
-import java.awt.Image;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -100,7 +100,7 @@ public class GestionarPeliculasWindow extends JFrame {
             public void componentShown (ComponentEvent e) {
                 if (pelicula [0] != null) {
                     if (pelicula [0].getNombre ().equals (pelicula [0].getId ().toString ())) {
-                        Pelicula array[] = db.obtenerDatosPeliculas ().toArray (new Pelicula [0]);
+                        Pelicula array[] = db.getPeliculas ().toArray (new Pelicula [0]);
 
                         int nuevas = 0;
                         for (int i = 0; i < array.length; nuevas += array [i++].getNombre ()
@@ -118,7 +118,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                 if (setpeliculas [0] != null) {
                     if (setpeliculas [0].getNombre ().equals (setpeliculas [0].getId ().toString ())) {
-                        SetPeliculas array[] = db.obtenerDatosSetPeliculas ().toArray (new SetPeliculas [0]);
+                        SetPeliculas array[] = db.getSetsPeliculas ().toArray (new SetPeliculas [0]);
 
                         int nuevas = 0;
                         for (int i = 0; i < array.length; nuevas += array [i++].getNombre ()
@@ -162,7 +162,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
         this.add (((Supplier <JLabel>) ( () -> {
             JLabel l = new JLabel (
-                    admin != null && db.obtenerDatosAdministradores ().contains (admin) ? admin.getNombre () : "");
+                    admin != null && db.getAdministradores ().contains (admin) ? admin.getNombre () : "");
             l.setFont (l.getFont ().deriveFont (Font.BOLD, 16f));
 
             return l;
@@ -183,7 +183,7 @@ public class GestionarPeliculasWindow extends JFrame {
                     r.setLayout (new BoxLayout (r, BoxLayout.Y_AXIS));
 
                     JComboBox <Pelicula> peliculas = new JComboBox <Pelicula> (
-                            new Vector <Pelicula> (db.obtenerDatosPeliculas ()));
+                            new Vector <Pelicula> (db.getPeliculas ()));
                     peliculas.setRenderer (new PeliculasComboBoxRenderer ());
                     peliculas.setMaximumRowCount (5);
                     peliculas.setSelectedIndex (peliculas.getItemCount () > 0 ? 0 : -1);
@@ -348,9 +348,9 @@ public class GestionarPeliculasWindow extends JFrame {
                     ((SpinnerNumberModel) maxDur.getModel ()).setMinimum (1);
                     ((SpinnerNumberModel) maxDur
                             .getModel ())
-                                    .setValue (db.obtenerDatosPeliculas ().isEmpty () ? Integer.MAX_VALUE
+                                    .setValue (db.getPeliculas ().isEmpty () ? Integer.MAX_VALUE
                                             : Pelicula
-                                                    .orderBy (db.obtenerDatosPeliculas (),
+                                                    .orderBy (db.getPeliculas (),
                                                             (Comparator <Pelicula>) ( (Pelicula x, Pelicula y) -> x
                                                                     .getDuracion ().compareTo (y.getDuracion ())),
                                                             true)
@@ -431,7 +431,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                         // Copiar y pegar es una guarrada pero no me apetece
                         // nada crear una variable.
-                        List <Pelicula> list = Pelicula.tree (db.obtenerDatosPeliculas (),
+                        List <Pelicula> list = Pelicula.tree (db.getPeliculas (),
                                 desc.isSelected ()
                                         ? (Comparator <Pelicula>) ((new Comparator [] {
                                                 (Object x, Object y) -> ((Pelicula) y)
@@ -1075,7 +1075,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                                 String str;
                                 try {
-                                    str = Pelicula.toJSON (db.obtenerDatosPeliculas (), true);
+                                    str = Pelicula.toJSON (db.getPeliculas (), true);
                                 }
 
                                 catch (NullPointerException | JSONException ex) {
@@ -1137,7 +1137,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                     return;
 
                                 new LoadingWindow ( () -> {
-                                    List <Pelicula> l = db.obtenerDatosPeliculas ();
+                                    List <Pelicula> l = db.getPeliculas ();
                                     l.removeAll (Pelicula.getDefault ());
                                     db.delete (l);
 
@@ -1163,7 +1163,7 @@ public class GestionarPeliculasWindow extends JFrame {
                     r.setLayout (new BoxLayout (r, BoxLayout.Y_AXIS));
 
                     JComboBox <SetPeliculas> setspeliculas = new JComboBox <SetPeliculas> (
-                            new Vector <SetPeliculas> (db.obtenerDatosSetPeliculas ().stream ()
+                            new Vector <SetPeliculas> (db.getSetsPeliculas ().stream ()
                                     .filter (e -> e.getAdministrador () == null || e.getAdministrador ().equals (admin))
                                     .collect (Collectors.toList ())));
                     setspeliculas.setRenderer (new SetsPeliculasComboBoxRenderer ());
@@ -1213,7 +1213,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                         setspeliculas.removeAllItems ();
 
-                        List <SetPeliculas> list = SetPeliculas.tree (db.obtenerDatosSetPeliculas ().stream ()
+                        List <SetPeliculas> list = SetPeliculas.tree (db.getSetsPeliculas ().stream ()
                                 .filter (x -> x.getAdministrador () == null || x.getAdministrador ().equals (admin))
                                 .collect (Collectors.toList ()),
                                 (Collections.list (orderBy.getElements ()).get (0).isSelected ()
@@ -1293,7 +1293,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                         pw [0] = w;
 
                                         setpeliculas [0] = (SetPeliculas) setspeliculas.getSelectedItem ();
-                                        new SetPeliculasWindow (setpeliculas, db.obtenerDatosPeliculas (), admin, f);
+                                        new SetPeliculasWindow (setpeliculas, db.getPeliculas (), admin, f);
                                     }
 
                                     catch (NullPointerException e1) {
@@ -1536,7 +1536,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                 f.setVisible (false);
                                 pw [0] = w;
 
-                                new SetPeliculasWindow (setpeliculas, db.obtenerDatosPeliculas (), admin, f);
+                                new SetPeliculasWindow (setpeliculas, db.getPeliculas (), admin, f);
                             });
 
                             return b;
@@ -1590,7 +1590,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                                 String str;
                                 try {
-                                    str = SetPeliculas.toJSON (db.obtenerDatosSetPeliculas (), true);
+                                    str = SetPeliculas.toJSON (db.getSetsPeliculas (), true);
                                 }
 
                                 catch (NullPointerException | JSONException ex) {
@@ -1652,7 +1652,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                     return;
 
                                 new LoadingWindow ( () -> {
-                                    List <SetPeliculas> l = db.obtenerDatosSetPeliculas ();
+                                    List <SetPeliculas> l = db.getSetsPeliculas ();
                                     l.remove (SetPeliculas.getDefault ());
                                     db.delete (l);
 

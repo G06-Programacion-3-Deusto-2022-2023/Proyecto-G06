@@ -73,7 +73,7 @@ public class ComplementosTableModel extends DefaultTableModel {
     public void orderBy (Pair <OrderCriteria, Boolean> order) {
         this.order = order;
 
-        List <Complemento> l = this.db.obtenerDatosComplementos ();
+        List <Complemento> l = this.db.getComplementos ();
         this.setDataVector ((this.values = Complemento
                 .tree (l, (Comparator <Complemento>) new Comparator [] {
                         (Comparator <Complemento>) ( (Complemento x,

@@ -41,7 +41,7 @@ public class AdministradorWindow extends JFrame {
             throw new NullPointerException (
                     "No se puede pasar un administador nulo a la ventana de modo administrador.");
 
-        if (!db.obtenerDatosAdministradores ().contains (admin))
+        if (!db.getAdministradores ().contains (admin))
             throw new IllegalArgumentException (
                     "El administrador enviado a la ventana de modo administrador no se encuentra en la base de datos.");
 

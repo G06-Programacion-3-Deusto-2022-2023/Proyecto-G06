@@ -1,8 +1,8 @@
 package VentanaGrafica;
 
-import java.awt.Image;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -127,8 +127,8 @@ public class VentanaInicioSesion extends JFrame {
                             HashMap <String, Usuario> m = new HashMap <String, Usuario> ();
 
                             List <Usuario> l = new ArrayList <Usuario> ();
-                            l.addAll (db.obtenerDatosAdministradores ());
-                            l.addAll (db.obtenerDatosEspectadores ());
+                            l.addAll (db.getAdministradores ());
+                            l.addAll (db.getEspectadores ());
 
                             for (int i = 0; i < l.size (); i++)
                                 m.put (l.get (i).getNombre (), l.get (i));

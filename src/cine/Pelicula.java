@@ -29,12 +29,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import internals.Utils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import internals.HasID;
+import internals.Utils;
 import internals.bst.BST;
 import internals.bst.Filter;
 import internals.bst.Treeable;

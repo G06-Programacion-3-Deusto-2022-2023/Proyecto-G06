@@ -1,8 +1,8 @@
 package VentanaGrafica;
 
-import java.awt.Image;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Arrays;
@@ -162,11 +162,11 @@ public class RegistroWindow extends JFrame {
                         }
 
                         if ((((JComboBox <String>) fields [3] [1]).getSelectedIndex () == 0
-                                && db.obtenerDatosEspectadores ().stream ().map (Espectador::getNombre)
+                                && db.getEspectadores ().stream ().map (Espectador::getNombre)
                                         .collect (Collectors.toList ())
                                         .contains (((JTextField) fields [0] [1]).getText ()))
                                 || (((JComboBox <String>) fields [3] [1]).getSelectedIndex () == 1
-                                        && db.obtenerDatosAdministradores ().stream ()
+                                        && db.getAdministradores ().stream ()
                                                 .map (Administrador::getNombre)
                                                 .collect (Collectors.toList ())
                                                 .contains (((JTextField) fields [0] [1]).getText ()))) {

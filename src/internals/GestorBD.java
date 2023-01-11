@@ -12,25 +12,27 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.UUID;
+import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.function.Supplier;
-
-import org.sqlite.SQLiteException;
+import java.util.stream.Stream;
 
 import cine.Administrador;
 import cine.Complemento;
@@ -39,13 +41,72 @@ import cine.Entrada;
 import cine.Espectador;
 import cine.Genero;
 import cine.Pelicula;
+import cine.Sala;
 import cine.SetPeliculas;
 import cine.Usuario;
 
 public class GestorBD {
     private static final String DRIVER_NAME = "org.sqlite.JDBC";
     private static final String DATABASE_FILE = "data/db/database.db";
-    private static final String CONNECTION_STRING = "jdbc:sqlite:" + DATABASE_FILE;
+    private static final String CONNECTION_STRING = "jdbc:sqlite:" + GestorBD.DATABASE_FILE;
+    private static final Pair <String, Pair <String, String> []> TABLES[] = new Pair [] {
+            new Pair <String, Pair <String, String> []> ("PELICULA", new Pair [] {
+                    new Pair <String, String> ("ID_PELICULA", "'%s'"),
+                    new Pair <String, String> ("NOMBRE_PELICULA", "'%s'"),
+                    new Pair <String, String> ("RUTA_IMAGEN", "'%s'"),
+                    new Pair <String, String> ("VALORACION", "%s"),
+                    new Pair <String, String> ("FECHA", "%d"),
+                    new Pair <String, String> ("DIRECTOR", "'%s'"),
+                    new Pair <String, String> ("DURACION", "%d"),
+                    new Pair <String, String> ("EDAD_RECOMENDADA", "%d"),
+                    new Pair <String, String> ("GENEROS", "%d")
+            }),
+            new Pair <String, Pair <String, String> []> ("ADMINISTRADOR", new Pair [] {
+                    new Pair <String, String> ("ID_ADMINISTRADOR", "'%s'"),
+                    new Pair <String, String> ("NOMBRE_ADMINISTRADOR", "'%s'"),
+                    new Pair <String, String> ("CONTRASENA_ADMINISTRADOR", "'%s'")
+            }),
+            new Pair <String, Pair <String, String> []> ("ESPECTADOR", new Pair [] {
+                    new Pair <String, String> ("ID_ESPECTADOR", "'%s'"),
+                    new Pair <String, String> ("NOMBRE_ESPECTADOR", "'%s'"),
+                    new Pair <String, String> ("CONTRASENA_ESPECTADOR", "'%s'"),
+                    new Pair <String, String> ("EDAD", "%d")
+            }),
+            new Pair <String, Pair <String, String> []> ("COMPLEMENTO", new Pair [] {
+                    new Pair <String, String> ("ID_COMPLEMENTO", "'%s'"),
+                    new Pair <String, String> ("NOMBRE_COMPLEMENTO", "'%s'"),
+                    new Pair <String, String> ("PRECIO", "'%.2f'"),
+                    new Pair <String, String> ("DESCUENTO", "%d")
+            }),
+            new Pair <String, Pair <String, String> []> ("SETPELICULAS", new Pair [] {
+                    new Pair <String, String> ("ID_PELICULA", "'%s'"),
+                    new Pair <String, String> ("NOMBRE_ADMINISTRADOR", "'%s'"),
+                    new Pair <String, String> ("NOMBRE_SETPELICULAS", "'%s'")
+            }),
+            new Pair <String, Pair <String, String> []> ("ARRAY_SETPELICULAS", new Pair [] {
+                    new Pair <String, String> ("ID_PELICULA", "'%s'"),
+                    new Pair <String, String> ("ID_SETPELICULAS", "'%s'")
+            }),
+            new Pair <String, Pair <String, String> []> ("ENTRADA", new Pair [] {
+                    new Pair <String, String> ("ID_ENTRADA", "'%s'"),
+                    new Pair <String, String> ("ID_ESPECTADOR", "'%s'"),
+                    new Pair <String, String> ("ID_PELICULA", "'%s'"),
+                    new Pair <String, String> ("FECHA", "'%s'"),
+                    new Pair <String, String> ("SALA", "%d"),
+                    new Pair <String, String> ("BUTACA", "%d"),
+                    new Pair <String, String> ("VALORACION", "%.1f"),
+                    new Pair <String, String> ("PRECIO", "%s")
+            }),
+            new Pair <String, Pair <String, String> []> ("ARRAY_ENTRADA", new Pair [] {
+                    new Pair <String, String> ("ID_ENTRADA", "'%s'"),
+                    new Pair <String, String> ("ID_COMPLEMENTO", "'%s'"),
+                    new Pair <String, String> ("CANTIDAD", "%d")
+            }),
+            new Pair <String, Pair <String, String> []> ("LLAVE", new Pair [] {
+                    new Pair <String, String> ("LLAVE", "'%s'")
+            })
+    };
+
     private static boolean FILE_LOCKED;
     private static final boolean WINPERMS[] = new boolean [4];
     private static final String DEFAULT_UNIX_PERMS = "rwxr-xr-x";
@@ -56,14 +117,70 @@ public class GestorBD {
             // Cargar el diver SQLite
             Class.forName (GestorBD.DRIVER_NAME);
         }
-        catch (ClassNotFoundException ex) {
-            System.err.println (String.format ("* Error al cargar el driver de BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (ClassNotFoundException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
+                    String.format ("* Error al cargar el driver de BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
+
+            Thread.currentThread ().interrupt ();
         }
     }
 
     public static File getFile () {
         return new File (GestorBD.DATABASE_FILE);
+    }
+
+    public static String getFields (int table) throws IllegalArgumentException {
+        if (table < 0 || table >= GestorBD.TABLES.length)
+            throw new IllegalArgumentException (
+                    String.format ("El índice de la tabla debe estar entre 0 y %d", GestorBD.TABLES.length - 1));
+
+        return String.join (", ", (((Supplier <String []>) () -> {
+            List <String> l = new ArrayList <String> ();
+            for (int i = 0; i < GestorBD.TABLES [table].y.length; l.add (GestorBD.TABLES [table].y [i++].x))
+                ;
+
+            return l.toArray (new String [0]);
+        })).get ());
+    }
+
+    public static String getFieldFormats (int table) throws IllegalArgumentException {
+        if (table < 0 || table >= GestorBD.TABLES.length)
+            throw new IllegalArgumentException (
+                    String.format ("El índice de la tabla debe estar entre 0 y %d", GestorBD.TABLES.length - 1));
+
+        return String.join (", ", (((Supplier <String []>) () -> {
+            List <String> l = new ArrayList <String> ();
+            for (int i = 0; i < GestorBD.TABLES [table].y.length; l.add (GestorBD.TABLES [table].y [i++].y))
+                ;
+
+            return l.toArray (new String [0]);
+        })).get ());
+    }
+
+    public static String insertIntoStatement (int table) throws IllegalArgumentException {
+        if (table < 0 || table >= GestorBD.TABLES.length)
+            throw new IllegalArgumentException (
+                    String.format ("El índice de la tabla debe estar entre 0 y %d", GestorBD.TABLES.length - 1));
+
+        return String.format ("INSERT INTO %s (%s) VALUES (%s)", GestorBD.TABLES [table].x, GestorBD.getFields (table),
+                GestorBD.getFieldFormats (table));
+    }
+
+    public static String updateStatement (int table) throws IllegalArgumentException {
+        if (table < 0 || table >= GestorBD.TABLES.length)
+            throw new IllegalArgumentException (
+                    String.format ("El índice de la tabla debe estar entre 0 y %d", GestorBD.TABLES.length - 2));
+
+        StringBuilder str = new StringBuilder (String.format ("UPDATE %s SET ", GestorBD.TABLES [table].x));
+        for (int i = 1; i < GestorBD.TABLES [table].y.length; i++)
+            str.append (String.format ("%s = %s, ", GestorBD.TABLES [table].y [i].x, GestorBD.TABLES [table].y [i].y));
+
+        str.delete (str.lastIndexOf (", "), str.length () - 1);
+
+        return str.toString ()
+                + String.format ("WHERE %s = %s;", GestorBD.TABLES [table].y [0].x, GestorBD.TABLES [table].y [0].y);
     }
 
     public static void lock () {
@@ -241,64 +358,99 @@ public class GestorBD {
         // datos
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
+            String sql[] = new String [] {
+                    String.format ("CREATE TABLE IF NOT EXISTS %s (%n", GestorBD.TABLES [0].x)
+                            + String.format ("%s VARCHAR(36) PRIMARY KEY,%n", GestorBD.TABLES [0].y [0].x)
+                            + String.format ("%s STRING,%n", GestorBD.TABLES [0].y [1].x)
+                            + String.format ("%s STRING, %n", GestorBD.TABLES [0].y [2].x)
+                            + String.format ("%s DECIMAL(3, 1) NOT NULL,%n", GestorBD.TABLES [0].y [3].x)
+                            + String.format ("%s INTEGER,%n", GestorBD.TABLES [0].y [4].x)
+                            + String.format ("%s STRING NOT NULL,%n", GestorBD.TABLES [0].y [5].x)
+                            + String.format ("%s INTEGER NOT NULL,%n", GestorBD.TABLES [0].y [6].x)
+                            + String.format ("%s INTEGER NOT NULL,%n", GestorBD.TABLES [0].y [7].x)
+                            + String.format ("%s INTEGER NOT NULL%n", GestorBD.TABLES [0].y [8].x)
+                            + ");",
+                    String.format ("CREATE TABLE IF NOT EXISTS %s (%n", GestorBD.TABLES [1].x)
+                            + String.format ("%s VARCHAR(36) PRIMARY KEY,%n", GestorBD.TABLES [1].y [0].x)
+                            + String.format ("%s STRING,%n", GestorBD.TABLES [1].y [1].x)
+                            + String.format ("%s STRING NOT NULL%n", GestorBD.TABLES [1].y [2].x)
+                            + ");",
+                    String.format ("CREATE TABLE IF NOT EXISTS %s (%n", GestorBD.TABLES [2].x)
+                            + String.format ("%s VARCHAR(36) PRIMARY KEY,%n", GestorBD.TABLES [2].y [0].x)
+                            + String.format ("%s STRING NOT NULL,%n", GestorBD.TABLES [2].y [1].x)
+                            + String.format ("%s STRING NOT NULL,%n", GestorBD.TABLES [2].y [2].x)
+                            + String.format ("%s INTEGER%n", GestorBD.TABLES [2].y [3].x)
+                            + ");",
+                    String.format ("CREATE TABLE IF NOT EXISTS %s (%n", GestorBD.TABLES [3].x)
+                            + String.format ("%s VARCHAR(36) PRIMARY KEY,%n", GestorBD.TABLES [3].y [0].x)
+                            + String.format ("%s STRING NOT NULL,%n", GestorBD.TABLES [3].y [1].x)
+                            + String.format ("%s DECIMAL(65,2),%n", GestorBD.TABLES [3].y [2].x)
+                            + String.format ("%s INTEGER%n", GestorBD.TABLES [3].y [3].x)
+                            + ");",
+                    String.format ("CREATE TABLE IF NOT EXISTS %s (%n", GestorBD.TABLES [4].x)
+                            + String.format ("%s VARCHAR(36) PRIMARY KEY,%n", GestorBD.TABLES [4].y [0].x)
+                            + String.format ("%s STRING,%n", GestorBD.TABLES [4].y [1].x)
+                            + String.format ("%s STRING%n", GestorBD.TABLES [4].y [2].x)
+                            + ");",
+                    String.format ("CREATE TABLE IF NOT EXISTS %s (%n", GestorBD.TABLES [5].x)
+                            + String.format ("%s VARCHAR(36) NOT NULL,%n", GestorBD.TABLES [5].y [0].x)
+                            + String.format ("%s VARCHAR(36) NOT NULL,%n", GestorBD.TABLES [5].y [1].x)
+                            + String.format ("PRIMARY KEY (%s, %s)%n", GestorBD.TABLES [5].y [0].x,
+                                    GestorBD.TABLES [5].y [1].x)
+                            + ");",
+                    String.format ("CREATE TABLE IF NOT EXISTS %s (%n", GestorBD.TABLES [6].x)
+                            + String.format ("%s VARCHAR(36) PRIMARY KEY,%n", GestorBD.TABLES [6].y [0].x)
+                            + String.format ("%s VARCHAR(36),%n", GestorBD.TABLES [6].y [1].x)
+                            + String.format ("%s VARCHAR(36),%n", GestorBD.TABLES [6].y [2].x)
+                            + String.format ("%s DATE,%n", GestorBD.TABLES [6].y [3].x)
+                            + String.format ("%s INTEGER CHECK (SALA BETWEEN -1 AND %d),%n",
+                                    GestorBD.TABLES [6].y [4].x,
+                                    Sala.getSalas ().size () - 1)
+                            + String.format ("%s INTEGER CHECK (BUTACA BETWEEN -1 AND %d),%n",
+                                    GestorBD.TABLES [6].y [5].x,
+                                    Sala.getFilas () * Sala.getColumnas () - 1)
+                            + String.format ("%s DECIMAL(3, 1),%n", GestorBD.TABLES [6].y [6].x)
+                            + String.format ("%s DECIMAL(65, 2)%n", GestorBD.TABLES [6].y [7].x)
+                            + ");",
+                    String.format ("CREATE TABLE IF NOT EXISTS %s (%n",
+                            GestorBD.TABLES [7].x)
+                            + String.format ("%s VARCHAR(36) NOT NULL,%n", GestorBD.TABLES [7].y [0].x)
+                            + String.format ("%s VARCHAR(36) NOT NULL,%n", GestorBD.TABLES [7].y [1].x)
+                            + String.format ("%s INTEGER UNSIGNED NOT NULL,%n", GestorBD.TABLES [7].y [2].x)
+                            + String.format ("PRIMARY KEY (ID_ENTRADA, ID_COMPLEMENTO)%n", GestorBD.TABLES [7].y [0].x,
+                                    GestorBD.TABLES [7].y [1].x)
+                            + ");",
+                    String.format ("CREATE TABLE IF NOT EXISTS %s (%n", GestorBD.TABLES [8].x)
+                            + String.format ("%s STRING PRIMARY KEY%n", GestorBD.TABLES [8].y [0].x)
+                            + ");"
+            };
 
-            String sql1 = "CREATE TABLE IF NOT EXISTS PELICULA (\n"
-                    + " ID_PELICULA VARCHAR(36) PRIMARY KEY NOT NULL,\n"
-                    + " NOMBRE_PELICULA STRING,\n"
-                    + " RUTA_IMAGEN STRING, \n"
-                    + " VALORACION DECIMAL(3, 1) NOT NULL,\n"
-                    + " FECHA INTEGER, \n"
-                    + " DIRECTOR STRING NOT NULL,\n"
-                    + " DURACION INTEGER NOT NULL,\n"
-                    + " EDAD_RECOMENDADA INTEGER NOT NULL,\n"
-                    + " GENEROS INTEGER NOT NULL\n"
-                    + ");";
-            String sql2 = "CREATE TABLE IF NOT EXISTS ADMINISTRADOR (\n"
-                    + " ID_ADMINISTRADOR VARCHAR(36) PRIMARY KEY NOT NULL,\n"
-                    + " NOMBRE_ADMINISTRADOR STRING,\n"
-                    + " CONTRASENA_ADMINISTRADOR STRING \n"
-                    + ");";
-            String sql3 = "CREATE TABLE IF NOT EXISTS ESPECTADOR (\n"
-                    + " ID_ESPECTADOR VARCHAR(36),\n"
-                    + " NOMBRE_ESPECTADOR STRING PRIMARY KEY NOT NULL ,\n"
-                    + " CONTRASENA_ESPECTADOR STRING, \n"
-                    + " EDAD INTEGER \n"
-                    + ");";
-            String sql4 = "CREATE TABLE IF NOT EXISTS COMPLEMENTO (\n"
-                    + " ID_COMPLEMENTO VARCHAR(36),\n"
-                    + " NOMBRE_COMPLEMENTO STRING PRIMARY KEY NOT NULL ,\n"
-                    + " PRECIO DECIMAL(65,2), \n"
-                    + " DESCUENTO INTEGER \n"
-                    + ");";
-            String sql5 = "CREATE TABLE IF NOT EXISTS SET_PELICULA (\n"
-                    + "ID_SET_PELICULA VARCHAR(36) PRIMARY KEY NOT NULL, "
-                    + "NOMBRE_ADMINISTRADOR STRING, \n"
-                    + "NOMBRE_SET_PELICULA STRING \n"
-                    + ");";
-            String sql6 = "CREATE TABLE IF NOT EXISTS ARRAY_SETPELICULA (\n"
-                    + " ID_PELICULA VARCHAR(36) NOT NULL,\n"
-                    + " ID_SETPELICULA VARCHAR(36) NOT NULL \n"
-                    + ");";
-            String sql7 = "CREATE TABLE IF NOT EXISTS LLAVES (\n"
-                    + " LLAVE STRING \n"
-                    + ");";
+            boolean error;
+            for (int i = 0; i < sql.length; i++) {
+                error = stmt.execute (sql [i]);
+                Logger.getLogger (GestorBD.class.getName ()).log (error ? Level.SEVERE : Level.INFO,
+                        String.format ("%s la tabla %s.",
+                                error ? "No pudo crearse" : "Creada", GestorBD.TABLES [i].x));
 
-            if (!stmt.execute (sql1) && !stmt.execute (sql2) && !stmt.execute (sql3) && !stmt.execute (sql4)
-                    && !stmt.execute (sql5) && !stmt.execute (sql6) && !stmt.execute (sql7)) {
-                System.out.println (
-                        "- Se ha creado la tabla pelicula, la tabla administrador, la tabla espectador, la tabla complemento y la tabla set_Pelicula");
+                if (error)
+                    throw new SQLException (String.format ("No pudo crearse la tabla %s", GestorBD.TABLES [i].x));
             }
         }
 
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al crear la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
+                    String.format ("Error al crear la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
+
+            return;
         }
 
         this.insert (Complemento.getDefault ().stream ().collect (Collectors.toList ()),
                 Collections.singleton (SetPeliculas.getDefault ()), Pelicula.getDefault ());
 
         this.createAdminKeys ();
+
+        GestorBD.lock ();
     }
 
     public void borrarBBDD () {
@@ -307,34 +459,34 @@ public class GestorBD {
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
+            boolean error;
+            for (int i = 0; i < GestorBD.TABLES.length; i++) {
+                error = stmt.execute (String.format ("DROP TABLE IF EXISTS %s", GestorBD.TABLES [i].x));
 
-            String sql1 = "DROP TABLE IF EXISTS PELICULA";
-            String sql2 = "DROP TABLE IF EXISTS ADMINISTRADOR";
-            String sql3 = "DROP TABLE IF EXISTS ESPECTADOR";
-            String sql4 = "DROP TABLE IF EXISTS COMPLEMENTO";
-            String sql5 = "DROP TABLE IF EXISTS SET_PELICULA";
-            String sql6 = "DROP TABLE IF EXISTS ARRAY_SET_PELICULA";
-            String sql7 = "DROP TABLE IF EXISTS LLAVES";
-            // Se ejecuta la sentencia de creación de la tabla Estudiantes
-            if (!stmt.execute (sql1) && !stmt.execute (sql2) && !stmt.execute (sql3) && !stmt.execute (sql4)
-                    && !stmt.execute (sql5) && !stmt.execute (sql6) && !stmt.execute (sql7)) {
-                System.out.println ("Se han borrado las tablas");
+                Logger.getLogger (GestorBD.class.getName ()).log (error ? Level.SEVERE : Level.INFO, String
+                        .format ("%s la tabla %s", error ? "No se pudo eliminar" : "Eliminada",
+                                GestorBD.TABLES [i].x));
             }
         }
 
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al borrar la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
+                    String.format ("Error al borrar la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
+
+            return;
         }
 
         try {
             // Se borra el fichero de la BBDD
-            Files.delete (Paths.get (DATABASE_FILE));
-            System.out.println ("- Se ha borrado el fichero de la BBDD");
+            Files.delete (Paths.get (GestorBD.DATABASE_FILE));
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO, "Se ha borrado el archivo de la BBDD.");
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al borrar el archivo de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (IOException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE, String.format (
+                    "Error al borrar el archivo de la BBDD (%s): %s", GestorBD.DATABASE_FILE, e.getMessage ()));
+            e.printStackTrace ();
         }
     }
 
@@ -360,231 +512,292 @@ public class GestorBD {
     public void insert (HasID... data) {
         GestorBD.unlock ();
 
-        for (int i[] = new int [1]; i [0] < data.length; i [0]++)
+        for (int i[] = new int [1]; i [0] < data.length; i [0]++) {
+            if (data [i [0]] == null)
+                continue;
+
             new Runnable [] {
                     data [i [0]] instanceof Administrador
-                            ? () -> this.insertarDatosAdministrador ((Administrador) data [i [0]])
+                            ? () -> this.insertAdministrador ((Administrador) data [i [0]])
                             : () -> {
                             },
                     data [i [0]] instanceof Complemento
-                            ? () -> this.insertarDatosComplemento ((Complemento) data [i [0]])
+                            ? () -> this.insertComplemento ((Complemento) data [i [0]])
                             : () -> {
                             },
-                    data [i [0]] instanceof Espectador ? () -> this.insertarDatosEspectador ((Espectador) data [i [0]])
+                    data [i [0]] instanceof Entrada
+                            ? () -> this.insertEntrada ((Entrada) data [i [0]])
                             : () -> {
                             },
-                    data [i [0]] instanceof Pelicula ? () -> this.insertarDatosPelicula ((Pelicula) data [i [0]])
+                    data [i [0]] instanceof Espectador ? () -> this.insertEspectador ((Espectador) data [i [0]])
+                            : () -> {
+                            },
+                    data [i [0]] instanceof Pelicula ? () -> this.insertPelicula ((Pelicula) data [i [0]])
                             : () -> {
                             },
                     data [i [0]] instanceof SetPeliculas
-                            ? () -> this.insertarDatosSetPelicula ((SetPeliculas) data [i [0]])
+                            ? () -> this.insertSetPelicula ((SetPeliculas) data [i [0]])
                             : () -> {
                             }
             } [Arrays
-                    .asList (Administrador.class, Complemento.class, Espectador.class, Pelicula.class,
+                    .asList (Administrador.class, Complemento.class, Entrada.class, Espectador.class, Pelicula.class,
                             SetPeliculas.class)
                     .indexOf (data [i [0]].getClass ())].run ();
+        }
 
         GestorBD.lock ();
     }
 
-    private void insertarDatosPelicula (Pelicula... peliculas) {
+    private void insertPelicula (Pelicula pelicula) {
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            // Se define la plantilla de la sentencia SQL
+            if (stmt
+                    .executeUpdate (String.format (
+                            GestorBD.insertIntoStatement (0),
+                            pelicula.getId ().toString (), pelicula.getNombre (), pelicula.getRutaImagen (),
+                            Double.toString (pelicula.getValoracion ()).replace (",", "."),
+                            pelicula.getFecha ().getValue (),
+                            pelicula.getDirector (), pelicula.getDuracion ().toMinutes (),
+                            pelicula.getEdad ().getValue (), Genero.Nombre.toValor (pelicula.getGeneros ()))) == 1)
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                        String.format ("Pelicula insertada: %s", pelicula.toString ()));
 
-            System.out.println ("- Insertando peliculas...");
-
-            // Se recorren los clientes y se insertan uno a uno
-            for (Pelicula p : peliculas) {
-                if (1 == stmt
-                        .executeUpdate (String.format (
-                                "INSERT INTO PELICULA (ID_PELICULA, NOMBRE_PELICULA, RUTA_IMAGEN, VALORACION, FECHA, DIRECTOR, DURACION, EDAD_RECOMENDADA, GENEROS) VALUES ('%s', '%s', '%s', %s, %d,'%s', %d, %d, %d);",
-                                p.getId ().toString (), p.getNombre (), p.getRutaImagen (),
-                                Double.toString (p.getValoracion ()).replace (",", "."), p.getFecha ().getValue (),
-                                p.getDirector (), p.getDuracion ().toMinutes (),
-                                p.getEdad ().getValue (), Genero.Nombre.toValor (p.getGeneros ())))) {
-                    System.out.println (String.format (" - Pelicula insertada: %s", p.toString ()));
-                }
-                else {
-                    System.out.println (String.format (" - No se ha insertado la pelicula: %s", p.toString ()));
-                }
-            }
+            else
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                        String.format ("No se ha insertado la pelicula: %s", pelicula.toString ()));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al insertar datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
     }
 
-    private void insertarDatosAdministrador (Administrador... administrador) {
+    private void insertAdministrador (Administrador administrador) {
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            // Se define la plantilla de la sentencia SQL
-            String sql = "INSERT INTO ADMINISTRADOR (ID_ADMINISTRADOR, NOMBRE_ADMINISTRADOR, CONTRASENA_ADMINISTRADOR) VALUES ('%s', '%s', '%s');";
+            if (stmt.executeUpdate (String.format (
+                    GestorBD.insertIntoStatement (1), administrador.getId (), administrador.getNombre (),
+                    administrador.getContrasena ())) == 1)
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                        String.format ("Administrador insertado: %s", administrador.toString ()));
 
-            System.out.println ("- Insertando administrador...");
-
-            for (Administrador a : administrador) {
-                if (1 == stmt.executeUpdate (String.format (sql, a.getId (), a.getNombre (), a.getContrasena ()))) {
-                    System.out.println (String.format (" - Administrador insertado: %s", a.toString ()));
-                }
-                else {
-                    System.out.println (String.format (" - No se ha insertado el administrador: %s", a.toString ()));
-                }
-            }
+            else
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                        String.format ("No se ha insertado el administrador: %s", administrador.toString ()));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al insertar datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
     }
 
-    private void insertarDatosEspectador (Espectador... espectador) {
+    private void insertEspectador (Espectador espectador) {
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            // Se define la plantilla de la sentencia SQL
-            String sql = "INSERT INTO ESPECTADOR (ID_ESPECTADOR, NOMBRE_ESPECTADOR, CONTRASENA_ESPECTADOR, EDAD) VALUES ('%s', '%s', '%s', %d);";
+            if (stmt.executeUpdate (
+                    String.format (
+                            GestorBD.insertIntoStatement (2),
+                            espectador.getId (), espectador.getNombre (),
+                            espectador.getContrasena (),
+                            espectador.getEdad ())) == 1)
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                        String.format ("Espectador insertado: %s", espectador.toString ()));
 
-            System.out.println ("- Insertando espectadores...");
-
-            for (Espectador e : espectador) {
-                if (1 == stmt.executeUpdate (
-                        String.format (sql, e.getId (), e.getNombre (), e.getContrasena (), e.getEdad ()))) {
-                    System.out.println (String.format (" - Espectador insertado: %s", e.toString ()));
-                }
-                else {
-                    System.out.println (String.format (" - No se ha insertado el espectador: %s", e.toString ()));
-                }
-            }
+            else
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                        String.format ("No se ha insertado el espectador: %s", espectador.toString ()));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al insertar datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
-        }
-    }
 
-    private void insertarDatosComplemento (Complemento... complementos) {
-        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
-                Statement stmt = con.createStatement ()) {
-            // Se define la plantilla de la sentencia SQL
-            String sql = "INSERT INTO COMPLEMENTO (ID_COMPLEMENTO, NOMBRE_COMPLEMENTO, PRECIO, DESCUENTO) VALUES ('%s', '%s', '%.2f', '%s');";
-
-            System.out.println ("- Insertando complementos...");
-
-            // Se recorren los clientes y se insertan uno a uno
-            for (Complemento c : complementos) {
-                try {
-                    if (1 == stmt.executeUpdate (
-                            String.format (sql, c.getId (), c.getNombre (), c.getPrecio (), c.getDescuento ()))) {
-                        System.out.println (String.format (" - Complementos insertada: %s", c.toString ()));
-                    }
-
-                    else {
-                        System.out.println (String.format (" - No se ha insertado el complemento: %s", c.toString ()));
-                    }
-                }
-
-                catch (SQLiteException e) {
-                    System.out.println (String.format (" - No se ha insertado el complemento: %s", c.toString ()));
-                }
-            }
-        }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al insertar datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
     }
 
-    private void insertarDatosSetPelicula (SetPeliculas... setPeliculas) {
+    private void insertComplemento (Complemento complemento) {
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            // Se define la plantilla de la sentencia SQL
+            if (stmt.executeUpdate (
+                    String.format (
+                            GestorBD.insertIntoStatement (3),
+                            complemento.getId (), complemento.getNombre (),
+                            complemento.getPrecio (),
+                            complemento.getDescuento ())) == 1)
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                        String.format ("Complemento insertado: %s", complemento.toString ()));
 
-            System.out.println ("- Insertando setPeliculas...");
-            this.insertarDatosArraySetPelicula (setPeliculas);
+            else
+                Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                        String.format ("No se ha insertado el complemento: %s", complemento.toString ()));
+        }
 
-            // Se recorren los clientes y se insertan uno a uno
-            for (SetPeliculas s : setPeliculas) {
-                String sql = "INSERT INTO SET_PELICULA (ID_SET_PELICULA, NOMBRE_ADMINISTRADOR, NOMBRE_SET_PELICULA) VALUES ('%s', '%s', '%s');";
-                if (!(s.getAdministrador () == null)) {
-                    if (1 == stmt.executeUpdate (
-                            String.format (sql, s.getId (), s.getAdministrador ().getNombre (), s.getNombre ()))) {
-                        this.update (s.getAdministrador ());
-                        System.out.println (String.format (" - set_Peliculas insertadas: %s", s.toString ()));
-                    }
-                    else {
-                        System.out.println (String.format (" - No se ha insertado el setPeliculas: %s", s.toString ()));
-                    }
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
+        }
+    }
+
+    private void insertSetPelicula (SetPeliculas setPeliculas) {
+        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                Statement stmt = con.createStatement ()) {
+            this.insertArraySetPelicula (setPeliculas);
+
+            String sql = GestorBD.insertIntoStatement (4);
+            if (setPeliculas.getAdministrador () != null) {
+                if (stmt.executeUpdate (
+                        String.format (sql, setPeliculas.getId (), setPeliculas.getAdministrador ().getNombre (),
+                                setPeliculas.getNombre ())) == 1) {
+                    this.update (setPeliculas.getAdministrador ());
+
+                    Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                            String.format ("Set de películas insertado: %s", setPeliculas.toString ()));
                 }
-                else {
-                    if (1 == stmt.executeUpdate (String.format (sql, s.getId (), "", s.getNombre ()))) {
-                        System.out.println (String.format (" - set_Peliculas insertadas: %s", s.toString ()));
-                    }
-                    else {
-                        System.out.println (String.format (" - No se ha insertado el setPeliculas: %s", s.toString ()));
-                    }
-                }
+
+                else
+                    Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                            String.format ("No se ha insertado el set de películas: %s", setPeliculas.toString ()));
+            }
+
+            else {
+                if (stmt
+                        .executeUpdate (String.format (sql, setPeliculas.getId (), "", setPeliculas.getNombre ())) == 1)
+                    Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                            String.format ("Set de películas insertado: %s", setPeliculas.toString ()));
+                else
+                    Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                            String.format ("No se ha insertado el set de películas: %s", setPeliculas.toString ()));
             }
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al insertar datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
+        }
+    }
+
+    private void insertArraySetPelicula (SetPeliculas setPeliculas) {
+        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                Statement stmt = con.createStatement ()) {
+
+            Pelicula p[] = setPeliculas.getPeliculas ().toArray (new Pelicula [0]);
+            for (int i = 0; i < p.length; i++) {
+                if (stmt.executeUpdate (String.format (
+                        GestorBD.insertIntoStatement (5),
+                        setPeliculas.getId ().toString (), p [i].getId ().toString ())) == 1)
+                    Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                            (String.format ("Insertada la película con ID %s del set de películas con ID %s.",
+                                    p [i].getId ().toString (), setPeliculas.getId ().toString ())));
+
+                else
+                    Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                            String.format ("No se ha insertado la película con ID %s del set de películas con ID %s.",
+                                    p [i].getId ().toString (), setPeliculas.getId ().toString ()));
+            }
+        }
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
+        }
+    }
+
+    private void insertEntrada (Entrada entrada) {
+        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                Statement stmt = con.createStatement ()) {
+            this.insertArrayEntrada (entrada);
+
+            stmt.executeUpdate (String.format (
+                    GestorBD.insertIntoStatement (6), entrada.getId ().toString (),
+                    entrada.getEspectador () == null ? "" : entrada.getEspectador ().getId ().toString (),
+                    entrada.getPelicula () == null ? "" : entrada.getPelicula ().getId ().toString (),
+                    new SimpleDateFormat ("yyyy-MM-dd").format (entrada.getFecha ().getTime ()),
+                    entrada.getSala () == null ? -1 : Sala.indexOf (entrada.getSala ()),
+                    entrada.getSala () == null || entrada.getButaca () == null ? -1 : ((IntSupplier) ( () -> {
+                        Pair <Integer, Integer> i = entrada.getSala ().indexOf (entrada.getButaca ());
+
+                        return i.x == -1 || i.y == -1 ? -1 : i.x * Sala.getColumnas () + i.y;
+                    })).getAsInt (),
+                    ((Double) entrada.getValoracion ()).isNaN () || entrada.getValoracion () < 1.0f
+                            || entrada.getValoracion () > 10.0f ? 0 : entrada.getValoracion (),
+                    entrada.getPrecio ().toString ()));
+
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format ("Entrada insertada: %s", entrada.toString ()));
+        }
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING, String.format (
+                    "No pudo insertarse la entrada %s: %s", entrada.getId ().toString (), e.getMessage ()));
+            e.printStackTrace ();
+        }
+    }
+
+    private void insertArrayEntrada (Entrada entrada) {
+        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                Statement stmt = con.createStatement ()) {
+            Map.Entry <Complemento, Integer> kv[] = entrada.getComplementos ().entrySet ().toArray (new Map.Entry [0]);
+            for (int i = 0; i < kv.length; i++)
+                stmt.executeUpdate (
+                        String.format (GestorBD.insertIntoStatement (7), entrada.getId ().toString (),
+                                kv [i].getKey ().getId ().toString (), kv [i].getValue ()));
+
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format ("Se insertaron los datos de los complementos de la entrada con ID %s.",
+                            entrada.getId ().toString ()));
+        }
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("No pudieron insertarse los datos de los complementos de la entrada con ID %s: %s",
+                            entrada.getId ().toString (), e.getMessage ()));
+            e.printStackTrace ();
         }
     }
 
     private void createAdminKeys () {
+        this.createAdminKeys (true);
+    }
+
+    private void createAdminKeys (boolean defaultKey) {
         GestorBD.unlock ();
 
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            for (int i = 0; i < 10; i++) {
-                String key = Usuario.generatePassword ();
-                String sql = String.format ("INSERT INTO LLAVES (LLAVE) VALUES ('%s')", key);
-                if (1 == stmt.executeUpdate (sql)) {
-                    System.out.println (String.format (" - llave insertada: %s", key));
-                }
-                else {
-                    System.out.println (String.format (" - No se han insertado llaves"));
-                }
+            List <String> keys = defaultKey ? Stream
+                    .concat (Stream.of (Settings.getAdminKey ()),
+                            Stream.generate (Usuario::generatePassword).limit (10))
+                    .toList () : Stream.generate (Usuario::generatePassword).limit (10).toList ();
+
+            for (int i = 0; i < keys.size (); i++) {
+                if (1 == stmt.executeUpdate (
+                        String.format (GestorBD.insertIntoStatement (8), keys.get (i))))
+                    Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                            String.format ("Llave insertada: %s", keys.get (i)));
+
+                else
+                    Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                            String.format ("Llave no insertada: %s", keys.get (i)));
             }
         }
 
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al insertar datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
 
         GestorBD.lock ();
-    }
-
-    private void insertarDatosArraySetPelicula (SetPeliculas... setPeliculas) {
-        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
-                Statement stmt = con.createStatement ()) {
-            // Se define la plantilla de la sentencia SQL
-
-            // Se recorren los clientes y se insertan uno a uno
-            for (SetPeliculas s : setPeliculas) {
-                for (Pelicula p : s.getPeliculas ()) {
-                    String sql = "INSERT INTO ARRAY_SETPELICULA (ID_SETPELICULA, ID_PELICULA) VALUES ('%s', '%s');";
-                    if (1 == stmt.executeUpdate (String.format (sql, s.getId ().toString (), p.getId ().toString ()))) {
-                        System.out.println (String.format (" - array_set_Peliculas insertadas: %s", s.toString ()));
-                    }
-                    else {
-                        System.out.println (
-                                String.format (" - No se ha insertado el array_setPeliculas: %s", s.toString ()));
-                    }
-                }
-            }
-        }
-
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al insertar datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
-        }
     }
 
     public void update (Collection <? extends HasID>... data) {
@@ -610,10 +823,13 @@ public class GestorBD {
         GestorBD.unlock ();
 
         for (int i[] = new int [1]; i [0] < data.length; i [0]++) {
+            if (data [i [0]] == null)
+                continue;
+
             String strs[] = new String [] [] {
                     new String [] {
                             "ADMINISTRADOR", "administrador", "administradores", "el administrador", String.format (
-                                    "UPDATE ADMINISTRADOR SET NOMBRE_ADMINISTRADOR = '%s', CONTRASENA_ADMINISTRADOR = '%s' WHERE ID_ADMINISTRADOR = '%s'",
+                                    GestorBD.updateStatement (1),
                                     data [i [0]] instanceof Administrador ? ((Administrador) data [i [0]]).getNombre ()
                                             : "",
                                     data [i [0]] instanceof Administrador
@@ -623,7 +839,7 @@ public class GestorBD {
                     },
                     new String [] {
                             "COMPLEMENTO", "complemento", "complementos", "el complemento", String.format (
-                                    "UPDATE COMPLEMENTO SET NOMBRE_COMPLEMENTO = '%s', PRECIO = '%.2f', DESCUENTO = %d WHERE ID_COMPLEMENTO = '%s'",
+                                    GestorBD.updateStatement (3),
                                     data [i [0]] instanceof Complemento ? ((Complemento) data [i [0]]).getNombre ()
                                             : "",
                                     data [i [0]] instanceof Complemento
@@ -634,8 +850,50 @@ public class GestorBD {
                                     data [i [0]].getId ())
                     },
                     new String [] {
+                            GestorBD.TABLES [6].x, "entrada", "entradas", "la entrada",
+                            String.format (GestorBD.updateStatement (6),
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getEspectador () == null ? ""
+                                                    : ((Entrada) data [i [0]]).getEspectador ().getId ().toString ()
+                                            : "",
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getPelicula () == null ? ""
+                                                    : ((Entrada) data [i [0]]).getPelicula ().getId ().toString ()
+                                            : "",
+                                    data [i [0]] instanceof Entrada
+                                            ? new SimpleDateFormat ("yyyy-MM-dd")
+                                                    .format (((Entrada) data [i [0]]).getFecha ().getTime ())
+                                            : "",
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getSala () == null ? -1
+                                                    : Sala.indexOf (((Entrada) data [i [0]]).getSala ())
+                                            : -1,
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getSala () == null
+                                                    || ((Entrada) data [i [0]]).getButaca () == null ? -1
+                                                            : ((IntSupplier) ( () -> {
+                                                                Pair <Integer, Integer> j = ((Entrada) data [i [0]])
+                                                                        .getSala ()
+                                                                        .indexOf (
+                                                                                ((Entrada) data [i [0]]).getButaca ());
+
+                                                                return j.x == -1 || j.y == -1 ? -1
+                                                                        : j.x * Sala.getColumnas () + j.y;
+                                                            })).getAsInt ()
+                                            : -1,
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Double) ((Entrada) data [i [0]]).getValoracion ()).isNaN ()
+                                                    || ((Entrada) data [i [0]]).getValoracion () < 1.0f
+                                                    || ((Entrada) data [i [0]]).getValoracion () > 10.0f ? 0
+                                                            : ((Entrada) data [i [0]]).getValoracion ()
+                                            : 0,
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getPrecio ().toString ()
+                                            : "0.0")
+                    },
+                    new String [] {
                             "ESPECTADOR", "espectador", "espectadores", "el espectador", String.format (
-                                    "UPDATE ESPECTADOR SET NOMBRE_ESPECTADOR = '%s', CONTRASENA_ESPECTADOR = '%s', EDAD = %d WHERE ID_ESPECTADOR = '%s'",
+                                    GestorBD.updateStatement (2),
                                     data [i [0]] instanceof Espectador ? ((Espectador) data [i [0]]).getNombre () : "",
                                     data [i [0]] instanceof Espectador ? ((Espectador) data [i [0]]).getContrasena ()
                                             : "",
@@ -644,7 +902,7 @@ public class GestorBD {
                     },
                     new String [] {
                             "PELICULA", "película", "películas", "la película", String.format (
-                                    "UPDATE PELICULA SET NOMBRE_PELICULA = '%s', RUTA_IMAGEN = '%s', VALORACION = %s, FECHA = %d, DIRECTOR = '%s', DURACION = %d, EDAD_RECOMENDAD = %d, GENEROS = %d WHERE ID_PELICULA = '%s'",
+                                    GestorBD.updateStatement (0),
                                     data [i [0]] instanceof Pelicula ? ((Pelicula) data [i [0]]).getNombre () : "",
                                     data [i [0]] instanceof Pelicula ? ((Pelicula) data [i [0]]).getRutaImagen () : "",
                                     data [i [0]] instanceof Pelicula
@@ -665,9 +923,9 @@ public class GestorBD {
                                     data [i [0]].getId ())
                     },
                     new String [] {
-                            "SET_PELICULA", "set de peliculas", "sets de películas", "el set de películas",
+                            "SETPELICULAS", "set de peliculas", "sets de películas", "el set de películas",
                             String.format (
-                                    "UPDATE SET_PELICULA SET NOMBRE_SET_PELICULA = '%s', NOMBRE_ADMINISTRADOR = '%s' WHERE ID_COMPLEMENTO = '%s'",
+                                    GestorBD.updateStatement (4),
                                     data [i [0]] instanceof SetPeliculas ? ((SetPeliculas) data [i [0]]).getNombre ()
                                             : "",
                                     data [i [0]] instanceof SetPeliculas
@@ -695,9 +953,48 @@ public class GestorBD {
                 rs.close ();
 
                 if (data [i [0]] instanceof SetPeliculas) {
-                    stmt.executeUpdate (String.format ("DELETE FROM ARRAY_SETPELICULA WHERE ID_SETPELICULA = '%s'",
-                            data [i [0]].getId ()));
-                    this.insertarDatosArraySetPelicula ((SetPeliculas) (data [i [0]]));
+                    Set <Pelicula> p = ((SetPeliculas) data [i [0]]).getPeliculas ();
+                    this.deleteSetPeliculasData ((SetPeliculas) data [i [0]]);
+                    ((SetPeliculas) data [i [0]]).setPeliculas (p);
+                    this.insertArraySetPelicula ((SetPeliculas) data [i [0]]);
+                }
+
+                else if (data [i [0]] instanceof Administrador) {
+                    GestorBD db = this;
+
+                    Set <SetPeliculas> add_delete[] = new Set [] { ((Supplier <Set <SetPeliculas>>) ( () -> {
+                        Set <SetPeliculas> sp = ((Administrador) data [i [0]]).getSetsPeliculas ();
+                        sp.removeAll (db.getSetsPeliculas ());
+
+                        return sp;
+                    })).get (), ((Supplier <Set <SetPeliculas>>) ( () -> {
+                        Set <SetPeliculas> sp = db.getSetsPeliculas ().stream ().collect (Collectors.toSet ());
+                        sp.removeAll (((Administrador) data [i [0]]).getSetsPeliculas ());
+
+                        return sp;
+                    })).get () };
+
+                    this.insert (add_delete [0]);
+                    this.delete (add_delete [1]);
+                }
+
+                else if (data [i [0]] instanceof Espectador) {
+                    GestorBD db = this;
+
+                    Set <Entrada> add_delete[] = new Set [] { ((Supplier <Set <Entrada>>) ( () -> {
+                        Set <Entrada> se = ((Espectador) data [i [0]]).getHistorial ();
+                        se.removeAll (db.getEntradas ());
+
+                        return se;
+                    })).get (), ((Supplier <Set <Entrada>>) ( () -> {
+                        Set <Entrada> se = db.getEntradas ().stream ().collect (Collectors.toSet ());
+                        se.removeAll (((Espectador) data [i [0]]).getHistorial ());
+
+                        return se;
+                    })).get () };
+
+                    this.insert (add_delete [0]);
+                    this.delete (add_delete [1]);
                 }
 
                 int result = stmt.executeUpdate (strs [4]);
@@ -708,7 +1005,7 @@ public class GestorBD {
                                 data [i [0]].getId ().toString ()));
             }
 
-            catch (Exception e) {
+            catch (SQLException e) {
                 Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
                         String.format ("Error al actualizar %s con ID %s en la BBDD: %s",
                                 strs [3], data [i [0]].getId ().toString (), e.getMessage ()));
@@ -742,9 +1039,13 @@ public class GestorBD {
         GestorBD.unlock ();
 
         for (int i[] = new int [1]; i [0] < data.length; i [0]++) {
+            if (data [i [0]] == null)
+                continue;
+
             Object delete[] = new Object [] [] {
                     new Object [] {
-                            "ADMINISTRADOR", "administrador", "administradores", "el administrador", (Runnable) () -> {
+                            GestorBD.TABLES [1].x, "administrador", "administradores", "el administrador",
+                            (Runnable) () -> {
                                 try {
                                     this.deleteAdminData ((Administrador) data [i [0]]);
                                 }
@@ -754,10 +1055,39 @@ public class GestorBD {
                             }
                     },
                     new Object [] {
-                            "COMPLEMENTO", "complemento", "complementos", "el complemento", null
+                            GestorBD.TABLES [3].x, "complemento", "complementos", "el complemento",
+                            (Runnable) ( () -> {
+                                try {
+                                    try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                                            Statement stmt = con.createStatement ()) {
+                                        stmt.execute (String.format ("DELETE FROM %s WHERE %s = '%s'",
+                                                GestorBD.TABLES [7].x, GestorBD.TABLES [7].y [1].x,
+                                                ((Complemento) data [i [0]]).getId ().toString ()));
+                                    }
+
+                                    catch (SQLException e) {
+                                        Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                                                "Hubo un problema al eliminar mapas de elementos y unidades de la base de datos.");
+                                    }
+                                }
+
+                                catch (ClassCastException e) {
+                                }
+                            })
                     },
                     new Object [] {
-                            "ESPECTADOR", "espectador", "espectadores", "el espectador", (Runnable) () -> {
+                            GestorBD.TABLES [6].x, "entrada", "entradas", "la entrada", (Runnable) () -> {
+                                try {
+                                    this.deleteEntradaData ((Entrada) data [i [0]]);
+                                }
+
+                                catch (ClassCastException e) {
+
+                                }
+                            }
+                    },
+                    new Object [] {
+                            GestorBD.TABLES [2].x, "espectador", "espectadores", "el espectador", (Runnable) () -> {
                                 try {
                                     this.deleteEspectadorData ((Espectador) data [i [0]]);
                                 }
@@ -767,13 +1097,21 @@ public class GestorBD {
                             }
                     },
                     new Object [] {
-                            "PELICULA", "película", "películas", "la película", null
+                            GestorBD.TABLES [0].x, "película", "películas", "la película", null
                     },
                     new Object [] {
-                            "SET_PELICULAS", "set de peliculas", "sets de películas", "el set de películas", null
+                            GestorBD.TABLES [4].x, "set de peliculas", "sets de películas", "el set de películas",
+                            (Runnable) () -> {
+                                try {
+                                    this.deleteSetPeliculasData ((SetPeliculas) data [i [0]]);
+                                }
+
+                                catch (ClassCastException e) {
+                                }
+                            }
                     }
             } [Arrays
-                    .asList (Administrador.class, Complemento.class, Espectador.class, Pelicula.class,
+                    .asList (Administrador.class, Complemento.class, Entrada.class, Espectador.class, Pelicula.class,
                             SetPeliculas.class)
                     .indexOf (data [i [0]].getClass ())];
 
@@ -802,74 +1140,102 @@ public class GestorBD {
     }
 
     public void deleteEspectadorData (Espectador espectador) {
+        this.delete (espectador.getHistorial ());
         espectador.getHistorial ().clear ();
-        this.update (espectador);
     }
 
     public void deleteAdminData (Administrador admin) {
-        SetPeliculas sets[] = admin.getSetsPeliculas ().toArray (new SetPeliculas [0]);
-        for (int i = 0; i < sets.length; this.delete (sets [i++]))
-            ;
-        this.update (admin);
+        this.delete (admin.getSetsPeliculas ());
+        admin.getSetsPeliculas ().clear ();
     }
 
-    public List <Pelicula> obtenerDatosPeliculas () {
+    public void deleteSetPeliculasData (SetPeliculas setPeliculas) {
+        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                Statement stmt = con.createStatement ()) {
+            stmt.executeUpdate (String.format ("DELETE FROM ARRAY_SETPELICULAS WHERE ID_SETPELICULA = '%s'",
+                    setPeliculas.getId ()));
+            setPeliculas.removeAll ();
+        }
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("No pudieron ser eliminados los datos del set de películas con ID %s: %s",
+                            setPeliculas.getId ().toString (), e.getMessage ()));
+            e.printStackTrace ();
+        }
+    }
+
+    private void deleteEntradaData (Entrada entrada) {
+        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                Statement stmt = con.createStatement ()) {
+            stmt.executeUpdate (String.format ("DELETE FROM ARRAY_ENTRADA WHERE ID_ENTRADA = '%s'",
+                    entrada.getId ()));
+            entrada.getComplementos ().clear ();
+        }
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("No pudieron ser eliminados los datos de la entrada con ID %s: %s",
+                            entrada.getId ().toString (), e.getMessage ()));
+            e.printStackTrace ();
+        }
+    }
+
+    public List <Pelicula> getPeliculas () {
         List <Pelicula> peliculas = new ArrayList <> ();
 
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            String sql = "SELECT * FROM PELICULA";
-
             // Se ejecuta la sentencia y se obtiene el ResultSet con los
             // resutlados
-            ResultSet rs = stmt.executeQuery (sql);
-            Pelicula pelicula;
+            ResultSet rs = stmt.executeQuery (String.format ("SELECT * FROM %s", GestorBD.TABLES [0].x));
 
             // Se recorre el ResultSet y se crean objetos Cliente
             while (rs.next ()) {
-                peliculas.add (new Pelicula (UUID.fromString (rs.getString ("ID_PELICULA")),
-                        rs.getString ("NOMBRE_PELICULA"), rs.getString ("RUTA_IMAGEN"), rs.getDouble ("VALORACION"),
-                        Year.of (rs.getInt ("FECHA")), rs.getString ("DIRECTOR"),
-                        Duration.ofMinutes (rs.getInt ("DURACION")),
-                        EdadRecomendada.fromValue (rs.getByte ("EDAD_RECOMENDADA")), Genero.Nombre
-                                .toGeneros ((short) rs.getInt ("GENEROS")),
+                peliculas.add (new Pelicula (UUID.fromString (rs.getString (GestorBD.TABLES [0].y [0].x)),
+                        rs.getString (GestorBD.TABLES [0].y [1].x), rs.getString (GestorBD.TABLES [0].y [2].x),
+                        rs.getDouble (GestorBD.TABLES [0].y [3].x),
+                        Year.of (rs.getInt (GestorBD.TABLES [0].y [4].x)), rs.getString (GestorBD.TABLES [0].y [5].x),
+                        Duration.ofMinutes (rs.getInt (GestorBD.TABLES [0].y [6].x)),
+                        EdadRecomendada.fromValue (rs.getByte (GestorBD.TABLES [0].y [7].x)), Genero.Nombre
+                                .toGeneros ((short) rs.getInt (GestorBD.TABLES [0].y [8].x)),
                         null));
-
             }
 
             // Se cierra el ResultSet
             rs.close ();
 
-            System.out.println (String.format ("- Se han recuperado %d peliculas...", peliculas.size ()));
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format ("Se han recuperado %d películas.", peliculas.size ()));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al obtener datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
 
         return peliculas;
     }
 
-    public List <Administrador> obtenerDatosAdministradores () {
+    public List <Administrador> getAdministradores () {
         List <Administrador> administradores = new ArrayList <> ();
 
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            String sql = "SELECT * FROM ADMINISTRADOR";
-
             // Se ejecuta la sentencia y se obtiene el ResultSet con los
             // resutlados
-            ResultSet rs = stmt.executeQuery (sql);
+            ResultSet rs = stmt.executeQuery (String.format ("SELECT * FROM %s", GestorBD.TABLES [1].x));
             Administrador administrador;
 
             // Se recorre el ResultSet y se crean objetos Cliente
             while (rs.next ()) {
-                UUID id = UUID.fromString (rs.getString ("ID_ADMINISTRADOR"));
+                UUID id = UUID.fromString (rs.getString (GestorBD.TABLES [1].y [0].x));
 
-                administrador = new Administrador (id, rs.getString ("NOMBRE_ADMINISTRADOR"),
-                        rs.getString ("CONTRASENA_ADMINISTRADOR"), null);
+                administrador = new Administrador (id, rs.getString (GestorBD.TABLES [1].y [1].x),
+                        rs.getString (GestorBD.TABLES [1].y [2].x), null);
 
                 administradores.add (administrador);
             }
@@ -877,39 +1243,43 @@ public class GestorBD {
             // Se cierra el ResultSet
             rs.close ();
 
-            System.out.println (String.format ("- Se han recuperado %d administradores...", administradores.size ()));
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format ("Se han recuperado %d administradores.", administradores.size ()));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al obtener datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
 
         return administradores;
     }
 
-    public List <Espectador> obtenerDatosEspectadores () {
+    public List <Espectador> getEspectadores () {
         List <Espectador> espectadores = new ArrayList <> ();
 
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            String sql = "SELECT * FROM ESPECTADOR";
-
             // Se ejecuta la sentencia y se obtiene el ResultSet con los
             // resutlados
-            ResultSet rs = stmt.executeQuery (sql);
+            ResultSet rs = stmt.executeQuery (String.format ("SELECT * FROM %s", GestorBD.TABLES [2].x));
             Espectador espectador;
 
             // Se recorre el ResultSet y se crean objetos Cliente
             while (rs.next ()) {
-                UUID id = UUID.fromString (rs.getString ("ID_ESPECTADOR"));
-                Map <Genero.Nombre, Genero.Preferencia> preferencias = new TreeMap <Genero.Nombre, Genero.Preferencia> ();
-                Collection <Entrada> historial = new TreeSet <Entrada> ();
-                Set <Espectador> grupo = new TreeSet <Espectador> ();
+                UUID id = UUID.fromString (rs.getString (GestorBD.TABLES [2].y [0].x));
 
-                espectador = new Espectador (id, rs.getString ("NOMBRE_ESPECTADOR"),
-                        rs.getString ("CONTRASENA_ESPECTADOR"), (byte) rs.getInt ("EDAD"), preferencias, historial,
-                        grupo);
+                espectador = new Espectador (id, rs.getString (GestorBD.TABLES [2].y [1].x),
+                        rs.getString (GestorBD.TABLES [2].y [2].x), (byte) rs.getInt (GestorBD.TABLES [2].y [3].x),
+                        null, null, null);
+
+                List <Entrada> entradas = this.getEntradas ().stream ()
+                        .filter (e -> e.getEspectador ().getId ().equals (id)).toList ();
+                for (int i = 0; i < entradas.size (); entradas.get (i++).setEspectador (espectador))
+                    ;
+                espectador.setHistorial (entradas);
 
                 espectadores.add (espectador);
             }
@@ -917,37 +1287,38 @@ public class GestorBD {
             // Se cierra el ResultSet
             rs.close ();
 
-            System.out.println (String.format ("- Se han recuperado %d espectadores...", espectadores.size ()));
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format ("Se han recuperado %d espectadores.", espectadores.size ()));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al obtener datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
 
         return espectadores;
     }
 
-    public List <Complemento> obtenerDatosComplementos () {
+    public List <Complemento> getComplementos () {
         List <Complemento> complementos = new ArrayList <> ();
 
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            String sql = "SELECT * FROM COMPLEMENTO";
-
             // Se ejecuta la sentencia y se obtiene el ResultSet con los
             // resutlados
-            ResultSet rs = stmt.executeQuery (sql);
+            ResultSet rs = stmt.executeQuery (String.format ("SELECT * FROM %s", GestorBD.TABLES [3].x));
             Complemento complemento;
 
             // Se recorre el ResultSet y se crean objetos Cliente
             while (rs.next ()) {
 
-                UUID id = UUID.fromString (rs.getString ("ID_COMPLEMENTO"));
+                UUID id = UUID.fromString (rs.getString (GestorBD.TABLES [3].y [0].x));
 
-                complemento = new Complemento (id, rs.getString ("NOMBRE_COMPLEMENTO"),
-                        new BigDecimal (rs.getString ("PRECIO").replace (",", ".")),
-                        rs.getInt ("DESCUENTO"));
+                complemento = new Complemento (id, rs.getString (GestorBD.TABLES [3].y [1].x),
+                        new BigDecimal (rs.getString (GestorBD.TABLES [3].y [2].x).replace (",", ".")),
+                        rs.getInt (GestorBD.TABLES [3].y [3].x));
 
                 complementos.add (complemento);
             }
@@ -955,17 +1326,20 @@ public class GestorBD {
             // Se cierra el ResultSet
             rs.close ();
 
-            System.out.println (String.format ("- Se han recuperado %d complementos...", complementos.size ()));
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format ("Se han recuperado %d complementos.", complementos.size ()));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al obtener datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
 
         return complementos;
     }
 
-    public List <SetPeliculas> obtenerDatosSetPeliculas () {
+    public List <SetPeliculas> getSetsPeliculas () {
         List <SetPeliculas> setsPeliculas = new ArrayList <> ();
 
         // Se abre la conexión y se obtiene el Statement
@@ -973,32 +1347,35 @@ public class GestorBD {
                 Statement stmt = con.createStatement ()) {
             // Se ejecuta la sentencia y se obtiene el ResultSet con los
             // resutlados
-            ResultSet rs = stmt.executeQuery ("SELECT * FROM SET_PELICULA");
+            ResultSet rs = stmt.executeQuery (String.format ("SELECT * FROM %s", GestorBD.TABLES [4].x));
 
             // Se recorre el ResultSet y se crean objetos Cliente
             while (rs.next ()) {
-                UUID id = UUID.fromString (rs.getString ("ID_SET_PELICULA"));
-                String nombre = rs.getString ("NOMBRE_SET_PELICULA");
+                UUID id = UUID.fromString (rs.getString (GestorBD.TABLES [4].y [0].x));
+                String nombre = rs.getString (GestorBD.TABLES [4].y [1].x);
 
                 setsPeliculas.add (new SetPeliculas (id,
-                        obtenerDatosAdministradorPorNombre (rs.getString ("NOMBRE_ADMINISTRADOR")), nombre,
-                        this.obtenerDatosArraySetPeliculas (id)));
+                        getAdministradorPorNombre (rs.getString (GestorBD.TABLES [4].y [2].x)), nombre,
+                        this.getArraySetPeliculas (id)));
             }
 
             // Se cierra el ResultSet
             rs.close ();
 
-            System.out.println (String.format ("- Se han recuperado %d sets_peliculas...", setsPeliculas.size ()));
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format ("Se han recuperado %d sets de películas.", setsPeliculas.size ()));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al obtener datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
 
         return setsPeliculas;
     }
 
-    private List <Pelicula> obtenerDatosArraySetPeliculas (UUID id) {
+    private List <Pelicula> getArraySetPeliculas (UUID id) {
         List <Pelicula> peliculas = new ArrayList <Pelicula> ();
 
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
@@ -1007,22 +1384,26 @@ public class GestorBD {
             // Se ejecuta la sentencia y se obtiene el ResultSet con los
             // resutlados
             ResultSet rs[] = new ResultSet [] { stmt.executeQuery (
-                    String.format ("SELECT ID_PELICULA FROM ARRAY_SETPELICULA WHERE ID_SETPELICULA = '%s'",
+                    String.format ("SELECT %s FROM %s WHERE %s = '%s'", GestorBD.TABLES [5].y [1].x,
+                            GestorBD.TABLES [5].x,
+                            GestorBD.TABLES [5].y [0].x,
                             id.toString ())),
                     null };
 
             // Se recorre el ResultSet y se crean objetos Cliente
             while (rs [0].next ()) {
-                rs [1] = stmt2.executeQuery (String.format ("SELECT * FROM PELICULA WHERE ID_PELICULA = '%s'",
-                        rs [0].getString ("ID_PELICULA")));
+                rs [1] = stmt2.executeQuery (String.format ("SELECT * FROM %s %s = '%s'",
+                        GestorBD.TABLES [0].x, GestorBD.TABLES [0].y [0].x,
+                        rs [0].getString (GestorBD.TABLES [5].y [0].x)));
 
-                peliculas.add (new Pelicula (UUID.fromString (rs [1].getString ("ID_PELICULA")),
-                        rs [1].getString ("NOMBRE_PELICULA"), rs [1].getString ("RUTA_IMAGEN"),
-                        rs [1].getDouble ("VALORACION"),
-                        Year.of (rs [1].getInt ("FECHA")), rs [1].getString ("DIRECTOR"),
-                        Duration.ofMinutes (rs [1].getInt ("DURACION")),
-                        EdadRecomendada.fromValue (rs [1].getByte ("EDAD_RECOMENDADA")), Genero.Nombre
-                                .toGeneros ((short) rs [1].getInt ("GENEROS")),
+                peliculas.add (new Pelicula (UUID.fromString (rs [1].getString (GestorBD.TABLES [0].y [0].x)),
+                        rs [1].getString (GestorBD.TABLES [0].y [1].x), rs [1].getString (GestorBD.TABLES [0].y [2].x),
+                        rs [1].getDouble (GestorBD.TABLES [0].y [3].x),
+                        Year.of (rs [1].getInt (GestorBD.TABLES [0].y [4].x)),
+                        rs [1].getString (GestorBD.TABLES [0].y [5].x),
+                        Duration.ofMinutes (rs [1].getInt (GestorBD.TABLES [0].y [6].x)),
+                        EdadRecomendada.fromValue (rs [1].getByte (GestorBD.TABLES [0].y [7].x)), Genero.Nombre
+                                .toGeneros ((short) rs [1].getInt (GestorBD.TABLES [0].y [8].x)),
                         null));
 
                 rs [1].close ();
@@ -1031,18 +1412,134 @@ public class GestorBD {
             // Se cierra el ResultSet
             rs [0].close ();
 
-            System.out.println (String.format ("- Se han recuperado %d array_sets_peliculas...", peliculas.size ()));
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format ("Se han recuperado %d arrays de películas de sets.", peliculas.size ()));
         }
 
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al obtener datos de la BBDD : %s", ex.getMessage ()));
-            ex.printStackTrace ();
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
 
         return peliculas;
     }
 
-    public Administrador obtenerDatosAdministradorPorNombre (String NombreAdministrador) {
+    private List <Entrada> getEntradas () {
+        List <Entrada> l = new ArrayList <Entrada> ();
+
+        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                Statement stmt = con.createStatement ()) {
+            ResultSet rs = stmt.executeQuery (String.format ("SELECT * FROM %s", GestorBD.TABLES [6].x));
+
+            for (; rs.next ();) {
+                UUID id = UUID.fromString (rs.getString (GestorBD.TABLES [6].y [0].x));
+                int i[] = new int [] { rs.getInt (GestorBD.TABLES [6].y [4].x),
+                        rs.getInt (GestorBD.TABLES [6].y [5].x) };
+
+                l.add (new Entrada (id,
+                        new Espectador (UUID.fromString (rs.getString (GestorBD.TABLES [6].y [1].x)), "", "",
+                                Espectador.getDefaultEdad (), null, null, null),
+                        this.getPeliculas ().stream ().filter (
+                                e -> {
+                                    try {
+                                        return e.getId ()
+                                                .equals (UUID.fromString (rs.getString (GestorBD.TABLES [6].y [2].x)));
+                                    }
+                                    catch (SQLException e1) {
+                                        Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                                                String.format ("No pudo obtenerse un ID de película: %s",
+                                                        e1.getMessage ()));
+                                        e1.printStackTrace ();
+
+                                        return false;
+                                    }
+                                })
+                                .findFirst ().orElse (null),
+                        ((Supplier <Calendar>) ( () -> {
+                            Calendar c = Calendar.getInstance ();
+                            try {
+                                c.setTime (rs.getDate (GestorBD.TABLES [6].y [3].x));
+                            }
+                            catch (SQLException e1) {
+                                Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                                        String.format ("No pudo obtenerse una fecha: %s", e1.getMessage ()));
+                                e1.printStackTrace ();
+
+                                return null;
+                            }
+
+                            return c;
+                        })).get (), i [0] == -1 ? null : Sala.getSalas ().get (i [0]),
+                        i [0] == -1 || i [1] == -1 ? null : Sala.getSalas ().get (i [0]).getButacas ().get (i [1]),
+                        this.getArrayEntrada (id), rs.getDouble (GestorBD.TABLES [6].y [7].x),
+                        rs.getBigDecimal (GestorBD.TABLES [6].y [8].x)));
+            }
+
+            rs.close ();
+        }
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("No se pudieron obtener los datos de las entradas: %s", e.getMessage ()));
+            e.printStackTrace ();
+
+            return Collections.emptyList ();
+        }
+
+        return l;
+    }
+
+    private Map <Complemento, Integer> getArrayEntrada (UUID id) {
+        Map <Complemento, Integer> m = new HashMap <Complemento, Integer> ();
+
+        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                Statement stmt = con.createStatement ()) {
+            ResultSet rs = stmt
+                    .executeQuery (String.format ("SELECT * FROM %s WHERE %s = %s",
+                            GestorBD.TABLES [7].y [0].x, GestorBD.TABLES [7].x, id.toString ()));
+
+            for (; rs.next ();) {
+                Complemento c = this.getComplementos ().stream ()
+                        .filter (e -> {
+                            try {
+                                return e.getId ().equals (UUID.fromString (rs.getString (GestorBD.TABLES [7].y [1].x)));
+                            }
+
+                            catch (SQLException e1) {
+                                Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                                        String.format (
+                                                "Hubo un error al intentar recuperar un ID de complemento: %s",
+                                                e1.getMessage ()));
+                                e1.printStackTrace ();
+
+                                return false;
+                            }
+                        })
+                        .findFirst ().orElse (null);
+
+                if (c == null)
+                    continue;
+
+                m.put (c, rs.getInt (GestorBD.TABLES [7].y [2].x));
+            }
+
+            rs.close ();
+        }
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("No pudieron obtenerse los complementos de la entrada con ID %s: %s", id.toString (),
+                            e.getMessage ()));
+            e.printStackTrace ();
+
+            return Collections.emptyMap ();
+        }
+
+        return m;
+    }
+
+    public Administrador getAdministradorPorNombre (String NombreAdministrador) {
         if (NombreAdministrador.length () == 0)
             return null;
 
@@ -1051,28 +1548,29 @@ public class GestorBD {
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            String sql = "SELECT * FROM ADMINISTRADOR WHERE NOMBRE_ADMINISTRADOR = '" + NombreAdministrador + "'";
-
             // Se ejecuta la sentencia y se obtiene el ResultSet con los
             // resutlados
-            ResultSet rs = stmt.executeQuery (sql);
+            ResultSet rs = stmt.executeQuery (String.format ("SELECT * FROM ADMINISTRADOR WHERE %s = '%s'",
+                    GestorBD.TABLES [1].x, GestorBD.TABLES [1].y [1].x, NombreAdministrador));
 
             while (rs.next ()) {
-                UUID id = UUID.fromString (rs.getString ("ID_ADMINISTRADOR"));
+                UUID id = UUID.fromString (rs.getString (GestorBD.TABLES [1].y [0].x));
 
-                administrador = new Administrador (id, rs.getString ("NOMBRE_ADMINISTRADOR"),
-                        rs.getString ("CONTRASENA_ADMINISTRADOR"), null);
-
+                administrador = new Administrador (id, rs.getString (GestorBD.TABLES [1].y [1].x),
+                        rs.getString (GestorBD.TABLES [1].y [2].x), null);
             }
 
             // Se cierra el ResultSet
             rs.close ();
 
-            System.out.println (String.format ("- Se ha recuperado el administrador '%s'...", NombreAdministrador));
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format ("Se ha recuperado el administrador '%s'.", NombreAdministrador));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al obtener datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al insertar datos en la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
 
         return administrador;
@@ -1083,30 +1581,26 @@ public class GestorBD {
 
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            String sql = "SELECT * FROM LLAVES";
-
             // Se ejecuta la sentencia y se obtiene el ResultSet con los
             // resutlados
-            ResultSet rs = stmt.executeQuery (sql);
-
+            ResultSet rs = stmt.executeQuery (String.format ("SELECT * FROM %s", GestorBD.TABLES [8].x));
             // Se recorre el ResultSet y se crean objetos Cliente
-            while (rs.next ()) {
-
-                llaves.add (rs.getString ("LLAVE"));
-
-            }
-
+            for (; rs.next ();)
+                llaves.add (rs.getString (GestorBD.TABLES [8].y [0].x));
             // Se cierra el ResultSet
             rs.close ();
 
-            System.out.println (String.format ("- Se han recuperado %d llaves...", llaves.size ()));
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format ("Se han recuperado %d llaves.", llaves.size ()));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al obtener datos de la BBDD : %s", ex.getMessage ()));
-            ex.printStackTrace ();
-        }
-        return llaves;
 
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
+                    String.format ("Error al obtener datos de la BBDD : %s", e.getMessage ()));
+            e.printStackTrace ();
+        }
+
+        return llaves;
     }
 
     public void deleteAdminKeys () {
@@ -1114,15 +1608,14 @@ public class GestorBD {
 
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            String sql7 = "DELETE FROM LLAVES;";
-
-            int result7 = stmt.executeUpdate (sql7);
-
-            System.out.println (String.format ("- Se han borrado %d llaves", result7));
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format ("Se han borrado %d llaves",
+                            stmt.executeUpdate (String.format ("TRUNCATE TABLE %s;", GestorBD.TABLES [8].x))));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al borrar llaves: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
+                    String.format ("Error al borrar llaves: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
 
         GestorBD.lock ();
@@ -1130,16 +1623,16 @@ public class GestorBD {
 
     public void regenerateAdminKeys () {
         this.deleteAdminKeys ();
-        this.createAdminKeys ();
+        this.createAdminKeys (false);
     }
 
     public void consumeAdminKey (String key) {
         GestorBD.unlock ();
 
-        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);) {
-            Statement stmt = con.createStatement ();
-
-            int r = stmt.executeUpdate (String.format ("DELETE FROM LLAVES WHERE LLAVE = \'%s\'", key));
+        try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
+                Statement stmt = con.createStatement ()) {
+            int r = stmt.executeUpdate (String.format ("DELETE FROM %s WHERE %s = '%s';", GestorBD.TABLES [8].x,
+                    GestorBD.TABLES [8].y [0], key));
 
             Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
                     String.format ("Se ha%s eliminado %d llave%s.", r == 1 ? "" : "n", r, r == 1 ? "" : "s"));
@@ -1147,7 +1640,7 @@ public class GestorBD {
 
         catch (Exception e) {
             Logger.getLogger (GestorBD.class.getName ()).log (Level.WARNING,
-                    String.format ("* Error al borrar llaves: \"%s\"", e.getMessage ()));
+                    String.format ("Error al borrar llaves: \"%s\"", e.getMessage ()));
             e.printStackTrace ();
         }
 
@@ -1158,30 +1651,39 @@ public class GestorBD {
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            // Se ejecuta la sentencia de borrado de datos
-            String sql1 = "DELETE FROM PELICULA;";
-            String sql2 = "DELETE FROM ADMINISTRADOR;";
-            String sql3 = "DELETE FROM ESPECTADOR;";
-            String sql4 = "DELETE FROM COMPLEMENTO;";
-            String sql5 = "DELETE FROM SET_PELICULA;";
-            String sql6 = "DELETE FROM ARRAY_SETPELICULA";
-            String sql7 = "DELETE FROM LLAVES;";
+            stmt.execute (String.format ("TRUNCATE TABLE %s;", GestorBD.TABLES [5].x));
+            stmt.execute (String.format ("TRUNCATE TABLE %s;", GestorBD.TABLES [7].x));
 
-            int result1 = stmt.executeUpdate (sql1);
-            int result2 = stmt.executeUpdate (sql2);
-            int result3 = stmt.executeUpdate (sql3);
-            int result4 = stmt.executeUpdate (sql4);
-            int result5 = stmt.executeUpdate (sql5);
-            stmt.executeUpdate (sql6);
-            int result7 = stmt.executeUpdate (sql7);
-
-            System.out.println (String.format (
-                    "- Se han borrado %d peliculas, %d Administradores, %d espectadores, %d complementos, %d setsPeliculas, %d llaves",
-                    result1, result2, result3, result4, result5, result7));
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
+                    String.format (
+                            "Han sido borrados:%n\t%d películas.%n\t%d administradores.%n\t%d espectadores.%n\t%d complementos.%n\t%d sets de películas.%n\t%d entradas.%n\t%d llaves",
+                            stmt.executeUpdate (String.format (
+                                    "DELETE FROM %s WHERE ID_PELICULA NOT IN (%s);",
+                                    GestorBD.TABLES [0].x, String.join (", ", Pelicula.getDefault ().stream ()
+                                            .map (e -> String.format ("'%s'", e.getId ().toString ()))
+                                            .collect (Collectors.toList ())))),
+                            stmt.executeUpdate (String.format (
+                                    "DELETE FROM %s;", GestorBD.TABLES [1].x)),
+                            stmt.executeUpdate (String.format (
+                                    "DELETE FROM %s;", GestorBD.TABLES [2].x)),
+                            stmt.executeUpdate (String.format (
+                                    "DELETE FROM %s WHERE ID_COMPLEMENTO NOT IN (%s);",
+                                    GestorBD.TABLES [3].x, String.join (", ", Complemento.getDefault ().stream ()
+                                            .map (e -> String.format ("'%s'", e.getId ().toString ()))
+                                            .collect (Collectors.toList ())))),
+                            stmt.executeUpdate (String.format (
+                                    "DELETE FROM %s WHERE ID_SETPELICULAS != %s;",
+                                    GestorBD.TABLES [4].x,
+                                    String.format ("'%s'", SetPeliculas.getDefault ().getId ().toString ()))),
+                            stmt.executeUpdate (String.format (
+                                    "DELETE FROM %s;", GestorBD.TABLES [6].x)),
+                            stmt.executeUpdate (String.format ("DELETE FROM %s;", GestorBD.TABLES [8].x))));
         }
-        catch (Exception ex) {
-            System.err.println (String.format ("* Error al borrar datos de la BBDD: %s", ex.getMessage ()));
-            ex.printStackTrace ();
+
+        catch (SQLException e) {
+            Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
+                    String.format ("Error al borrar datos de la BBDD: %s", e.getMessage ()));
+            e.printStackTrace ();
         }
     }
 }

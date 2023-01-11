@@ -9,6 +9,10 @@ public class Pair <X, Y> {
         this.y = y;
     }
 
+    public boolean equals (Object o) {
+        return o instanceof Pair && this.x.equals (((Pair) o).x) && this.y.equals (((Pair) o).y);
+    }
+
     @Override
     public String toString () {
         return "Pair [Fila=" + x + ", Columna=" + y + "]";
