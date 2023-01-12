@@ -1,11 +1,13 @@
 package internals;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
@@ -16,12 +18,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import cine.SetPeliculas;
+
 public final class Settings {
     private static final String SETTINGS_PATH = "data/settings/settings.properties";
     private static final String DEFAULT_SETTINGS_PATH = "data/default/settings/settings.properties";
     private static final String COMMENT = "AVISO: ESTE ARCHIVO SOLO DEBE SER MODIFICADO DESDE EL PROGRAMA.";
     private static final String DEFAULT_LOGO_PATH = "data/assets/logo.png";
     private static final String DEFAULT_LOGO_URL = "https://clipartmag.com/images/movie-reel-logo-17.png";
+    private static final String ACTIVE_SET_PATH = "data/serialized/activeset.json";
     private static Properties properties;
     private static final Properties defaults = ((Supplier <Properties>) ( () -> {
         Properties p = new Properties ();
@@ -33,6 +38,9 @@ public final class Settings {
         p.setProperty ("descuentoespectador", "20");
         p.setProperty ("fallbackseatrenderer", Boolean.FALSE.toString ());
         p.setProperty ("adminkey", "proyecto06");
+
+        if (!new File (Settings.ACTIVE_SET_PATH).exists ())
+            Settings.setActiveSet ();
 
         Settings.properties = new Properties (p);
 
@@ -303,5 +311,82 @@ public final class Settings {
 
     public static void useFallbackRenderer (boolean fallbackrenderer) {
         Settings.properties.setProperty ("fallbackseatrenderer", Boolean.toString (fallbackrenderer));
+    }
+
+    public static String getActiveSetPath () {
+        return Settings.ACTIVE_SET_PATH;
+    }
+
+    public static SetPeliculas getActiveSet () {
+        if (!new File (Settings.ACTIVE_SET_PATH).exists ())
+            return SetPeliculas.getDefault ();
+
+        try {
+            return SetPeliculas.fromJSON (new File (Settings.ACTIVE_SET_PATH)).stream ().findFirst ()
+                    .orElse (SetPeliculas.getDefault ());
+        }
+
+        catch (Exception e) {
+            Logger.getLogger (Settings.class.getName ()).log (Level.WARNING, String.format (
+                    "No se ha podido obtener el set de películas activo del archivo %s, por lo que se usará el set por defecto.",
+                    new File (Settings.ACTIVE_SET_PATH).getAbsolutePath ()));
+
+            return SetPeliculas.getDefault ();
+        }
+    }
+
+    public static void setActiveSet () {
+        Settings.setActiveSet (SetPeliculas.getDefault ());
+    }
+
+    public static void setActiveSet (SetPeliculas setPeliculas) throws NullPointerException {
+        if (setPeliculas == null)
+            throw new NullPointerException (
+                    "No se puede establecer un set de películas nulo como el set de películas activo.");
+
+        File f = new File (Settings.ACTIVE_SET_PATH);
+        try {
+            Files.createDirectories (f.getParentFile ().toPath ());
+        }
+
+        catch (FileAlreadyExistsException e) {
+            try {
+                Files.delete (f.toPath ());
+            }
+
+            catch (IOException e1) {
+                Logger.getLogger (Settings.class.getName ()).log (Level.WARNING,
+                        "No pudo crearse la estructura de directorios del set activo.");
+                e.printStackTrace ();
+
+                return;
+            }
+        }
+
+        catch (IOException e) {
+            Logger.getLogger (Settings.class.getName ()).log (Level.WARNING,
+                    "No pudo crearse la estructura de directorios del set activo.");
+            e.printStackTrace ();
+
+            return;
+        }
+
+        try (BufferedOutputStream bos = new BufferedOutputStream (
+                new FileOutputStream (f))) {
+            bos.write (SetPeliculas.toJSON (((Supplier <SetPeliculas>) ( () -> {
+                SetPeliculas sp = new SetPeliculas (setPeliculas);
+                sp.setAdministrador (null);
+
+                return sp;
+            })).get (), true).getBytes ());
+        }
+
+        catch (IOException e) {
+            Logger.getLogger (Settings.class.getName ()).log (Level.WARNING,
+                    String.format ("No pudo escribirse el set de películas con ID %s en el archivo %s: %s",
+                            setPeliculas.getId (), f.getAbsolutePath (),
+                            e.getMessage ()));
+            e.printStackTrace ();
+        }
     }
 }

@@ -362,6 +362,8 @@ public class GestorBD {
                 Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
                         "No pudo crearse la estructura de directorios del archivo de base de datos.");
                 e.printStackTrace ();
+
+                return;
             }
         }
 
@@ -369,6 +371,8 @@ public class GestorBD {
             Logger.getLogger (GestorBD.class.getName ()).log (Level.SEVERE,
                     "No pudo crearse la estructura de directorios del archivo de base de datos.");
             e.printStackTrace ();
+
+            return;
         }
 
         // Se abre la conexión y se obtiene el Statement
@@ -592,7 +596,8 @@ public class GestorBD {
                     data [i [0]] instanceof SetPeliculas
                             ? () -> this.insertSetPelicula ((SetPeliculas) data [i [0]])
                             : () -> {
-                                this.insertArraySetPelicula ((SetPeliculas) data [i [0]]);
+                                this.insertArraySetPelicula (
+                                        (SetPeliculas) data [i [0]]);
                             }
             } [Arrays
                     .asList (Administrador.class, Complemento.class, Entrada.class,
@@ -895,9 +900,12 @@ public class GestorBD {
         GestorBD.unlock ();
 
         for (int i[] = new int [1]; i [0] < data.length; i [0]++) {
-            if (data [i [0]] == null || (data [i [0]] instanceof Pelicula && ((Pelicula) data [i [0]]).isDefault ())
-                    || (data [i [0]] instanceof SetPeliculas && ((SetPeliculas) data [i [0]]).isDefault ())
-                    || (data [i [0]] instanceof Complemento && ((Complemento) data [i [0]]).isDefault ()))
+            if (data [i [0]] == null
+                    || (data [i [0]] instanceof Pelicula && ((Pelicula) data [i [0]]).isDefault ())
+                    || (data [i [0]] instanceof SetPeliculas
+                            && ((SetPeliculas) data [i [0]]).isDefault ())
+                    || (data [i [0]] instanceof Complemento
+                            && ((Complemento) data [i [0]]).isDefault ()))
                 continue;
 
             String strs[] = new String [] [] {
@@ -1125,7 +1133,8 @@ public class GestorBD {
                                 return sp;
                             })).get (), ((Supplier <Set <SetPeliculas>>) ( () -> {
                                 Set <SetPeliculas> sp = db.getSetsPeliculas ().stream ()
-                                        .filter (e -> ((Administrador) data [i [0]]).equals (e.getAdministrador ()))
+                                        .filter (e -> ((Administrador) data [i [0]])
+                                                .equals (e.getAdministrador ()))
                                         .collect (Collectors.toSet ());
                                 sp.removeAll (((Administrador) data [i [0]])
                                         .getSetsPeliculas ());
@@ -1283,11 +1292,29 @@ public class GestorBD {
                             "el set de películas",
                             (Runnable) () -> {
                                 try {
+                                    if (Settings.getActiveSet ()
+                                            .equals ((SetPeliculas) data [i [0]])) {
+                                        Files.delete (new File (Settings
+                                                .getActiveSetPath ())
+                                                        .toPath ());
+
+                                        Settings.setActiveSet();
+                                    }
                                     this.deleteSetPeliculasData (
                                             (SetPeliculas) data [i [0]]);
                                 }
 
                                 catch (ClassCastException e) {
+                                }
+
+                                catch (IOException e) {
+                                    Logger.getLogger (GestorBD.class.getName ())
+                                            .log (Level.WARNING,
+                                                    String.format (
+                                                            "No pudo eliminarse el archivo %s, que contiene el set de películas activo.",
+                                                            new File (Settings
+                                                                    .getActiveSetPath ())
+                                                                            .getAbsolutePath ()));
                                 }
                             }
                     }
@@ -1560,7 +1587,8 @@ public class GestorBD {
                 UUID id = UUID.fromString (rs.getString (GestorBD.TABLES [4].y [0].x));
 
                 SetPeliculas sp = new SetPeliculas (id,
-                        this.getAdministradorByName (rs.getString (GestorBD.TABLES [4].y [1].x)),
+                        this.getAdministradorByName (
+                                rs.getString (GestorBD.TABLES [4].y [1].x)),
                         rs.getString (GestorBD.TABLES [4].y [2].x), null);
                 sp.add (this.getArraySetPeliculas (id));
 
@@ -1784,7 +1812,8 @@ public class GestorBD {
             ResultSet rs = stmt.executeQuery (String.format ("SELECT COUNT(*) FROM %s WHERE %s = '%s'",
                     GestorBD.TABLES [1].x, GestorBD.TABLES [1].y [1].x, name));
             if (rs.getInt ("COUNT(*)") == 0) {
-                Logger.getLogger (String.format ("No se recuperó ningún administrador con nombre '%s'.", name));
+                Logger.getLogger (String.format ("No se recuperó ningún administrador con nombre '%s'.",
+                        name));
                 rs.close ();
 
                 return null;
@@ -1879,7 +1908,8 @@ public class GestorBD {
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
             int r = stmt.executeUpdate (
-                    String.format ("DELETE FROM %s WHERE %s IN ('%s', '%s');", GestorBD.TABLES [8].x,
+                    String.format ("DELETE FROM %s WHERE %s IN ('%s', '%s');",
+                            GestorBD.TABLES [8].x,
                             GestorBD.TABLES [8].y [0].x, key, Settings.getAdminKey ()));
 
             Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
@@ -1905,14 +1935,16 @@ public class GestorBD {
             stmt.execute (String.format ("DELETE FROM %s;", GestorBD.TABLES [5].x));
             stmt.execute (String.format ("DELETE FROM %s WHERE %s != %s;", GestorBD.TABLES [7].x,
                     GestorBD.TABLES [7].y [0].x,
-                    String.format (GestorBD.TABLES [7].y [0].y, SetPeliculas.getDefault ().getId ().toString ())));
+                    String.format (GestorBD.TABLES [7].y [0].y,
+                            SetPeliculas.getDefault ().getId ().toString ())));
 
             Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
                     String.format (
                             "Han sido borrados:%n\t%d películas.%n\t%d administradores.%n\t%d espectadores.%n\t%d complementos.%n\t%d sets de películas.%n\t%d entradas.%n\t%d llaves",
                             stmt.executeUpdate (String.format (
                                     "DELETE FROM %s WHERE %s NOT IN (%s);",
-                                    GestorBD.TABLES [0].x, GestorBD.TABLES [0].y [0].x,
+                                    GestorBD.TABLES [0].x,
+                                    GestorBD.TABLES [0].y [0].x,
                                     String.join (", ", Pelicula.getDefault ()
                                             .stream ()
                                             .map (e -> String.format (
@@ -1926,7 +1958,8 @@ public class GestorBD {
                                     "DELETE FROM %s;", GestorBD.TABLES [2].x)),
                             stmt.executeUpdate (String.format (
                                     "DELETE FROM %s WHERE %s NOT IN (%s);",
-                                    GestorBD.TABLES [3].x, GestorBD.TABLES [3].y [0].x,
+                                    GestorBD.TABLES [3].x,
+                                    GestorBD.TABLES [3].y [0].x,
                                     String.join (", ", Complemento.getDefault ()
                                             .stream ()
                                             .map (e -> String.format (
@@ -1936,7 +1969,8 @@ public class GestorBD {
                                                     .toList ())))),
                             stmt.executeUpdate (String.format (
                                     "DELETE FROM %s WHERE %s != %s;",
-                                    GestorBD.TABLES [4].x, GestorBD.TABLES [4].y [0].x,
+                                    GestorBD.TABLES [4].x,
+                                    GestorBD.TABLES [4].y [0].x,
                                     String.format (GestorBD.TABLES [4].y [0].y,
                                             SetPeliculas.getDefault ()
                                                     .getId ()

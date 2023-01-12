@@ -65,6 +65,7 @@ import cine.Genero;
 import cine.Pelicula;
 import cine.SetPeliculas;
 import internals.GestorBD;
+import internals.Settings;
 import internals.bst.Filter;
 import internals.swing.JSONChooser;
 import internals.swing.JTextFieldLimit;
@@ -1283,6 +1284,18 @@ public class GestionarPeliculasWindow extends JFrame {
                                 return b;
                             })).get (),
                             ((Supplier <JButton>) ( () -> {
+                                JButton b = new JButton ("Marcar como activo");
+
+                                b.setEnabled (false);
+                                b.addActionListener (e -> {
+                                    Settings.setActiveSet ((SetPeliculas) setspeliculas.getSelectedItem ());
+
+                                    b.setEnabled (false);
+                                });
+
+                                return b;
+                            })).get (),
+                            ((Supplier <JButton>) ( () -> {
                                 JButton b = new JButton ("Modificar");
 
                                 b.setEnabled (false);
@@ -1333,16 +1346,20 @@ public class GestionarPeliculasWindow extends JFrame {
                     setspeliculas.addActionListener (e -> {
                         setButtons [0].setEnabled (setspeliculas.getSelectedItem () != null);
 
+                        setButtons [2].setEnabled (setspeliculas.getSelectedItem () != null
+                                && !((SetPeliculas) setspeliculas.getSelectedItem ())
+                                        .equals (Settings.getActiveSet ()));
+
                         if (setspeliculas.getSelectedItem () == null
                                 || ((SetPeliculas) setspeliculas.getSelectedItem ()).isDefault ()) {
                             setButtons [1].setEnabled (false);
-                            setButtons [2].setEnabled (false);
+                            setButtons [3].setEnabled (false);
 
                             return;
                         }
 
                         setButtons [1].setEnabled (true);
-                        setButtons [2].setEnabled (true);
+                        setButtons [3].setEnabled (true);
                     });
 
                     r.add (((Supplier <JLabel>) ( () -> {
