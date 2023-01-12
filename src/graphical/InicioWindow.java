@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -33,15 +33,15 @@ import internals.GestorBD;
 import internals.Settings;
 import internals.swing.ImageDisplayer;
 
-public class VentanaInicio extends JFrame {
-    public VentanaInicio () {
+public class InicioWindow extends JFrame {
+    public InicioWindow () {
         this (null);
     }
 
-    public VentanaInicio (GestorBD db) {
+    public InicioWindow (GestorBD db) {
         final int lw = 200;
 
-        final VentanaInicio f = this;
+        final InicioWindow f = this;
 
         final JLabel l = new JLabel (Settings.getNombre (), SwingConstants.CENTER);
         final ImageDisplayer id[] = new ImageDisplayer [1];
@@ -51,7 +51,7 @@ public class VentanaInicio extends JFrame {
         }
 
         catch (MalformedURLException e1) {
-            Logger.getLogger (VentanaInicio.class.getName ()).log (Level.WARNING,
+            Logger.getLogger (InicioWindow.class.getName ()).log (Level.WARNING,
                     String.format ("No se pudo crear una URL a partir del archivo %s", Settings.getLogo ()));
 
             try {
@@ -62,7 +62,7 @@ public class VentanaInicio extends JFrame {
             }
 
             catch (MalformedURLException e2) {
-                Logger.getLogger (VentanaInicio.class.getName ()).log (Level.WARNING,
+                Logger.getLogger (InicioWindow.class.getName ()).log (Level.WARNING,
                         String.format ("No se pudo crear una URL a partir del archivo %s", Settings.getLogo ()));
 
                 id [0] = null;
@@ -94,7 +94,7 @@ public class VentanaInicio extends JFrame {
                     }
 
                     catch (MalformedURLException e2) {
-                        Logger.getLogger (VentanaInicio.class.getName ()).log (Level.WARNING,
+                        Logger.getLogger (InicioWindow.class.getName ()).log (Level.WARNING,
                                 String.format ("No se pudo crear una URL a partir del archivo %s",
                                         Settings.getLogo ()));
 
@@ -111,7 +111,7 @@ public class VentanaInicio extends JFrame {
                     }
 
                     catch (MalformedURLException e2) {
-                        Logger.getLogger (VentanaInicio.class.getName ()).log (Level.WARNING,
+                        Logger.getLogger (InicioWindow.class.getName ()).log (Level.WARNING,
                                 String.format ("No se pudo crear una URL a partir del archivo %s",
                                         Settings.getLogo ()));
 
@@ -172,7 +172,7 @@ public class VentanaInicio extends JFrame {
                                         }
 
                                         f.setVisible (false);
-                                        new VentanaInicioSesion (db, f);
+                                        new InicioSesionWindow (db, f);
                                     });
 
                                     return b;
@@ -210,7 +210,7 @@ public class VentanaInicio extends JFrame {
 
                                     b.addActionListener (e -> {
                                         f.setVisible (false);
-                                        new VentanaEspectador (db, null, f);
+                                        new EspectadorWindow (db, null, f);
                                     });
 
                                     return b;

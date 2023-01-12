@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
@@ -23,24 +23,24 @@ import javax.swing.WindowConstants;
 import cine.Espectador;
 import internals.GestorBD;
 
-public class VentanaEspectador extends JFrame {
-    public VentanaEspectador () {
+public class EspectadorWindow extends JFrame {
+    public EspectadorWindow () {
         this (null, null);
     }
 
-    public VentanaEspectador (final GestorBD db, final Espectador espectador) {
+    public EspectadorWindow (final GestorBD db, final Espectador espectador) {
         this (db, espectador, null);
     }
 
-    public VentanaEspectador (final GestorBD db, final Espectador espectador, final VentanaInicio w)
+    public EspectadorWindow (final GestorBD db, final Espectador espectador, final InicioWindow w)
             throws NullPointerException {
         super ();
 
         if (db == null)
             throw new NullPointerException ("La base de datos no puede ser nula.");
 
-        final VentanaEspectador f = this;
-        final VentanaInicio pw[] = new VentanaInicio [] { w };
+        final EspectadorWindow f = this;
+        final InicioWindow pw[] = new InicioWindow [] { w };
         final JButton b[] = new JButton [2];
 
         this.addWindowListener (new WindowAdapter () {
@@ -80,7 +80,7 @@ public class VentanaEspectador extends JFrame {
 
                 b [0].addActionListener (e -> {
                     f.setVisible (false);
-                    new VentanaSeleccionarPelicula (db, espectador, f);
+                    new SeleccionarPeliculaWindow (db, espectador, f);
                 });
 
                 return b [0];

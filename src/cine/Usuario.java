@@ -24,6 +24,7 @@ import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.PasswordGenerator;
 
+import internals.CustomCharacterData;
 import internals.HasID;
 import internals.Utils;
 
@@ -113,34 +114,12 @@ public abstract class Usuario implements HasID {
     }
 
     public static String generatePassword () {
-        enum CustomCharacterData implements org.passay.CharacterData {
-            Special ("INSUFFICIENT_SPECIAL", "!#$%&()*+,-./:;<=>?@[\\]^_`{|}~");
-
-            private final String errorCode;
-            private final String characters;
-
-            CustomCharacterData (final String code, final String charString) {
-                errorCode = code;
-                characters = charString;
-            }
-
-            @Override
-            public String getErrorCode () {
-                return errorCode;
-            }
-
-            @Override
-            public String getCharacters () {
-                return characters;
-            }
-        }
-
         return new PasswordGenerator ().generatePassword (
                 Usuario.RPASSLEN,
-                new CharacterRule (CustomCharacterData.Special),
                 new CharacterRule (EnglishCharacterData.LowerCase),
                 new CharacterRule (EnglishCharacterData.UpperCase),
-                new CharacterRule (EnglishCharacterData.Digit));
+                new CharacterRule (EnglishCharacterData.Digit),
+                new CharacterRule (CustomCharacterData.Special));
     }
 
     public static List <Usuario> fromJSON (File file) throws NullPointerException, IOException, JSONException {

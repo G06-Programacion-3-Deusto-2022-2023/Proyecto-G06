@@ -22,7 +22,6 @@ public final class Settings {
     private static final String COMMENT = "AVISO: ESTE ARCHIVO SOLO DEBE SER MODIFICADO DESDE EL PROGRAMA.";
     private static final String DEFAULT_LOGO_PATH = "data/assets/logo.png";
     private static final String DEFAULT_LOGO_URL = "https://clipartmag.com/images/movie-reel-logo-17.png";
-    private static final String ADMIN_KEY = "proyecto06";
     private static Properties properties;
     private static final Properties defaults = ((Supplier <Properties>) ( () -> {
         Properties p = new Properties ();
@@ -33,6 +32,7 @@ public final class Settings {
         p.setProperty ("diaespectador", "2");
         p.setProperty ("descuentoespectador", "20");
         p.setProperty ("fallbackseatrenderer", Boolean.FALSE.toString ());
+        p.setProperty ("adminkey", "proyecto06");
 
         Settings.properties = new Properties (p);
 
@@ -137,7 +137,22 @@ public final class Settings {
     }
 
     public static String getAdminKey () {
-        return Settings.ADMIN_KEY;
+        return Settings.properties.getProperty ("adminkey");
+    }
+
+    public static void setAdminKey () {
+        Settings.properties.setProperty ("adminkey", Settings.defaults.getProperty ("adminkey"));
+    }
+
+    public static void setAdminKey (String key) throws NullPointerException, IllegalArgumentException {
+        if (key == null)
+            throw new NullPointerException ("No se puede cambiar la clave de administrador usando un string nulo.");
+
+        if (!Utils.isValidAdminKey (key))
+            throw new IllegalArgumentException (
+                    "Se han encontrado carácteres ilegales en la candidata a clave de administrador.");
+
+        Settings.properties.setProperty ("adminkey", key);
     }
 
     public static String getNombre () {

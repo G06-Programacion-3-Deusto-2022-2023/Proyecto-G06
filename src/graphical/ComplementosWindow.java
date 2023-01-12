@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
@@ -30,13 +30,13 @@ import cine.Sala;
 import internals.GestorBD;
 import internals.Pair;
 
-public class VentanaComplementos extends JFrame {
+public class ComplementosWindow extends JFrame {
     Set <Complemento> complementos;
     Map <Complemento, Integer> complementosEspectador;
 
-    public VentanaComplementos (GestorBD db, VentanaSalaCine v2, Espectador espectador, Pelicula pelicula, Sala sala,
+    public ComplementosWindow (GestorBD db, SalaCineWindow v2, Espectador espectador, Pelicula pelicula, Sala sala,
             Pair <Integer, Integer> Butaca) {
-        VentanaComplementos v = this;
+        ComplementosWindow v = this;
 
         complementos = new TreeSet <Complemento> ();
         complementosEspectador = new HashMap <Complemento, Integer> ();
@@ -95,7 +95,7 @@ public class VentanaComplementos extends JFrame {
 
             @Override
             public void actionPerformed (ActionEvent e) {
-                SwingUtilities.invokeLater ( () -> new VentanaDatosAsistencia (db, v, espectador, pelicula, sala,
+                SwingUtilities.invokeLater ( () -> new DatosAsistenciaWindow (db, v, espectador, pelicula, sala,
                         Butaca, complementosEspectador));
 
             }

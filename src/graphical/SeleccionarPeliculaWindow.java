@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
@@ -26,7 +26,7 @@ import cine.Espectador;
 import cine.Pelicula;
 import internals.GestorBD;
 
-public class VentanaSeleccionarPelicula extends JFrame {
+public class SeleccionarPeliculaWindow extends JFrame {
     boolean siguiente;
     int indice;
     Image imagenIcon1;
@@ -36,8 +36,8 @@ public class VentanaSeleccionarPelicula extends JFrame {
     JLabel imagen2;
     JLabel imagen3;
 
-    public VentanaSeleccionarPelicula (GestorBD db, Espectador espectador, VentanaEspectador v2) {
-        VentanaSeleccionarPelicula v = this;
+    public SeleccionarPeliculaWindow (GestorBD db, Espectador espectador, EspectadorWindow v2) {
+        SeleccionarPeliculaWindow v = this;
 
         indice = 0;
         siguiente = true;
@@ -316,7 +316,7 @@ public class VentanaSeleccionarPelicula extends JFrame {
             public void actionPerformed (ActionEvent e) {
                 for (Pelicula pelicula : peliculas) {
                     if (pelicula.getNombre ().equals (pelicula1.getText ())) {
-                        SwingUtilities.invokeLater ( () -> new VentanaSalaCine (db, espectador, pelicula, v));
+                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v));
                     }
                 }
 
@@ -328,7 +328,7 @@ public class VentanaSeleccionarPelicula extends JFrame {
             public void actionPerformed (ActionEvent e) {
                 for (Pelicula pelicula : peliculas) {
                     if (pelicula.getNombre ().equals (pelicula2.getText ())) {
-                        SwingUtilities.invokeLater ( () -> new VentanaSalaCine (db, espectador, pelicula, v));
+                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v));
                     }
                 }
 
@@ -340,7 +340,7 @@ public class VentanaSeleccionarPelicula extends JFrame {
             public void actionPerformed (ActionEvent e) {
                 for (Pelicula pelicula : peliculas) {
                     if (pelicula.getNombre ().equals (pelicula3.getText ())) {
-                        SwingUtilities.invokeLater ( () -> new VentanaSalaCine (db, espectador, pelicula, v));
+                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v));
                     }
                 }
 

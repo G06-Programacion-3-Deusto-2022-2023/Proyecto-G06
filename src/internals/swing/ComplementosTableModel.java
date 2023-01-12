@@ -11,9 +11,9 @@ import javax.naming.NameAlreadyBoundException;
 import javax.naming.NamingException;
 import javax.swing.table.DefaultTableModel;
 
-import VentanaGrafica.LoadingWindow;
 import cine.Complemento;
 import cine.Consumible;
+import graphical.LoadingWindow;
 import internals.GestorBD;
 import internals.Pair;
 

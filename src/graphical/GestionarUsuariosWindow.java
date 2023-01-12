@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -51,7 +50,6 @@ import org.json.JSONException;
 
 import cine.Administrador;
 import cine.Espectador;
-import cine.Pelicula;
 import cine.Usuario;
 import internals.GestorBD;
 import internals.Utils;
@@ -372,7 +370,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                             ((String) users.getSelectedItem ()).length () - 4);
 
                                     Usuario user = ((String) users.getSelectedItem ()).endsWith ((" (A)"))
-                                            ? db.getAdministradorPorNombre (username)
+                                            ? db.getAdministradorByName (username)
                                             : db.getEspectadores ().stream ()
                                                     .filter (x -> x.getNombre ().equals (username)).findFirst ().get ();
 
@@ -435,7 +433,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                 }
 
                                 db.deleteAdminData (
-                                        db.getAdministradorPorNombre (((String) users.getSelectedItem ())
+                                        db.getAdministradorByName (((String) users.getSelectedItem ())
                                                 .substring (0, ((String) users.getSelectedItem ()).length () - 4)));
                             });
 
@@ -468,7 +466,7 @@ public class GestionarUsuariosWindow extends JFrame {
                                     return;
                                 }
 
-                                db.delete (db.getAdministradorPorNombre (username));
+                                db.delete (db.getAdministradorByName (username));
 
                                 if (((String) users.getSelectedItem ())
                                         .substring (0, ((String) users.getSelectedItem ()).length () - 4)

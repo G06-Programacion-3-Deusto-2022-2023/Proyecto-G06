@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -29,7 +29,7 @@ public class AdministradorWindow extends JFrame {
         this (db, admin, null);
     }
 
-    public AdministradorWindow (GestorBD db, Administrador admin, VentanaInicio w)
+    public AdministradorWindow (GestorBD db, Administrador admin, InicioWindow w)
             throws NullPointerException, IllegalArgumentException {
         super ();
 
@@ -45,7 +45,7 @@ public class AdministradorWindow extends JFrame {
             throw new IllegalArgumentException (
                     "El administrador enviado a la ventana de modo administrador no se encuentra en la base de datos.");
 
-        VentanaInicio pw[] = new VentanaInicio [] { w };
+        InicioWindow pw[] = new InicioWindow [] { w };
         AdministradorWindow f = this;
 
         this.addWindowListener (new WindowAdapter () {

@@ -32,7 +32,7 @@ public class Sala {
     private Pelicula pelicula;
     private Vector <Butaca> butacas;
 
-    public Sala () {
+    private Sala () {
         super ();
 
         this.setPelicula (null);

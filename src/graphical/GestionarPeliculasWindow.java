@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -449,7 +449,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                                                 ((Pelicula) x).getFecha ()),
                                                 (Object x, Object y) -> ((Pelicula) y)
                                                         .getDirector ()
-                                                        .compareTo (
+                                                        .compareToIgnoreCase (
                                                                 ((Pelicula) x).getDirector ()),
                                                 (Object x, Object y) -> ((Pelicula) y)
                                                         .getDuracion ()
@@ -470,7 +470,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                         : (Comparator <Pelicula>) ((new Comparator [] {
                                                 (Object x, Object y) -> ((Pelicula) x)
                                                         .getNombre ()
-                                                        .compareTo (
+                                                        .compareToIgnoreCase (
                                                                 ((Pelicula) y).getNombre ()),
                                                 (Object x,
                                                         Object y) -> ((Double) ((Pelicula) x)
@@ -483,7 +483,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                                                 ((Pelicula) y).getFecha ()),
                                                 (Object x, Object y) -> ((Pelicula) x)
                                                         .getDirector ()
-                                                        .compareTo (
+                                                        .compareToIgnoreCase (
                                                                 ((Pelicula) y).getDirector ()),
                                                 (Object x, Object y) -> ((Pelicula) x)
                                                         .getDuracion ()
@@ -1225,7 +1225,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                                                         .compareToIgnoreCase (x.getNombre ()))
                                                         : (Comparator <SetPeliculas>) ( (SetPeliculas x,
                                                                 SetPeliculas y) -> x.getNombre ()
-                                                                        .compareTo (y.getNombre ())))
+                                                                        .compareToIgnoreCase (y.getNombre ())))
                                                 : (desc.isSelected ()
                                                         ? (Comparator <SetPeliculas>) ( (SetPeliculas x,
                                                                 SetPeliculas y) -> ((Integer) y.size ())

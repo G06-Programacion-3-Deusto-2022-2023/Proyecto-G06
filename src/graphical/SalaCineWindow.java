@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -52,9 +52,9 @@ import internals.Settings;
 import internals.Utils;
 import internals.swing.ImageDisplayer;
 
-public class VentanaSalaCine extends JFrame {
-    public VentanaSalaCine (final GestorBD db, final Espectador espectador, final Pelicula pelicula,
-            final VentanaSeleccionarPelicula w)
+public class SalaCineWindow extends JFrame {
+    public SalaCineWindow (final GestorBD db, final Espectador espectador, final Pelicula pelicula,
+            final SeleccionarPeliculaWindow w)
             throws NullPointerException {
         super ();
 
@@ -64,8 +64,8 @@ public class VentanaSalaCine extends JFrame {
         if (pelicula == null)
             throw new NullPointerException ("La pelicula no puede ser nula.");
 
-        final VentanaSalaCine f = this;
-        final VentanaSeleccionarPelicula pw[] = new VentanaSeleccionarPelicula [] { w };
+        final SalaCineWindow f = this;
+        final SeleccionarPeliculaWindow pw[] = new SeleccionarPeliculaWindow [] { w };
 
         new LoadingWindow ( () -> {
             f.addWindowListener (new WindowAdapter () {
@@ -345,7 +345,7 @@ public class VentanaSalaCine extends JFrame {
                     }
 
                     catch (IOException e1) {
-                        Logger.getLogger (VentanaSalaCine.class.getName ()).log (Level.WARNING, String.format (
+                        Logger.getLogger (SalaCineWindow.class.getName ()).log (Level.WARNING, String.format (
                                 "No se pudieron crear las imágenes derivadas de la imagen de butaca.",
                                 SEAT_IMAGE_PATH));
 
@@ -377,7 +377,7 @@ public class VentanaSalaCine extends JFrame {
                             sb [0].addActionListener (e -> {
                                 f.setVisible (false);
 
-                                new VentanaComplementos (db, f, espectador, pelicula, sala,
+                                new ComplementosWindow (db, f, espectador, pelicula, sala,
                                         new Pair <Integer, Integer> (
                                                 selection [0] / Sala.getColumnas (), selection [0] % Sala.getColumnas ()));
                             });

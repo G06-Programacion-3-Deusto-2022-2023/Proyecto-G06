@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
@@ -24,8 +24,8 @@ import cine.Sala;
 import internals.GestorBD;
 import internals.Pair;
 
-public class VentanaDatosAsistencia extends JFrame {
-    public VentanaDatosAsistencia (GestorBD db, VentanaComplementos v2, Espectador espectador, Pelicula pelicula,
+public class DatosAsistenciaWindow extends JFrame {
+    public DatosAsistenciaWindow (GestorBD db, ComplementosWindow v2, Espectador espectador, Pelicula pelicula,
             Sala sala, Pair <Integer, Integer> butaca, Map <Complemento, Integer> complementos) {
         BigDecimal precio = Entrada.getDefaultPrecio ();
         for (Complemento c : complementos.keySet ())
@@ -53,8 +53,8 @@ public class VentanaDatosAsistencia extends JFrame {
                         new Butaca (espectador), complementos);
                 espectador.getHistorial ().add (entrada);
                 setVisible (false);
-                SwingUtilities.invokeLater ( () -> new VentanaEspectador (db, espectador,
-                        new VentanaInicio ()));
+                SwingUtilities.invokeLater ( () -> new EspectadorWindow (db, espectador,
+                        new InicioWindow ()));
             }
         });
 

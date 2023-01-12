@@ -1,5 +1,7 @@
 package internals;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -11,8 +13,11 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.awt.datatransfer.StringSelection;
-import java.awt.Toolkit;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import org.passay.EnglishCharacterData;
 
 public final class Utils {
     private Utils () {
@@ -126,5 +131,27 @@ public final class Utils {
 
         StringSelection selection = new StringSelection (s);
         Toolkit.getDefaultToolkit ().getSystemClipboard ().setContents (selection, selection);
+    }
+
+    public static boolean isValidAdminKey (String key) throws NullPointerException {
+        if (key == null)
+            throw new NullPointerException (
+                    "No se puede analizar una clave de administrador consistente en un string nulo.");
+
+        return ((Supplier <Set <Character>>) ( () -> {
+            Set <Character> s = key.codePoints ().mapToObj (e -> Character.valueOf ((char) e))
+                    .collect (Collectors.toSet ());
+
+            s.removeAll (EnglishCharacterData.LowerCase.getCharacters ().codePoints ()
+                    .mapToObj (e -> Character.valueOf ((char) e)).collect (Collectors.toSet ()));
+            s.removeAll (EnglishCharacterData.UpperCase.getCharacters ().codePoints ()
+                    .mapToObj (e -> Character.valueOf ((char) e)).collect (Collectors.toSet ()));
+            s.removeAll (EnglishCharacterData.Digit.getCharacters ().codePoints ()
+                    .mapToObj (e -> Character.valueOf ((char) e)).collect (Collectors.toSet ()));
+            s.removeAll (CustomCharacterData.Special.getCharacters ().codePoints ()
+                    .mapToObj (e -> Character.valueOf ((char) e)).collect (Collectors.toSet ()));
+
+            return s;
+        })).get ().isEmpty ();
     }
 }

@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -41,7 +41,7 @@ public class HistorialWindow extends JFrame {
         this (espectador, null);
     }
 
-    public HistorialWindow (Espectador espectador, VentanaEspectador w) throws NullPointerException, UnsupportedOperationException {
+    public HistorialWindow (Espectador espectador, EspectadorWindow w) throws NullPointerException, UnsupportedOperationException {
         super ();
 
         if (espectador == null)

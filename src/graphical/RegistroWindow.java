@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -37,7 +37,7 @@ public class RegistroWindow extends JFrame {
         this (db, null);
     }
 
-    public RegistroWindow (GestorBD db, VentanaInicio w) throws NullPointerException {
+    public RegistroWindow (GestorBD db, InicioWindow w) throws NullPointerException {
         super ();
 
         if (db == null)

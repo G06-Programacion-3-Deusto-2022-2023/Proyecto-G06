@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -483,20 +483,35 @@ public class PeliculaWindow extends JFrame {
                     JPanel r = new JPanel (new FlowLayout (FlowLayout.CENTER, 15, 0));
 
                     r.add (((Supplier <JButton>) ( () -> {
-                        JButton b = new JButton (pelicula [0] == null ? "Añadir" : "Modificar");
+                        JButton b = new JButton (pelicula [0] == null ? "Crear" : "Modificar");
                         b.addActionListener (e -> {
+                            if (nombre.getText ().contains ("\"") || nombre.getText ().contains ("'")
+                                    || nombre.getText ().contains ("`")) {
+                                JOptionPane.showMessageDialog (f,
+                                        "El nombre de la película no puede contener comillas.",
+                                        String.format ("Error al %s película.",
+                                                pelicula [0] == null ? "crear" : "modificar"),
+                                        JOptionPane.ERROR_MESSAGE);
+                            }
+
                             long d;
                             if ((d = ((SpinnerNumberModel) horas.getModel ()).getNumber ().longValue () * 60
                                     + ((SpinnerNumberModel) minutos.getModel ()).getNumber ().longValue ()) == 0) {
                                 JOptionPane.showMessageDialog (f,
-                                        "La película no puede tener una duración de 0 minutos.");
+                                        "La película no puede tener una duración de 0 minutos.",
+                                        String.format ("Error al %s película.",
+                                                pelicula [0] == null ? "crear" : "modificar"),
+                                        JOptionPane.ERROR_MESSAGE);
 
                                 return;
                             }
 
                             if (generosValues.isEmpty ()) {
                                 JOptionPane.showMessageDialog (f,
-                                        "La película debe pertenecer a algún género.");
+                                        "La película debe pertenecer a algún género.",
+                                        String.format ("Error al %s película.",
+                                                pelicula [0] == null ? "crear" : "modificar"),
+                                        JOptionPane.ERROR_MESSAGE);
 
                                 return;
                             }
@@ -513,7 +528,10 @@ public class PeliculaWindow extends JFrame {
                                         }
                                     })).getAsBoolean ())) {
                                 JOptionPane.showMessageDialog (f,
-                                        "La ruta especificada para la imagen de la película debe ser nula o apuntar a una imagen accesible.");
+                                        "La ruta especificada para la imagen de la película debe ser nula o apuntar a una imagen accesible.",
+                                        String.format ("Error al %s película.",
+                                                pelicula [0] == null ? "crear" : "modificar"),
+                                        JOptionPane.ERROR_MESSAGE);
 
                                 return;
                             }
@@ -528,7 +546,10 @@ public class PeliculaWindow extends JFrame {
 
                                 catch (IOException ex) {
                                     JOptionPane.showMessageDialog (f,
-                                            "No pudo abrirse el archivo de la imagen.");
+                                            "No pudo abrirse el archivo de la imagen.",
+                                            String.format ("Error al %s película.",
+                                                    pelicula [0] == null ? "crear" : "modificar"),
+                                            JOptionPane.ERROR_MESSAGE);
 
                                     return;
                                 }
@@ -544,7 +565,10 @@ public class PeliculaWindow extends JFrame {
 
                                 catch (IOException ex) {
                                     JOptionPane.showMessageDialog (f,
-                                            "No pudo abrirse el archivo de la imagen.");
+                                            "No pudo abrirse el archivo de la imagen.",
+                                            String.format ("Error al %s película.",
+                                                    pelicula [0] == null ? "crear" : "modificar"),
+                                            JOptionPane.ERROR_MESSAGE);
 
                                     return;
                                 }
@@ -631,9 +655,10 @@ public class PeliculaWindow extends JFrame {
         })).get ());
 
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
-        this.setTitle (String.format ("%s una película", pelicula [0] == null ? "Añadir" : "Modificar"));
+        this.setTitle (String.format ("%s una película", pelicula [0] == null ? "Crear" : "Modificar"));
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("OptionPane.questionIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
+                ((ImageIcon) UIManager.getIcon ("OptionPane.questionIcon", new Locale ("es-ES"))).getImage ()
+                        .getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (null);

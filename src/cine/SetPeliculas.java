@@ -100,10 +100,18 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
     }
 
     public void setAdministrador (Administrador administrador) {
-        if (this.isDefault () && SetPeliculas.DEFAULT_SET)
+        if (this.isDefault () && SetPeliculas.DEFAULT_SET
+                && !Utils.isAmongstCallers ("cine.SetPeliculas")
+                && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
+        if (this.administrador != null)
+            this.administrador.getSetsPeliculas ().remove (this);
+
         this.administrador = administrador;
+
+        if (this.administrador != null)
+            this.administrador.getSetsPeliculas ().add (this);
     }
 
     public String getNombre () {
@@ -148,7 +156,8 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
                 && !Utils.isAmongstCallers ("internals.GestorBD"))
             return;
 
-        SortedSet <Pelicula> oldpeliculas = this.peliculas == null ? new TreeSet <Pelicula> () : this.peliculas;
+        SortedSet <Pelicula> oldpeliculas = this.peliculas == null ? new TreeSet <Pelicula> ()
+                : new TreeSet <Pelicula> (this.peliculas);
 
         this.peliculas = new TreeSet <Pelicula> (
                 peliculas == null || peliculas.size () < SetPeliculas.MIN_SIZE
@@ -490,7 +499,7 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
         }
 
         try {
-            peliculas.addAll (Pelicula.fromJSON (o.getJSONArray("peliculas").toString ()));
+            peliculas.addAll (Pelicula.fromJSON (o.getJSONArray ("peliculas").toString ()));
         }
 
         catch (JSONException e) {

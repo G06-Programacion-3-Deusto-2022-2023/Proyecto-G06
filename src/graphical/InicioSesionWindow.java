@@ -1,4 +1,4 @@
-package VentanaGrafica;
+package graphical;
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -31,20 +31,20 @@ import cine.Usuario;
 import internals.GestorBD;
 import internals.swing.JTextFieldLimit;
 
-public class VentanaInicioSesion extends JFrame {
-    public VentanaInicioSesion (GestorBD db) {
+public class InicioSesionWindow extends JFrame {
+    public InicioSesionWindow (GestorBD db) {
         this (db, null);
     }
 
-    public VentanaInicioSesion (GestorBD db, VentanaInicio w) throws NullPointerException {
+    public InicioSesionWindow (GestorBD db, InicioWindow w) throws NullPointerException {
         super ();
 
         if (db == null)
             throw new NullPointerException (
                     "No se puede pasar una base de datos nula a la ventana de inicio de sesión");
 
-        VentanaInicioSesion f = this;
-        VentanaInicio pw[] = new VentanaInicio [] { w };
+        InicioSesionWindow f = this;
+        InicioWindow pw[] = new InicioWindow [] { w };
 
         this.addWindowListener (new WindowAdapter () {
             @Override
@@ -162,7 +162,7 @@ public class VentanaInicioSesion extends JFrame {
                             return;
                         }
 
-                        new VentanaEspectador (db, (Espectador) u, w);
+                        new EspectadorWindow (db, (Espectador) u, w);
                     });
 
                     return b;
