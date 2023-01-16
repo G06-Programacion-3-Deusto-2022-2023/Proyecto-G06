@@ -37,6 +37,8 @@ public class SeleccionarPeliculaWindow extends JFrame {
     JLabel imagen3;
 
     public SeleccionarPeliculaWindow (GestorBD db, Espectador espectador, EspectadorWindow v2) {
+    	
+    	EspectadorWindow pw[] = new EspectadorWindow [] { v2 };
         SeleccionarPeliculaWindow v = this;
 
         indice = 0;
@@ -98,7 +100,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon1 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -112,7 +114,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon2 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -126,7 +128,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon3 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -150,7 +152,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon1 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -164,7 +166,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon2 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -178,7 +180,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon3 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -209,7 +211,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon3 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -224,7 +226,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon2 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -238,7 +240,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon1 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -262,7 +264,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon3 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -277,7 +279,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon2 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -291,7 +293,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
                     try {
                         imagenIcon1 = new ImageIcon (
                                 ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, 0);
+                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     }
                     catch (IOException e1) {
                         // TODO Auto-generated catch block
@@ -357,13 +359,13 @@ public class SeleccionarPeliculaWindow extends JFrame {
                 pelicula3.setText (ObtenerPelicula (peliculas, indice + 2));
                 try {
                     imagenIcon1 = new ImageIcon (ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice))))
-                            .getImage ().getScaledInstance (300, 300, 0);
+                            .getImage ().getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     imagenIcon2 = new ImageIcon (
                             ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice + 1)))).getImage ()
-                                    .getScaledInstance (300, 300, 0);
+                                    .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                     imagenIcon3 = new ImageIcon (
                             ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice + 2)))).getImage ()
-                                    .getScaledInstance (300, 300, 0);
+                                    .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
                 }
                 catch (IOException e1) {
                     // TODO Auto-generated catch block
@@ -380,6 +382,9 @@ public class SeleccionarPeliculaWindow extends JFrame {
 
             @Override
             public void windowClosed (WindowEvent e) {
+            	if (pw [0] == null)
+                    return;
+
                 v2.setVisible (true);
             }
         });
