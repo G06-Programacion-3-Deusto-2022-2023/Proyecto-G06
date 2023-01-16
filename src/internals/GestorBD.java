@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -813,7 +814,7 @@ public class GestorBD {
     private void insertArrayEntrada (Entrada entrada) {
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            Map.Entry <Complemento, Integer> kv[] = entrada.getComplementos ().entrySet ()
+            Map.Entry <Complemento, BigInteger> kv[] = entrada.getComplementos ().entrySet ()
                     .toArray (new Map.Entry [0]);
             for (int i = 0; i < kv.length; i++)
                 stmt.executeUpdate (
@@ -1298,7 +1299,7 @@ public class GestorBD {
                                                 .getActiveSetPath ())
                                                         .toPath ());
 
-                                        Settings.setActiveSet();
+                                        Settings.setActiveSet ();
                                     }
                                     this.deleteSetPeliculasData (
                                             (SetPeliculas) data [i [0]]);
@@ -1743,8 +1744,8 @@ public class GestorBD {
         return l;
     }
 
-    private Map <Complemento, Integer> getArrayEntrada (UUID id) {
-        Map <Complemento, Integer> m = new HashMap <Complemento, Integer> ();
+    private Map <Complemento, BigInteger> getArrayEntrada (UUID id) {
+        Map <Complemento, BigInteger> m = new HashMap <Complemento, BigInteger> ();
 
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
@@ -1777,7 +1778,7 @@ public class GestorBD {
                 if (c == null)
                     continue;
 
-                m.put (c, rs.getInt (GestorBD.TABLES [7].y [2].x));
+                m.put (c, rs.getBigDecimal (GestorBD.TABLES [7].y [2].x).toBigInteger ());
             }
 
             rs.close ();

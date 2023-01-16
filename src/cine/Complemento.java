@@ -3,6 +3,7 @@ package cine;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -197,9 +199,19 @@ public class Complemento implements Treeable <Complemento>, Comparable <Compleme
                 this.nombre, this.precio.doubleValue (), this.descuento);
     }
 
+    public BigDecimal aplicarDescuento () {
+        return this.aplicarDescuento (this.descuento);
+    }
+
     public BigDecimal aplicarDescuento (int descuento) {
         return this.precio.subtract (this.precio.multiply (new BigDecimal (descuento).scaleByPowerOfTen (-2)))
                 .setScale (2, RoundingMode.HALF_EVEN);
+    }
+
+    public static BigDecimal sum (Map <Complemento, BigInteger> c) {
+        return c.entrySet ().stream ()
+                .map (e -> e.getKey ().aplicarDescuento ().multiply (new BigDecimal (e.getValue ())))
+                .reduce (BigDecimal.ZERO, (a, b) -> a.add (b));
     }
 
     public boolean isDefault () {

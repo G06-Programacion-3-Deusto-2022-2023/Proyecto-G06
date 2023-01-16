@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -147,12 +148,12 @@ public class HistorialWindow extends JFrame {
                                     JPanel t = new JPanel ();
                                     t.setLayout (new BoxLayout (t, BoxLayout.Y_AXIS));
 
-                                    Pair <Complemento, Integer> c = ((Supplier <Pair <Complemento, Integer>>) ( () -> {
+                                    Pair <Complemento, BigInteger> c = ((Supplier <Pair <Complemento, BigInteger>>) ( () -> {
                                         Complemento ks[] = historial [current [0]].getComplementos ().keySet ()
                                                 .toArray (new Complemento [0]);
                                         for (int i = 0; i < ks.length; i++)
                                             if (ks [i].getNombre ().equals (l.getSelectedValue ()))
-                                                return new Pair <Complemento, Integer> (ks [i],
+                                                return new Pair <Complemento, BigInteger> (ks [i],
                                                         historial [current [0]].getComplementos ().get (ks [i]));
 
                                         return null;

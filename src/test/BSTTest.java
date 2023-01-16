@@ -3,6 +3,7 @@ package test;
 import static org.junit.Assert.assertEquals;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -64,7 +65,7 @@ public class BSTTest {
         assertEquals (5, Entrada.tree (((Supplier <List <Entrada>>) ( () -> {
             List <Entrada> list = new ArrayList <Entrada> ();
             for (int i = 0; i < 10; i++)
-                list.add ((i & 1) == 1 ? ((Supplier <Entrada>) (() -> {Entrada entrada = new Entrada (); entrada.setComplementos (Collections.singletonMap (new Complemento (BigDecimal.TEN), 100)); return entrada;})).get () : new Entrada ());
+                list.add ((i & 1) == 1 ? ((Supplier <Entrada>) (() -> {Entrada entrada = new Entrada (); entrada.setComplementos (Collections.singletonMap (new Complemento (BigDecimal.TEN), BigInteger.valueOf (100))); return entrada;})).get () : new Entrada ());
             return list;
         })).get (),
                 (Filter <Entrada>) (e -> e.getPrecio ()

@@ -5,6 +5,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Calendar;
 import java.util.Map;
 
@@ -26,10 +27,10 @@ import internals.Pair;
 
 public class DatosAsistenciaWindow extends JFrame {
     public DatosAsistenciaWindow (GestorBD db, ComplementosWindow v2, Espectador espectador, Pelicula pelicula,
-            Sala sala, Pair <Integer, Integer> butaca, Map <Complemento, Integer> complementos) {
+            Sala sala, Pair <Integer, Integer> butaca, Map <Complemento, BigInteger> complementos) {
         BigDecimal precio = Entrada.getDefaultPrecio ();
         for (Complemento c : complementos.keySet ())
-            precio.add (c.getPrecio ().multiply (BigDecimal.valueOf (complementos.get (c))));
+            precio.add (c.getPrecio ().multiply (new BigDecimal (complementos.get (c))));
 
         JLabel peliculaTexto = new JLabel ("Pelicula:" + pelicula.getNombre ());
         JLabel fecha = new JLabel ("Fecha:");

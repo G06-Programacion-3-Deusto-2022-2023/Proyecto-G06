@@ -3,6 +3,7 @@ package cine;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.text.ParsePosition;
@@ -47,7 +48,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
     private Calendar fecha;
     private Sala sala;
     private Butaca butaca;
-    private Map <Complemento, Integer> complementos;
+    private Map <Complemento, BigInteger> complementos;
     private double valoracion;
     private BigDecimal precio;
 
@@ -69,26 +70,26 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
     }
 
     public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca) {
-        this (espectador, pelicula, fecha, sala, butaca, new HashMap <Complemento, Integer> ());
+        this (espectador, pelicula, fecha, sala, butaca, new HashMap <Complemento, BigInteger> ());
     }
 
     public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca,
-            Map <Complemento, Integer> complementos) {
+            Map <Complemento, BigInteger> complementos) {
         this (espectador, pelicula, fecha, sala, butaca, complementos, Double.NaN);
     }
 
     public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca,
-            Map <Complemento, Integer> complementos, double valoracion) {
+            Map <Complemento, BigInteger> complementos, double valoracion) {
         this (espectador, pelicula, fecha, sala, butaca, complementos, valoracion, null);
     }
 
     public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca,
-            Map <Complemento, Integer> complementos, double valoracion, BigDecimal precio) {
+            Map <Complemento, BigInteger> complementos, double valoracion, BigDecimal precio) {
         this (UUID.randomUUID (), espectador, pelicula, fecha, sala, butaca, complementos, valoracion, precio);
     }
 
     public Entrada (UUID id, Espectador espectador, Pelicula pelicula, Calendar fecha, Sala sala, Butaca butaca,
-            Map <Complemento, Integer> complementos, double valoracion, BigDecimal precio) {
+            Map <Complemento, BigInteger> complementos, double valoracion, BigDecimal precio) {
         super ();
 
         this.id = id;
@@ -152,14 +153,14 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
                 : butaca;
     }
 
-    public Map <Complemento, Integer> getComplementos () {
+    public Map <Complemento, BigInteger> getComplementos () {
         return this.complementos;
     }
 
-    public void setComplementos (Map <Complemento, Integer> complementos) {
+    public void setComplementos (Map <Complemento, BigInteger> complementos) {
         if (complementos == null) {
             if (this.complementos == null)
-                this.complementos = new TreeMap <Complemento, Integer> ();
+                this.complementos = new TreeMap <Complemento, BigInteger> ();
 
             return;
         }
@@ -262,7 +263,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
 
                     StringBuilder str = new StringBuilder ("\t{");
 
-                    List <Map.Entry <Complemento, Integer>> c = this.complementos.entrySet ().stream ()
+                    List <Map.Entry <Complemento, BigInteger>> c = this.complementos.entrySet ().stream ()
                             .collect (Collectors.toList ());
                     for (int i = 0; i < c.size (); i++)
                         str.append (String.format ("\t\t%n%s (%.2f €%s, x%d),", c.get (i).getKey ().getNombre (),
@@ -281,7 +282,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
     public BigDecimal total () throws ArithmeticException {
         BigDecimal p = BigDecimal.valueOf (this.precio.doubleValue ());
 
-        ArrayList <Map.Entry <Complemento, Integer>> keyValueArray = new ArrayList <Map.Entry <Complemento, Integer>> (
+        ArrayList <Map.Entry <Complemento, BigInteger>> keyValueArray = new ArrayList <Map.Entry <Complemento, BigInteger>> (
                 complementos.entrySet ());
         for (int i = 0; i < complementos.size (); i++)
             p = p.add (keyValueArray.get (i).getKey ().getPrecio ()
@@ -405,7 +406,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
         Date fecha = null;
         Sala sala = null;
         Butaca butaca = null;
-        Map <Complemento, Integer> complementos = new HashMap <Complemento, Integer> ();
+        Map <Complemento, BigInteger> complementos = new HashMap <Complemento, BigInteger> ();
         double valoracion = 0.0f;
         BigDecimal precio = null;
 
@@ -471,7 +472,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
             for (int i = 0; i < jsonarray.length (); i++)
                 complementos.put (
                         Complemento.fromJSONObject (jsonarray.getJSONObject (i).getJSONObject ("complemento")),
-                        jsonarray.getJSONObject (i).getInt ("cantidad"));
+                        jsonarray.getJSONObject (i).getBigInteger ("cantidad"));
         }
 
         catch (JSONException e) {
@@ -562,7 +563,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
                                                                     + ((Supplier <JSONArray>) ( () -> {
                                                                         JSONArray jsonar = new JSONArray ();
 
-                                                                        List <Map.Entry <Complemento, Integer>> entries = array [i [0]].complementos
+                                                                        List <Map.Entry <Complemento, BigInteger>> entries = array [i [0]].complementos
                                                                                 .entrySet ()
                                                                                 .stream ()
                                                                                 .collect (Collectors.toList ());
@@ -619,7 +620,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
                 .put ("complementos", ((Supplier <JSONArray>) ( () -> {
                     JSONArray array = new JSONArray ();
 
-                    List <Map.Entry <Complemento, Integer>> entries = this.complementos.entrySet ()
+                    List <Map.Entry <Complemento, BigInteger>> entries = this.complementos.entrySet ()
                             .stream ().collect (Collectors.toList ());
 
                     for (int i = 0; i < entries.size (); i++)

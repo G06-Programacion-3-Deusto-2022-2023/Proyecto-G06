@@ -18,9 +18,12 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,11 +46,11 @@ import javax.swing.table.TableCellRenderer;
 
 import org.jdesktop.swingx.JXTable;
 
+import cine.Complemento;
 import cine.Espectador;
 import cine.Pelicula;
 import cine.Sala;
 import internals.GestorBD;
-import internals.Pair;
 import internals.Settings;
 import internals.Utils;
 import internals.swing.ImageDisplayer;
@@ -194,11 +197,12 @@ public class SalaCineWindow extends JFrame {
                             t [0].setRowHeight (SEAT_IMAGE_HEIGHT);
 
                             t [0].getSelectionModel ().addListSelectionListener (e -> {
-                                if ((selection [0] == -1 && (t [0].getSelectedRow () == -1 || t [0].getSelectedColumn () == -1)) || sala
-                                        .getButacas ().get (
-                                                Sala.getColumnas () * t [0].getSelectedRow ()
-                                                        + t [0].getSelectedColumn ())
-                                        .ocupada ()) {
+                                if ((selection [0] == -1
+                                        && (t [0].getSelectedRow () == -1 || t [0].getSelectedColumn () == -1)) || sala
+                                                .getButacas ().get (
+                                                        Sala.getColumnas () * t [0].getSelectedRow ()
+                                                                + t [0].getSelectedColumn ())
+                                                .ocupada ()) {
                                     if (selection [0] != -1) {
                                         t [0].setRowSelectionInterval ((int) (selection [0] / Sala.getColumnas ()),
                                                 (int) (selection [0] / Sala.getColumnas ()));
@@ -377,9 +381,31 @@ public class SalaCineWindow extends JFrame {
                             sb [0].addActionListener (e -> {
                                 f.setVisible (false);
 
-                                new ComplementosWindow (db, f, espectador, pelicula, sala,
-                                        new Pair <Integer, Integer> (
-                                                selection [0] / Sala.getColumnas (), selection [0] % Sala.getColumnas ()));
+                                ConcurrentMap<Complemento, BigInteger> c = new ConcurrentHashMap<Complemento, BigInteger>();
+
+                                Thread tt;
+                                (tt = new Thread(() -> {
+                                    ComplementosWindow cw = new ComplementosWindow(c);
+                        
+                                    for (; cw.isDisplayable();)
+                                        ;
+                        
+                                    try {
+                                        Thread.sleep(1);
+                                    }
+                                    
+                                    catch (InterruptedException ex) {
+                                        ex.printStackTrace();
+                                    }
+                                })).start();
+                        
+                                try {
+                                    tt.join();
+                                }
+                                
+                                catch (InterruptedException ex) {
+                                    ex.printStackTrace();
+                                }
                             });
 
                             return sb [0];

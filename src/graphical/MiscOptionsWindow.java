@@ -817,8 +817,6 @@ public class MiscOptionsWindow extends JFrame {
                                 new JButton ("Importar"), new JButton ("Exportar") };
 
                         r.add (((Supplier <JScrollPane>) ( () -> {
-                            JScrollPane s = new JScrollPane (t);
-
                             t.setModel (new ComplementosTableModel (db));
 
                             t.setSelectionMode (ListSelectionModel.SINGLE_SELECTION);
@@ -930,7 +928,7 @@ public class MiscOptionsWindow extends JFrame {
                                         return tf;
                                     })).get ()));
 
-                            return s;
+                            return new JScrollPane (t);
                         })).get ());
 
                         r.add (((Supplier <JPanel>) ( () -> {

@@ -119,10 +119,7 @@ public class ComplementosTableModel extends DefaultTableModel {
 
     @Override
     public Object getValueAt (int row, int col) {
-        if (this.getDataVector ().isEmpty ())
-            return new Object [] { "-", null, 0 } [col];
-
-        return new Object [] { this.dataVector.get (row).get (0),
+        return this.getDataVector ().isEmpty () ? new Object [] { "-", null, 0 } [col] : new Object [] { this.dataVector.get (row).get (0),
                 this.dataVector.get (row).get (1),
                 this.dataVector.get (row).get (2) } [col];
     }
@@ -223,7 +220,7 @@ public class ComplementosTableModel extends DefaultTableModel {
     }
 
     @Override
-    public Class getColumnClass (int col) {
+    public Class <?> getColumnClass (int col) {
         return String.class;
     }
 
