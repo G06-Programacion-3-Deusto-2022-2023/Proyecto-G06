@@ -8,6 +8,9 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+
 import java.util.Locale;
 import java.util.function.Supplier;
 
@@ -42,6 +45,17 @@ public class EspectadorWindow extends JFrame {
         final EspectadorWindow f = this;
         final InicioWindow pw[] = new InicioWindow [] { w };
         final JButton b[] = new JButton [2];
+
+        this.addComponentListener (new ComponentAdapter () {
+            @Override
+            public void componentShown (ComponentEvent e) {
+                if (espectador != null)
+                    db.update (espectador);
+
+                if (b [1] != null && espectador != null && !espectador.getHistorial ().isEmpty ())
+                    b [1].setEnabled (true);
+            }
+        });
 
         this.addWindowListener (new WindowAdapter () {
             @Override

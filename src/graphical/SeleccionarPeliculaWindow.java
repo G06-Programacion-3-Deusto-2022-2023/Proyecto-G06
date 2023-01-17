@@ -318,7 +318,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
             public void actionPerformed (ActionEvent e) {
                 for (Pelicula pelicula : peliculas) {
                     if (pelicula.getNombre ().equals (pelicula1.getText ())) {
-                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v));
+                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v2));
                     }
                 }
 
@@ -330,7 +330,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
             public void actionPerformed (ActionEvent e) {
                 for (Pelicula pelicula : peliculas) {
                     if (pelicula.getNombre ().equals (pelicula2.getText ())) {
-                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v));
+                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v2));
                     }
                 }
 
@@ -342,7 +342,7 @@ public class SeleccionarPeliculaWindow extends JFrame {
             public void actionPerformed (ActionEvent e) {
                 for (Pelicula pelicula : peliculas) {
                     if (pelicula.getNombre ().equals (pelicula3.getText ())) {
-                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v));
+                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v2));
                     }
                 }
 

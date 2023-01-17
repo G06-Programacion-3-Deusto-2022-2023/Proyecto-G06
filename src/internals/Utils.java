@@ -108,7 +108,7 @@ public final class Utils {
     }
 
     public static Triplet <Integer, Integer, Integer> getDate (Calendar c) {
-        return new Triplet <Integer, Integer, Integer> (c.get (Calendar.DAY_OF_MONTH), c.get (Calendar.MONTH),
+        return new Triplet <Integer, Integer, Integer> (c.get (Calendar.DAY_OF_MONTH), c.get (Calendar.MONTH) + 1,
                 c.get (Calendar.YEAR));
     }
 

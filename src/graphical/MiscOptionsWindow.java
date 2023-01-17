@@ -928,6 +928,8 @@ public class MiscOptionsWindow extends JFrame {
                                         return tf;
                                     })).get ()));
 
+                            t.getTableHeader ().setReorderingAllowed (false);
+
                             return new JScrollPane (t);
                         })).get ());
 

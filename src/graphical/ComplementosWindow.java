@@ -51,31 +51,19 @@ import org.jdesktop.swingx.JXPanel;
 
 import cine.Complemento;
 import cine.Consumible;
+import cine.Entrada;
+import cine.Espectador;
 import internals.GestorBD;
 import internals.swing.ChosenComplementosTableModel;
 
 public class ComplementosWindow extends JFrame {
-    public ComplementosWindow (ConcurrentMap <Complemento, BigInteger> c) {
-        this (c, (SalaCineWindow) null);
+    public ComplementosWindow (ConcurrentMap <Complemento, BigInteger> c, GestorBD db, Entrada entrada,
+            JFrame w) {
+        this (c, db.getComplementos (), entrada, w);
     }
 
-    public ComplementosWindow (ConcurrentMap <Complemento, BigInteger> c, SalaCineWindow w) {
-        this (c, Complemento.getDefault (), w);
-    }
-
-    public ComplementosWindow (ConcurrentMap <Complemento, BigInteger> c, GestorBD db) {
-        this (c, db, null);
-    }
-
-    public ComplementosWindow (ConcurrentMap <Complemento, BigInteger> c, GestorBD db, SalaCineWindow w) {
-        this (c, db.getComplementos (), w);
-    }
-
-    public ComplementosWindow (ConcurrentMap <Complemento, BigInteger> c, Collection <Complemento> cs) {
-        this (c, cs, null);
-    }
-
-    public ComplementosWindow (ConcurrentMap <Complemento, BigInteger> c, Collection <Complemento> cs, SalaCineWindow w)
+    public ComplementosWindow (ConcurrentMap <Complemento, BigInteger> c, Collection <Complemento> cs,
+            Entrada entrada, JFrame w)
             throws NullPointerException, IllegalArgumentException {
         super ();
 
@@ -87,6 +75,10 @@ public class ComplementosWindow extends JFrame {
             throw new NullPointerException (
                     "No se puede pasar una lista de complementos nula a la ventana de complementos.");
 
+        if (w != null && !(w instanceof DatosAsistenciaWindow || w instanceof EspectadorWindow))
+            throw new IllegalArgumentException (
+                    "No se puede pasar una ventana no nula a la lista de complementos que no sea una instancia ni de DatosAsistenciaWindow ni de EspectadorWindow");
+
         final ComplementosWindow f = this;
         final ConcurrentMap <Complemento, BigInteger> ic = new ConcurrentHashMap <Complemento, BigInteger> (c);
         final boolean ric[] = new boolean [] { true };
@@ -94,14 +86,27 @@ public class ComplementosWindow extends JFrame {
         this.addWindowListener (new WindowAdapter () {
             @Override
             public void windowClosed (WindowEvent e) {
-                if (w != null)
-                    w.setVisible (true);
+                if (w instanceof EspectadorWindow) {
+                    if (ric [0]) {
+                        w.setVisible (true);
+
+                        return;
+                    }
+
+                    entrada.setComplementos (c);
+                    new DatosAsistenciaWindow (entrada, cs, (EspectadorWindow) w);
+
+                    return;
+                }
 
                 if (!ric [0])
                     return;
 
                 c.clear ();
                 c.putAll (ic);
+
+                if (w != null)
+                    w.setVisible (true);
             }
         });
 
@@ -311,6 +316,8 @@ public class ComplementosWindow extends JFrame {
 
                                         return t;
                                     })).get ()));
+
+                            ct.getTableHeader ().setReorderingAllowed (false);
 
                             return new JScrollPane (ct);
                         })).get ());

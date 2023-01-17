@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +40,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -47,6 +49,7 @@ import javax.swing.table.TableCellRenderer;
 import org.jdesktop.swingx.JXTable;
 
 import cine.Complemento;
+import cine.Entrada;
 import cine.Espectador;
 import cine.Pelicula;
 import cine.Sala;
@@ -56,8 +59,12 @@ import internals.Utils;
 import internals.swing.ImageDisplayer;
 
 public class SalaCineWindow extends JFrame {
+    public SalaCineWindow (final GestorBD db, final Espectador espectador, final Pelicula pelicula) {
+        this (db, espectador, pelicula, null);
+    }
+
     public SalaCineWindow (final GestorBD db, final Espectador espectador, final Pelicula pelicula,
-            final SeleccionarPeliculaWindow w)
+            final EspectadorWindow w)
             throws NullPointerException {
         super ();
 
@@ -68,14 +75,23 @@ public class SalaCineWindow extends JFrame {
             throw new NullPointerException ("La pelicula no puede ser nula.");
 
         final SalaCineWindow f = this;
-        final SeleccionarPeliculaWindow pw[] = new SeleccionarPeliculaWindow [] { w };
+        final EspectadorWindow pw[] = new EspectadorWindow [] { w };
+        final boolean cont[] = new boolean [1];
+
+        Sala sala = Sala.getSalas ().get (new Random ().nextInt (5));
+        int selection[] = new int [] { -1 };
 
         new LoadingWindow ( () -> {
             f.addWindowListener (new WindowAdapter () {
                 @Override
                 public void windowClosed (WindowEvent e) {
-                    if (pw [0] != null)
+                    if (pw [0] != null && !cont [0])
                         pw [0].setVisible (true);
+
+                    if (cont [0])
+                        new ComplementosWindow (new ConcurrentHashMap <Complemento, BigInteger> (), db,
+                                new Entrada (espectador, pelicula, Calendar.getInstance (), sala,
+                                        sala.getButacas ().get (selection [0])), w);
                 }
             });
 
@@ -92,9 +108,7 @@ public class SalaCineWindow extends JFrame {
                 p.setBorder (BorderFactory.createEmptyBorder (25, 25, 25, 25));
                 p.setLayout (new BoxLayout (p, BoxLayout.Y_AXIS));
 
-                Sala sala = Sala.getSalas ().get (new Random ().nextInt (5));
                 sala.llenarSala (pelicula);
-                int selection[] = new int [] { -1 };
 
                 JLabel selectionLabel = (((Supplier <JLabel>) ( () -> {
                     JLabel l = new JLabel ("Ninguna butaca seleccionada");
@@ -379,33 +393,8 @@ public class SalaCineWindow extends JFrame {
                             sb [0].setEnabled (false);
 
                             sb [0].addActionListener (e -> {
-                                f.setVisible (false);
-
-                                ConcurrentMap<Complemento, BigInteger> c = new ConcurrentHashMap<Complemento, BigInteger>();
-
-                                Thread tt;
-                                (tt = new Thread(() -> {
-                                    ComplementosWindow cw = new ComplementosWindow(c);
-                        
-                                    for (; cw.isDisplayable();)
-                                        ;
-                        
-                                    try {
-                                        Thread.sleep(1);
-                                    }
-                                    
-                                    catch (InterruptedException ex) {
-                                        ex.printStackTrace();
-                                    }
-                                })).start();
-                        
-                                try {
-                                    tt.join();
-                                }
-                                
-                                catch (InterruptedException ex) {
-                                    ex.printStackTrace();
-                                }
+                                cont [0] = true;
+                                f.dispose ();
                             });
 
                             return sb [0];

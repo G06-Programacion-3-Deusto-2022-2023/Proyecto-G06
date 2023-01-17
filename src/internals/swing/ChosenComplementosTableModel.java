@@ -9,6 +9,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import java.awt.Font;
+
 import javax.swing.JLabel;
 import javax.swing.table.DefaultTableModel;
 
@@ -16,14 +18,15 @@ import cine.Complemento;
 import graphical.ComplementosWindow;
 
 public class ChosenComplementosTableModel extends DefaultTableModel {
-    private ConcurrentMap <Complemento, BigInteger> c;
-    private JLabel l;
+    protected ConcurrentMap <Complemento, BigInteger> c;
+    protected JLabel l;
 
     public ChosenComplementosTableModel (ConcurrentMap <Complemento, BigInteger> c) {
         super ();
 
         this.c = c;
         this.l = new JLabel ();
+        this.l.setFont (l.getFont ().deriveFont (Font.PLAIN));
         this.update ();
     }
 

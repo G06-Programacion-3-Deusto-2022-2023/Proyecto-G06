@@ -15,6 +15,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Year;
@@ -95,7 +96,7 @@ public class GestorBD {
                     new Pair <String, String> ("FECHA", "'%s'"),
                     new Pair <String, String> ("SALA", "%d"),
                     new Pair <String, String> ("BUTACA", "%d"),
-                    new Pair <String, String> ("VALORACION", "%.1f"),
+                    new Pair <String, String> ("VALORACION", "%s"),
                     new Pair <String, String> ("PRECIO", "%s")
             }),
             new Pair <String, Pair <String, String> []> ("ARRAY_ENTRADA", new Pair [] {
@@ -446,7 +447,7 @@ public class GestorBD {
                                     GestorBD.TABLES [6].y [1].x)
                             + String.format ("%s VARCHAR(36),%n",
                                     GestorBD.TABLES [6].y [2].x)
-                            + String.format ("%s DATE,%n", GestorBD.TABLES [6].y [3].x)
+                            + String.format ("%s STRING,%n", GestorBD.TABLES [6].y [3].x)
                             + String.format ("%s INTEGER CHECK (SALA BETWEEN -1 AND %d),%n",
                                     GestorBD.TABLES [6].y [4].x,
                                     Sala.getSalas ().size () - 1)
@@ -794,10 +795,12 @@ public class GestorBD {
                                 return i.x == -1 || i.y == -1 ? -1
                                         : i.x * Sala.getColumnas () + i.y;
                             })).getAsInt (),
-                    ((Double) entrada.getValoracion ()).isNaN () || entrada.getValoracion () < 1.0f
-                            || entrada.getValoracion () > 10.0f ? 0
-                                    : entrada.getValoracion (),
-                    entrada.getPrecio ().toString ()));
+                    String.format ("%.1f",
+                            ((Double) entrada.getValoracion ()).isNaN () || entrada.getValoracion () < 1.0f
+                                    || entrada.getValoracion () > 10.0f ? 0
+                                            : entrada.getValoracion ())
+                            .replace (",", "."),
+                    entrada.getPrecio ().toPlainString ().replace (",", ".")));
 
             Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
                     String.format ("Entrada insertada: %s", entrada.toString ()));
@@ -999,7 +1002,7 @@ public class GestorBD {
                                                                     })).getAsInt ()
                                             : -1,
                                     data [i [0]] instanceof Entrada
-                                            ? ((Double) ((Entrada) data [i [0]])
+                                            ? String.format ("%.1f", ((Double) ((Entrada) data [i [0]])
                                                     .getValoracion ())
                                                             .isNaN ()
                                                     || ((Entrada) data [i [0]])
@@ -1008,8 +1011,9 @@ public class GestorBD {
                                                             .getValoracion () > 10.0f
                                                                     ? 0
                                                                     : ((Entrada) data [i [0]])
-                                                                            .getValoracion ()
-                                            : 0,
+                                                                            .getValoracion ())
+                                                    .replace (",", ".")
+                                            : "0",
                                     data [i [0]] instanceof Entrada
                                             ? ((Entrada) data [i [0]])
                                                     .getPrecio ()
@@ -1150,22 +1154,21 @@ public class GestorBD {
                 else if (data [i [0]] instanceof Espectador) {
                     GestorBD db = this;
 
-                    Set <Entrada> add_delete[] = new Set [] { ((Supplier <Set <Entrada>>) ( () -> {
-                        Set <Entrada> se = ((Espectador) data [i [0]]).getHistorial ();
-                        se.removeAll (db.getEntradas ());
+                    List <Entrada> add_delete[] = new List [] { this.getEntradas (), new ArrayList <Entrada> (), new ArrayList <Entrada> () };
 
-                        return se;
-                    })).get (), ((Supplier <Set <Entrada>>) ( () -> {
-                        Set <Entrada> se = db.getEntradas ().stream ()
-                                .filter (e -> e.getEspectador ().equals (data [i [0]]))
-                                .collect (Collectors.toSet ());
-                        se.removeAll (((Espectador) data [i [0]]).getHistorial ());
+                    for (int j = 0; j < add_delete [0].size (); j++) {
+                        if (((Espectador) data [i [0]]).getHistorial ().contains (add_delete [0].get (j))) {
+                            add_delete [1].add (add_delete [0].get (j));
 
-                        return se;
-                    })).get () };
+                            continue;
+                        }
 
-                    this.insert (add_delete [0]);
-                    this.delete (add_delete [1]);
+                        add_delete [2].add (add_delete [0].get (j));
+                    }
+                    add_delete [1].addAll (((Espectador) data [i [0]]).getHistorial ());
+
+                    this.update (add_delete [1]);
+                    this.delete (add_delete [2]);
                 }
 
                 int result = stmt.executeUpdate (strs [4]);
@@ -1389,7 +1392,8 @@ public class GestorBD {
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
             stmt.executeUpdate (String.format ("DELETE FROM %s WHERE %s = '%s'",
-                    GestorBD.TABLES [6].x, GestorBD.TABLES [6].y [0].x, entrada.getId ()));
+                    GestorBD.TABLES [7].x, GestorBD.TABLES [7].y [0].x,
+                    String.format (GestorBD.TABLES [7].y [0].x, entrada.getId ())));
             entrada.getComplementos ().clear ();
         }
 
@@ -1708,9 +1712,10 @@ public class GestorBD {
                         ((Supplier <Calendar>) ( () -> {
                             Calendar c = Calendar.getInstance ();
                             try {
-                                c.setTime (rs.getDate (GestorBD.TABLES [6].y [3].x));
+                                c.setTime (new SimpleDateFormat ("yyyy-MM-dd")
+                                        .parse (rs.getString (GestorBD.TABLES [6].y [3].x)));
                             }
-                            catch (SQLException e1) {
+                            catch (SQLException | ParseException e1) {
                                 Logger.getLogger (GestorBD.class.getName ()).log (
                                         Level.WARNING,
                                         String.format ("No pudo obtenerse una fecha: %s",
@@ -1725,8 +1730,8 @@ public class GestorBD {
                         i [0] == -1 || i [1] == -1 ? null
                                 : Sala.getSalas ().get (i [0]).getButacas ()
                                         .get (i [1]),
-                        this.getArrayEntrada (id), rs.getDouble (GestorBD.TABLES [6].y [7].x),
-                        rs.getBigDecimal (GestorBD.TABLES [6].y [8].x)));
+                        this.getArrayEntrada (id), rs.getDouble (GestorBD.TABLES [6].y [6].x),
+                        rs.getBigDecimal (GestorBD.TABLES [6].y [7].x)));
             }
 
             rs.close ();
@@ -1751,8 +1756,8 @@ public class GestorBD {
                 Statement stmt = con.createStatement ()) {
             ResultSet rs = stmt
                     .executeQuery (String.format ("SELECT * FROM %s WHERE %s = %s",
-                            GestorBD.TABLES [7].y [0].x, GestorBD.TABLES [7].x,
-                            id.toString ()));
+                            GestorBD.TABLES [7].x, GestorBD.TABLES [7].y [0].x,
+                            String.format (GestorBD.TABLES [7].y [0].y, id.toString ())));
 
             for (; rs.next ();) {
                 Complemento c = this.getComplementos ().stream ()

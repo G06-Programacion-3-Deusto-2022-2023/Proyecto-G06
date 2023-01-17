@@ -23,8 +23,10 @@ import internals.Utils;
 import internals.swing.ImageDisplayer;
 
 public class LoadingWindow {
+    private final static String DEFAULT_MESSAGE = "Cargando...";
+
     private class ILoadingWindow extends JWindow {
-        public ILoadingWindow (boolean fast) {
+        public ILoadingWindow (String message, boolean fast) {
             super ();
 
             this.add (((Supplier <JPanel>) ( () -> {
@@ -38,7 +40,7 @@ public class LoadingWindow {
                     q.setLayout (new BoxLayout (q, BoxLayout.Y_AXIS));
 
                     JLabel loadingLabel = ((Supplier <JLabel>) ( () -> {
-                        JLabel l = new JLabel ("Cargando...");
+                        JLabel l = new JLabel (message);
                         l.setFont (l.getFont ().deriveFont (Font.BOLD, 20f));
 
                         return l;
@@ -107,50 +109,82 @@ public class LoadingWindow {
         this (r, Thread.currentThread ());
     }
 
+    public LoadingWindow (Runnable r, String message) {
+        this (r, message, false);
+    }
+
     public LoadingWindow (Runnable r, boolean fast) {
-        this (r, Thread.currentThread (), fast);
+        this (r, Thread.currentThread (), LoadingWindow.DEFAULT_MESSAGE, fast);
+    }
+
+    public LoadingWindow (Runnable r, String message, boolean fast) {
+        this (r, Thread.currentThread (), message, fast);
     }
 
     public LoadingWindow (Thread t) {
         this (t, Thread.currentThread ());
     }
 
+    public LoadingWindow (Thread t, String message) {
+        this (t, message, false);
+    }
+
     public LoadingWindow (Thread t, boolean fast) {
-        this (t, Thread.currentThread (), fast);
+        this (t, Thread.currentThread (), LoadingWindow.DEFAULT_MESSAGE, fast);
+    }
+
+    public LoadingWindow (Thread t, String message, boolean fast) {
+        this (t, Thread.currentThread (), message, fast);
     }
 
     public LoadingWindow (Runnable r, Thread s) {
         this (new Thread (r), s);
     }
 
+    public LoadingWindow (Runnable r, Thread s, String message) {
+        this (new Thread (r), s, message, false);
+    }
+
     public LoadingWindow (Runnable r, Thread s, boolean fast) {
-        this (new Thread (r), s, fast);
+        this (new Thread (r), s, LoadingWindow.DEFAULT_MESSAGE, fast);
+    }
+
+    public LoadingWindow (Runnable r, Thread s, String message, boolean fast) {
+        this (new Thread (r), s, message, fast);
     }
 
     public LoadingWindow (Thread t, Thread s) {
         this (t, s, false);
     }
 
-    public LoadingWindow (Thread t, Thread s, boolean fast) throws NullPointerException {
+    public LoadingWindow (Thread t, Thread s, String message) {
+        this (t, s, message, false);
+    }
+
+    public LoadingWindow (Thread t, Thread s, boolean fast) {
+        this (t, s, LoadingWindow.DEFAULT_MESSAGE, fast);
+    }
+
+    public LoadingWindow (Thread t, Thread s, String message, boolean fast) throws NullPointerException {
         super ();
 
         if (t == null || s == null)
             throw new NullPointerException ("No se puede pasar un hilo nulo a la ventana de carga.");
 
         if (SwingUtilities.isEventDispatchThread ()) {
-            new WLoadingWindow (t, javax.swing.FocusManager.getCurrentManager ().getActiveWindow (), fast);
+            new WLoadingWindow (t, javax.swing.FocusManager.getCurrentManager ().getActiveWindow (), message, fast);
 
             return;
         }
 
-        new TLoadingWindow (t, s, fast);
+        new TLoadingWindow (t, s, message, fast);
     }
 
     private class TLoadingWindow {
-        public TLoadingWindow (Thread t, Thread s, boolean fast) {
+        public TLoadingWindow (Thread t, Thread s, String message, boolean fast) {
             super ();
 
-            ILoadingWindow w = new ILoadingWindow (fast);
+            ILoadingWindow w = new ILoadingWindow (message, fast);
 
             Thread nt;
             (nt = new Thread ( () -> {
@@ -178,7 +212,7 @@ public class LoadingWindow {
     }
 
     private class WLoadingWindow {
-        public WLoadingWindow (Thread t, Window w, boolean fast) {
+        public WLoadingWindow (Thread t, Window w, String message, boolean fast) {
             super ();
 
             ILoadingWindow g[] = new ILoadingWindow [1];
@@ -188,7 +222,7 @@ public class LoadingWindow {
                 if (!fast)
                     WLoadingWindow.disableComponents (w);
 
-                g [0] = new ILoadingWindow (fast);
+                g [0] = new ILoadingWindow (message, fast);
                 g [0].setLocationRelativeTo (w);
 
                 Thread nt2;

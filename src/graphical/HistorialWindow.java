@@ -36,13 +36,16 @@ import cine.Complemento;
 import cine.Entrada;
 import cine.Espectador;
 import internals.Pair;
+import internals.Triplet;
+import internals.Utils;
 
 public class HistorialWindow extends JFrame {
     public HistorialWindow (Espectador espectador) {
         this (espectador, null);
     }
 
-    public HistorialWindow (Espectador espectador, EspectadorWindow w) throws NullPointerException, UnsupportedOperationException {
+    public HistorialWindow (Espectador espectador, EspectadorWindow w)
+            throws NullPointerException, UnsupportedOperationException {
         super ();
 
         if (espectador == null)
@@ -120,7 +123,13 @@ public class HistorialWindow extends JFrame {
                                 return rc [0] == -1 ? "ninguno" : String.format ("fila %d, butaca %d", rc [0], rc [1]);
                             })).get ());
 
-                    fecha.setText ("Fecha: " + "");
+                    fecha.setText (String.format ("Fecha: %s", historial [current [0]].getFecha () == null ? "--/--/--"
+                            : ((Supplier <String>) ( () -> {
+                                Triplet <Integer, Integer, Integer> date = Utils
+                                        .getDate (historial [current [0]].getFecha ());
+
+                                return String.format ("%d/%02d/%d", date.x, date.y, date.z);
+                            })).get ()));
 
                     duracion.setText ("Duración: " + historial [current [0]].getPelicula ().duracionToString ());
 
@@ -328,7 +337,8 @@ public class HistorialWindow extends JFrame {
         this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
         this.setTitle ("Mi historial");
         this.setIconImage (
-                ((ImageIcon) UIManager.getIcon ("OptionPane.informationIcon", new Locale ("es-ES"))).getImage ().getScaledInstance (64, 64, Image.SCALE_SMOOTH));
+                ((ImageIcon) UIManager.getIcon ("OptionPane.informationIcon", new Locale ("es-ES"))).getImage ()
+                        .getScaledInstance (64, 64, Image.SCALE_SMOOTH));
         this.pack ();
         this.setResizable (false);
         this.setLocationRelativeTo (null);

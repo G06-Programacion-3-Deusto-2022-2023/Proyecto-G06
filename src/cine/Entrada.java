@@ -23,6 +23,8 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,7 +50,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
     private Calendar fecha;
     private Sala sala;
     private Butaca butaca;
-    private Map <Complemento, BigInteger> complementos;
+    private ConcurrentMap <Complemento, BigInteger> complementos;
     private double valoracion;
     private BigDecimal precio;
 
@@ -153,19 +155,19 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
                 : butaca;
     }
 
-    public Map <Complemento, BigInteger> getComplementos () {
+    public ConcurrentMap <Complemento, BigInteger> getComplementos () {
         return this.complementos;
     }
 
     public void setComplementos (Map <Complemento, BigInteger> complementos) {
         if (complementos == null) {
             if (this.complementos == null)
-                this.complementos = new TreeMap <Complemento, BigInteger> ();
+                this.complementos = new ConcurrentHashMap <Complemento, BigInteger> ();
 
             return;
         }
 
-        this.complementos = complementos;
+        this.complementos = new ConcurrentHashMap <Complemento, BigInteger> (complementos);
     }
 
     public double getValoracion () {
@@ -185,10 +187,10 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
     }
 
     public void setPrecio () {
-        this.precio = Settings.getPrecioEntrada ()
-                .subtract (new BigDecimal (Settings.getDescuentoEspectador ()).scaleByPowerOfTen (-2)
-                        .multiply (Settings.getDiaEspectador () == Utils.getCurrentDay () ? BigDecimal.ONE
-                                : BigDecimal.ZERO))
+        this.precio = Settings.getPrecioEntrada ().subtract (Settings.getPrecioEntrada ()
+                .multiply (new BigDecimal (Settings.getDescuentoEspectador ()).multiply (
+                        Settings.getDiaEspectador () == Utils.getCurrentDay () ? BigDecimal.ONE : BigDecimal.ZERO)
+                        .scaleByPowerOfTen (-2)))
                 .setScale (2, RoundingMode.HALF_EVEN);
     }
 
@@ -244,7 +246,9 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
         return String.format (
                 "Entrada (hash: %d) {%n\tID: %s%n\tEspectador: %s (ID: %s)%n\tPelícula: %s (ID: %s)%n\tFecha: %s%n\tSala: %s%n%s%n\tComplementos: %s%n\tPrecio: %.2f €%n\tValoración: %s%n\tTotal: %.2f €%n}",
                 this.hashCode (), this.id.toString (), this.espectador.getNombre (), this.espectador.getId (),
-                this.pelicula.getNombre (), this.pelicula.getId (), ((Supplier <String>) ( () -> {
+                this.pelicula == null ? "-" : this.pelicula.getNombre (),
+                this.pelicula == null ? "-" : this.pelicula.getId (),
+                this.fecha == null ? "--/--/--" : ((Supplier <String>) ( () -> {
                     Triplet <Integer, Integer, Integer> date = Utils.getDate (this.fecha);
 
                     return String.format ("%d/%02d/%d", date.x, date.y, date.z);
@@ -252,12 +256,12 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
                     int i = Sala.indexOf (this.sala);
 
                     return i == -1 ? "-" : String.format ("%d", i);
-                })).get (), (((Supplier <String>) ( () -> {
+                })).get (), ((Supplier <String>) ( () -> {
                     Pair <Integer, Integer> i = this.sala == null ? null : this.sala.indexOf (this.butaca);
 
                     return String.format ("\tButaca: %s%n\tFila: %s", i == null ? "-" : Integer.toString (i.x + 1),
                             i == null ? "-" : Integer.toString (i.y + 1));
-                })).get ()), ((Supplier <String>) ( () -> {
+                })).get (), ((Supplier <String>) ( () -> {
                     if (this.complementos.isEmpty ())
                         return "ninguno";
 
@@ -280,13 +284,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
     }
 
     public BigDecimal total () throws ArithmeticException {
-        BigDecimal p = BigDecimal.valueOf (this.precio.doubleValue ());
-
-        ArrayList <Map.Entry <Complemento, BigInteger>> keyValueArray = new ArrayList <Map.Entry <Complemento, BigInteger>> (
-                complementos.entrySet ());
-        for (int i = 0; i < complementos.size (); i++)
-            p = p.add (keyValueArray.get (i).getKey ().getPrecio ()
-                    .multiply (new BigDecimal (keyValueArray.get (i).getValue ())));
+        BigDecimal p = this.precio.add (Complemento.sum (this.complementos));
 
         if ((p = p.setScale (2, RoundingMode.HALF_EVEN)).compareTo (Consumible.getMaxPrecio ()) > 0)
             throw new ArithmeticException (
