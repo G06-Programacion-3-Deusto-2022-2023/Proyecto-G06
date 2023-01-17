@@ -25,11 +25,11 @@ import cine.Administrador;
 import internals.GestorBD;
 
 public class AdministradorWindow extends JFrame {
-    public AdministradorWindow (GestorBD db, Administrador admin) {
+    public AdministradorWindow (final GestorBD db, final Administrador admin) {
         this (db, admin, null);
     }
 
-    public AdministradorWindow (GestorBD db, Administrador admin, InicioWindow w)
+    public AdministradorWindow (final GestorBD db, final Administrador admin, final InicioWindow w)
             throws NullPointerException, IllegalArgumentException {
         super ();
 
@@ -45,8 +45,8 @@ public class AdministradorWindow extends JFrame {
             throw new IllegalArgumentException (
                     "El administrador enviado a la ventana de modo administrador no se encuentra en la base de datos.");
 
-        InicioWindow pw[] = new InicioWindow [] { w };
-        AdministradorWindow f = this;
+        final InicioWindow pw[] = new InicioWindow [] { w };
+        final AdministradorWindow f = this;
 
         this.addWindowListener (new WindowAdapter () {
             @Override

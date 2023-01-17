@@ -1,406 +1,325 @@
 package graphical;
 
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
+import java.io.File;
+
+import java.util.LinkedList;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import java.awt.Font;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Image;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.GridBagConstraints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.net.MalformedURLException;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
-import javax.imageio.ImageIO;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
 
 import cine.Espectador;
 import cine.Pelicula;
 import internals.GestorBD;
+import internals.Pair;
+import internals.Settings;
+import internals.Triplet;
+import internals.swing.ImageDisplayer;
 
 public class SeleccionarPeliculaWindow extends JFrame {
-    boolean siguiente;
-    int indice;
-    Image imagenIcon1;
-    Image imagenIcon2;
-    Image imagenIcon3;
-    JLabel imagen1;
-    JLabel imagen2;
-    JLabel imagen3;
+    public SeleccionarPeliculaWindow (final GestorBD db, final Espectador espectador, final EspectadorWindow w)
+            throws NullPointerException {
+        super ();
 
-    public SeleccionarPeliculaWindow (GestorBD db, Espectador espectador, EspectadorWindow v2) {
-    	
-    	EspectadorWindow pw[] = new EspectadorWindow [] { v2 };
-        SeleccionarPeliculaWindow v = this;
+        if (db == null)
+            throw new NullPointerException (
+                    "No se puede pasar una base de datos nula a la ventana de selección de películas.");
 
-        indice = 0;
-        siguiente = true;
+        final EspectadorWindow pw[] = new EspectadorWindow [] { w };
+        final SeleccionarPeliculaWindow f = this;
 
-        SortedSet <Pelicula> peliculas = new TreeSet <Pelicula> ();
+        final Dimension idims = new Dimension (200, 200 * 16 / 9);
+        final long sleep = 15;
 
-        JButton anteriores3 = new JButton ("Anteriores 3 peliculas");
-        JButton siguientes3 = new JButton ("Siguientes 3 peliculas");
-        JButton pelicula1 = new JButton ();
-        JButton pelicula2 = new JButton ();
-        JButton pelicula3 = new JButton ();
-        JPanel foto1 = new JPanel ();
-        JPanel foto2 = new JPanel ();
-        JPanel foto3 = new JPanel ();
-        JPanel centralSuperior = new JPanel (new GridLayout (1, 3));
-        JPanel centralInferior = new JPanel (new GridLayout (1, 3));
-        JPanel principal = new JPanel (new GridLayout (2, 1));
-        JLabel imagen1 = new JLabel ();
-        JLabel imagen2 = new JLabel ();
-        JLabel imagen3 = new JLabel ();
+        final LinkedList <Pelicula> lp = new LinkedList <Pelicula> (Settings.getActiveSet ().getPeliculas ());
+        final Triplet <ImageDisplayer, JLabel, Runnable> pd[] = new Triplet [3];
+        pd [0] = new Triplet <ImageDisplayer, JLabel, Runnable> (new ImageDisplayer (), ((Supplier <JLabel>) ( () -> {
+            JLabel l = new JLabel ();
 
-        this.getContentPane ().setLayout (new BorderLayout ());
-        ;
-        this.getContentPane ().add (principal, BorderLayout.CENTER);
-        this.getContentPane ().add (anteriores3, BorderLayout.NORTH);
-        this.getContentPane ().add (siguientes3, BorderLayout.SOUTH);
+            l.setFont (l.getFont ().deriveFont (Font.BOLD, 14f));
+            l.setMinimumSize (new Dimension ((int) idims.getWidth (), (int) (idims.getHeight () / 5)));
+            l.setPreferredSize (new Dimension ((int) idims.getWidth (), (int) (idims.getHeight () / 5)));
+            l.setMaximumSize (new Dimension ((int) idims.getWidth (), (int) (idims.getHeight () / 5)));
+            l.setHorizontalAlignment (SwingConstants.CENTER);
 
-        principal.add (centralSuperior);
-        principal.add (centralInferior);
-        centralInferior.add (pelicula1);
-        centralInferior.add (pelicula2);
-        centralInferior.add (pelicula3);
-        foto1.add (imagen1);
-        foto2.add (imagen2);
-        foto3.add (imagen3);
+            return l;
+        })).get (), () -> {
+            Dimension psz = pd [0].x.getParent () == null ? null : new Dimension (pd [0].x.getParent ().getSize ());
 
-        centralSuperior.add (foto1);
-        centralSuperior.add (foto2);
-        centralSuperior.add (foto3);
-
-        this.setTitle (espectador == null ? "Invitado" : espectador.getNombre ());
-        this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
-
-        this.setSize (1000, 800);
-        this.setLocationRelativeTo (null);
-        this.setVisible (true);
-
-        siguientes3.addActionListener (new ActionListener () {
-
-            @Override
-            public void actionPerformed (ActionEvent e) {
-                if (siguiente == true) {
-                    indice = indice + 1;
-                    if (indice >= peliculas.size ()) {
-                        indice = indice - peliculas.size ();
-                    }
-                    pelicula1.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon1 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
-                    indice = indice + 1;
-                    if (indice >= peliculas.size ()) {
-                        indice = indice - peliculas.size ();
-                    }
-                    pelicula2.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon2 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
-                    indice = indice + 1;
-                    if (indice >= peliculas.size ()) {
-                        indice = indice - peliculas.size ();
-                    }
-                    pelicula3.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon3 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
-
-                    imagen1.setIcon (new ImageIcon (imagenIcon1));
-                    imagen2.setIcon (new ImageIcon (imagenIcon2));
-                    imagen3.setIcon (new ImageIcon (imagenIcon3));
-
-                    centralSuperior.add (foto1);
-                    centralSuperior.add (foto2);
-                    centralSuperior.add (foto3);
-                }
-                else {
-                    indice = indice + 3;
-                    if (indice >= peliculas.size ()) {
-                        indice = indice - peliculas.size ();
-                    }
-                    pelicula1.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon1 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
-                    indice = indice + 1;
-                    if (indice >= peliculas.size ()) {
-                        indice = indice - peliculas.size ();
-                    }
-                    pelicula2.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon2 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
-                    indice = indice + 1;
-                    if (indice >= peliculas.size ()) {
-                        indice = indice - peliculas.size ();
-                    }
-                    pelicula3.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon3 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
-
-                    imagen1.setIcon (new ImageIcon (imagenIcon1));
-                    imagen2.setIcon (new ImageIcon (imagenIcon2));
-                    imagen3.setIcon (new ImageIcon (imagenIcon3));
-
-                    centralSuperior.add (foto1);
-                    centralSuperior.add (foto2);
-                    centralSuperior.add (foto3);
-                    siguiente = true;
-                }
+            Image img;
+            try {
+                img = new ImageIcon (new File (lp.get (0).getRutaImagen ()).toURI ().toURL ()).getImage ();
             }
-        });
-        anteriores3.addActionListener (new ActionListener () {
 
-            @Override
-            public void actionPerformed (ActionEvent e) {
-                if (siguiente == false) {
-                    indice = indice - 1;
-                    if (indice < 0) {
-                        indice = indice + peliculas.size ();
-                    }
-                    pelicula3.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon3 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
+            catch (MalformedURLException e1) {
+                Logger.getLogger (SeleccionarPeliculaWindow.class.getName ()).log (Level.WARNING,
+                        String.format ("No se pudo crear una URL a partir del archivo %s",
+                                Settings.getLogo ()));
 
-                    indice = indice - 1;
-                    if (indice < 0) {
-                        indice = indice + peliculas.size ();
-                    }
-                    pelicula2.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon2 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
-                    indice = indice - 1;
-                    if (indice < 0) {
-                        indice = indice + peliculas.size ();
-                    }
-                    pelicula1.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon1 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
-
-                    imagen1.setIcon (new ImageIcon (imagenIcon1));
-                    imagen2.setIcon (new ImageIcon (imagenIcon2));
-                    imagen3.setIcon (new ImageIcon (imagenIcon3));
-
-                    centralSuperior.add (foto1);
-                    centralSuperior.add (foto2);
-                    centralSuperior.add (foto3);
-                }
-                else {
-                    indice = indice - 3;
-                    if (indice < 0) {
-                        indice = indice + peliculas.size ();
-                    }
-                    pelicula3.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon3 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
-
-                    indice = indice - 1;
-                    if (indice < 0) {
-                        indice = indice + peliculas.size ();
-                    }
-                    pelicula2.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon2 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
-                    indice = indice - 1;
-                    if (indice < 0) {
-                        indice = indice + peliculas.size ();
-                    }
-                    pelicula1.setText (ObtenerPelicula (peliculas, indice));
-                    try {
-                        imagenIcon1 = new ImageIcon (
-                                ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice)))).getImage ()
-                                        .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    }
-                    catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace ();
-                    }
-
-                    imagen1.setIcon (new ImageIcon (imagenIcon1));
-                    imagen2.setIcon (new ImageIcon (imagenIcon2));
-                    imagen3.setIcon (new ImageIcon (imagenIcon3));
-
-                    centralSuperior.add (foto1);
-                    centralSuperior.add (foto2);
-                    centralSuperior.add (foto3);
-
-                    siguiente = false;
-                }
+                img = new ImageIcon (this.getClass ()
+                        .getResource ("/toolbarButtonGraphics/media/Movie24.gif")).getImage ();
             }
-        });
-        pelicula1.addActionListener (new ActionListener () {
 
-            @Override
-            public void actionPerformed (ActionEvent e) {
-                for (Pelicula pelicula : peliculas) {
-                    if (pelicula.getNombre ().equals (pelicula1.getText ())) {
-                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v2));
-                    }
-                }
+            pd [0].x.setImage (img, (int) idims.getWidth (), (int) idims.getHeight (), Image.SCALE_SMOOTH);
+            pd [0].y.setText (lp.get (0).getNombre ());
 
+            if (psz != null) {
+                pd [0].x.getParent ().setSize (psz);
+                pd [0].x.getParent ().repaint ();
             }
-        });
-        pelicula2.addActionListener (new ActionListener () {
 
-            @Override
-            public void actionPerformed (ActionEvent e) {
-                for (Pelicula pelicula : peliculas) {
-                    if (pelicula.getNombre ().equals (pelicula2.getText ())) {
-                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v2));
-                    }
-                }
-
+            try {
+                Thread.sleep (sleep);
             }
-        });
-        pelicula3.addActionListener (new ActionListener () {
 
-            @Override
-            public void actionPerformed (ActionEvent e) {
-                for (Pelicula pelicula : peliculas) {
-                    if (pelicula.getNombre ().equals (pelicula3.getText ())) {
-                        SwingUtilities.invokeLater ( () -> new SalaCineWindow (db, espectador, pelicula, v2));
-                    }
-                }
-
+            catch (InterruptedException e1) {
+                e1.printStackTrace ();
             }
+
+            f.repaint ();
         });
+        pd [1] = new Triplet <ImageDisplayer, JLabel, Runnable> (new ImageDisplayer (), ((Supplier <JLabel>) ( () -> {
+            JLabel l = new JLabel ();
+
+            l.setFont (l.getFont ().deriveFont (Font.BOLD, 14f));
+            l.setMinimumSize (new Dimension ((int) idims.getWidth (), (int) (idims.getHeight () / 5)));
+            l.setPreferredSize (new Dimension ((int) idims.getWidth (), (int) (idims.getHeight () / 5)));
+            l.setMaximumSize (new Dimension ((int) idims.getWidth (), (int) (idims.getHeight () / 5)));
+            l.setHorizontalAlignment (SwingConstants.CENTER);
+
+            return l;
+        })).get (), () -> {
+            Dimension psz = pd [1].x.getParent () == null ? null : new Dimension (pd [1].x.getParent ().getSize ());
+
+            Image img;
+            try {
+                img = new ImageIcon (new File (lp.get (1).getRutaImagen ()).toURI ().toURL ()).getImage ();
+            }
+
+            catch (MalformedURLException e1) {
+                Logger.getLogger (SeleccionarPeliculaWindow.class.getName ()).log (Level.WARNING,
+                        String.format ("No se pudo crear una URL a partir del archivo %s",
+                                Settings.getLogo ()));
+
+                img = new ImageIcon (this.getClass ()
+                        .getResource ("/toolbarButtonGraphics/media/Movie24.gif")).getImage ();
+            }
+
+            pd [1].x.setImage (img, (int) idims.getWidth (), (int) idims.getHeight (), Image.SCALE_SMOOTH);
+            pd [1].y.setText (lp.get (1).getNombre ());
+
+            if (psz != null) {
+                pd [1].x.getParent ().setSize (psz);
+                pd [1].x.getParent ().repaint ();
+            }
+
+            try {
+                Thread.sleep (sleep);
+            }
+
+            catch (InterruptedException e1) {
+                e1.printStackTrace ();
+            }
+
+            f.repaint ();
+        });
+        pd [2] = new Triplet <ImageDisplayer, JLabel, Runnable> (new ImageDisplayer (), ((Supplier <JLabel>) ( () -> {
+            JLabel l = new JLabel ();
+
+            l.setFont (l.getFont ().deriveFont (Font.BOLD, 14f));
+            l.setMinimumSize (new Dimension ((int) idims.getWidth (), (int) (idims.getHeight () / 5)));
+            l.setPreferredSize (new Dimension ((int) idims.getWidth (), (int) (idims.getHeight () / 5)));
+            l.setMaximumSize (new Dimension ((int) idims.getWidth (), (int) (idims.getHeight () / 5)));
+            l.setHorizontalAlignment (SwingConstants.CENTER);
+
+            return l;
+        })).get (), () -> {
+            Dimension psz = pd [2].x.getParent () == null ? null : new Dimension (pd [2].x.getParent ().getSize ());
+
+            Image img;
+            try {
+                img = new ImageIcon (new File (lp.get (2).getRutaImagen ()).toURI ().toURL ()).getImage ();
+            }
+
+            catch (MalformedURLException e1) {
+                Logger.getLogger (SeleccionarPeliculaWindow.class.getName ()).log (Level.WARNING,
+                        String.format ("No se pudo crear una URL a partir del archivo %s",
+                                Settings.getLogo ()));
+
+                img = new ImageIcon (this.getClass ()
+                        .getResource ("/toolbarButtonGraphics/media/Movie24.gif")).getImage ();
+            }
+
+            pd [2].x.setImage (img, (int) idims.getWidth (), (int) idims.getHeight (), Image.SCALE_SMOOTH);
+            pd [2].y.setText (lp.get (2).getNombre ());
+
+            if (psz != null) {
+                pd [2].x.getParent ().setSize (psz);
+                pd [2].x.getParent ().repaint ();
+            }
+
+            try {
+                Thread.sleep (sleep);
+            }
+
+            catch (InterruptedException e1) {
+                e1.printStackTrace ();
+            }
+
+            f.repaint ();
+        });
+
         this.addWindowListener (new WindowAdapter () {
-
-            @Override
-            public void windowOpened (WindowEvent e) {
-
-                peliculas.addAll (Pelicula.getDefault ());
-                pelicula1.setText (ObtenerPelicula (peliculas, indice));
-                pelicula2.setText (ObtenerPelicula (peliculas, indice + 1));
-                pelicula3.setText (ObtenerPelicula (peliculas, indice + 2));
-                try {
-                    imagenIcon1 = new ImageIcon (ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice))))
-                            .getImage ().getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    imagenIcon2 = new ImageIcon (
-                            ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice + 1)))).getImage ()
-                                    .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                    imagenIcon3 = new ImageIcon (
-                            ImageIO.read (new File (ObtenerImagenPelicula (peliculas, indice + 2)))).getImage ()
-                                    .getScaledInstance (300, 300, Image.SCALE_SMOOTH);
-                }
-                catch (IOException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace ();
-                }
-                indice = indice + 2;
-
-                imagen1.setIcon (new ImageIcon (imagenIcon1));
-                imagen2.setIcon (new ImageIcon (imagenIcon2));
-                imagen3.setIcon (new ImageIcon (imagenIcon3));
-
-                v2.setVisible (false);
-            }
-
             @Override
             public void windowClosed (WindowEvent e) {
-            	if (pw [0] == null)
-                    return;
-
-                v2.setVisible (true);
+                if (pw [0] != null)
+                    w.setVisible (true);
             }
         });
-    }
 
-    public static String ObtenerPelicula (SortedSet <Pelicula> peliculas, Integer indice) {
-        ArrayList <Pelicula> peliculasArray = new ArrayList <Pelicula> (peliculas);
-        String pelicula = peliculasArray.get (indice).getNombre ();
+        this.add (((Supplier <JPanel>) ( () -> {
+            JPanel p = new JPanel (new GridBagLayout ());
+            p.setBorder (BorderFactory.createEmptyBorder (25, 25, 25, 25));
 
-        return pelicula;
-    }
+            GridBagConstraints gbc = new GridBagConstraints ();
+            gbc.gridwidth = GridBagConstraints.REMAINDER;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.anchor = GridBagConstraints.NORTH;
+            gbc.insets = new Insets (10, 0, 10, 0);
 
-    public static String ObtenerImagenPelicula (SortedSet <Pelicula> peliculas, Integer indice) {
-        ArrayList <Pelicula> peliculasArray = new ArrayList <Pelicula> (peliculas);
-        String pelicula = peliculasArray.get (indice).getRutaImagen ();
+            p.add (((Supplier <JButton>) ( () -> {
+                JButton b = new JButton (new ImageIcon (this.getClass ()
+                        .getResource ("/toolbarButtonGraphics/navigation/Up16.gif")));
 
-        return pelicula;
+                b.addActionListener (e -> {
+                    lp.addFirst (lp.removeLast ());
+                    lp.addFirst (lp.removeLast ());
+                    lp.addFirst (lp.removeLast ());
+
+                    pd [0].z.run ();
+                    pd [1].z.run ();
+                    pd [2].z.run ();
+                });
+
+                return b;
+            })).get (), gbc);
+
+            gbc.anchor = GridBagConstraints.CENTER;
+
+            p.add (((Supplier <JPanel>) ( () -> {
+                JPanel q = new JPanel (new FlowLayout (FlowLayout.CENTER, 15, 0));
+
+                for (int i[] = new int [1]; i [0] < pd.length; i [0]++)
+                    q.add (((Supplier <JPanel>) ( () -> {
+                        JPanel r = new JPanel (new GridBagLayout ());
+                        r.setBorder (BorderFactory.createEmptyBorder (1, 1, 1, 1));
+
+                        GridBagConstraints gbc2 = new GridBagConstraints ();
+                        gbc2.gridwidth = GridBagConstraints.REMAINDER;
+                        gbc2.fill = GridBagConstraints.NONE;
+                        gbc2.anchor = GridBagConstraints.NORTH;
+
+                        Pair <Triplet <ImageDisplayer, JLabel, Runnable>, Integer> cp = new Pair <Triplet <ImageDisplayer, JLabel, Runnable>, Integer> (
+                                pd [i [0]], i [0]);
+
+                        cp.x.z.run ();
+
+                        r.addMouseListener (new MouseAdapter () {
+                            @Override
+                            public void mouseClicked (MouseEvent e) {
+                                if (SwingUtilities.isRightMouseButton (e)) {
+                                    new PeliculaDetailsWindow (lp.get (cp.y));
+
+                                    return;
+                                }
+
+                                if (!SwingUtilities.isLeftMouseButton (e))
+                                    return;
+
+                                pw [0] = null;
+                                f.dispose ();
+
+                                new SalaCineWindow (db, espectador, lp.get (cp.y), w);
+                            }
+
+                            @Override
+                            public void mouseEntered (MouseEvent e) {
+                                r.setBorder (BorderFactory.createLineBorder (Color.GRAY, 1));
+                            }
+
+                            @Override
+                            public void mouseExited (MouseEvent e) {
+                                r.setBorder (BorderFactory.createEmptyBorder (1, 1, 1, 1));
+                            }
+                        });
+
+                        r.add (cp.x.x, gbc2);
+
+                        gbc2.insets = new Insets (5, 0, 0, 0);
+                        gbc2.anchor = GridBagConstraints.SOUTH;
+
+                        r.add (cp.x.y, gbc2);
+
+                        return r;
+                    })).get ());
+
+                return q;
+            })).get (), gbc);
+
+            gbc.anchor = GridBagConstraints.SOUTH;
+
+            p.add (((Supplier <JButton>) ( () -> {
+                JButton b = new JButton (new ImageIcon (this.getClass ()
+                        .getResource ("/toolbarButtonGraphics/navigation/Down16.gif")));
+
+                b.addActionListener (e -> {
+                    lp.add (lp.pop ());
+                    lp.add (lp.pop ());
+                    lp.add (lp.pop ());
+
+                    pd [0].z.run ();
+                    pd [1].z.run ();
+                    pd [2].z.run ();
+                });
+
+                return b;
+            })).get (), gbc);
+
+            return p;
+        })).get ());
+
+        this.setDefaultCloseOperation (WindowConstants.DISPOSE_ON_CLOSE);
+        this.setIconImage (new ImageIcon (this.getClass ()
+                .getResource ("/toolbarButtonGraphics/media/Movie24.gif")).getImage ()
+                        .getScaledInstance (64, 64, Image.SCALE_SMOOTH));
+        this.setTitle ("Asistir a una película");
+        this.setSize ((int) (idims.getWidth () * 3.75), (int) (idims.getHeight () * 1.75));
+        this.setResizable (false);
+        this.setLocationRelativeTo (w);
+        this.setVisible (true);
     }
 }

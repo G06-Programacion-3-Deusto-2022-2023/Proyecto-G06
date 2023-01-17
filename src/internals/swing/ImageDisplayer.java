@@ -4,12 +4,17 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.awt.RenderingHints;
 
 import javax.swing.JPanel;
 
 public class ImageDisplayer extends JPanel {
     private Image image;
+
+    public ImageDisplayer () {
+        this (new BufferedImage (1, 1, BufferedImage.TYPE_INT_RGB));
+    }
 
     public ImageDisplayer (Image image) {
         this (image, image.getWidth (null), image.getHeight (null));
@@ -29,8 +34,7 @@ public class ImageDisplayer extends JPanel {
         if (image == null)
             throw new NullPointerException ("No se puede mostrar una imagen nula en un ImageDisplayer.");
 
-        this.image = image.getScaledInstance (width, height, hints);
-        this.image.setAccelerationPriority (1);
+        this.setImage (image, width, height, hints);
     }
 
     public Image getImage () {
@@ -54,7 +58,8 @@ public class ImageDisplayer extends JPanel {
             throw new NullPointerException ("No se puede mostrar una imagen nula en un ImageDisplayer.");
 
         this.image = image.getScaledInstance (width, height, hints);
-        this.repaint ();
+        this.image.setAccelerationPriority (1);
+        this.setSize (this.getSize ());
     }
 
     @Override
@@ -70,6 +75,11 @@ public class ImageDisplayer extends JPanel {
 
         super.paintComponent (g2d);
         g2d.drawImage (this.image, 0, 0, this.getWidth (), this.getHeight (), this);
+    }
+
+    @Override
+    public Dimension getSize () {
+        return this.getPreferredSize ();
     }
 
     @Override

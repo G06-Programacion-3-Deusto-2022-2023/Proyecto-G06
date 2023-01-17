@@ -78,6 +78,7 @@ public class InicioWindow extends JFrame {
                     GestorBD.unlock ();
 
                 Settings.save ();
+                System.exit (0);
             }
         });
 
@@ -90,7 +91,7 @@ public class InicioWindow extends JFrame {
                 if (id [0] != null) {
                     try {
                         Image img = new ImageIcon (new File (Settings.getLogo ()).toURI ().toURL ()).getImage ();
-                        id [0].setImage (img, lw, img.getHeight (null) * lw / img.getWidth (null), Image.SCALE_SMOOTH);
+                        id [0] = new ImageDisplayer (img, lw, img.getHeight (null) * lw / img.getWidth (null), Image.SCALE_SMOOTH);
                     }
 
                     catch (MalformedURLException e2) {
@@ -209,6 +210,14 @@ public class InicioWindow extends JFrame {
                                     JButton b = new JButton ("Continuar como invitado");
 
                                     b.addActionListener (e -> {
+                                        if (db == null) {
+                                            JOptionPane.showMessageDialog (f,
+                                                    "No se puede acceder al modo espectador teniendo una base de datos nula.",
+                                                    "Funcionalidad limitada", JOptionPane.WARNING_MESSAGE);
+
+                                            return;
+                                        }
+
                                         f.setVisible (false);
                                         new EspectadorWindow (db, null, f);
                                     });
@@ -221,6 +230,8 @@ public class InicioWindow extends JFrame {
 
                             return r;
                         })).get ());
+
+                        f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
                         f.pack ();
                         f.repaint ();
@@ -246,7 +257,6 @@ public class InicioWindow extends JFrame {
             return p;
         })).get ());
 
-        this.setDefaultCloseOperation (WindowConstants.EXIT_ON_CLOSE);
         this.setTitle (Settings.getNombre ());
         this.setIconImage (
                 ((ImageIcon) UIManager.getIcon ("FileChooser.homeFolderIcon", new Locale ("es-ES"))).getImage ()

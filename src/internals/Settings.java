@@ -322,8 +322,16 @@ public final class Settings {
             return SetPeliculas.getDefault ();
 
         try {
-            return SetPeliculas.fromJSON (new File (Settings.ACTIVE_SET_PATH)).stream ().findFirst ()
+            SetPeliculas s = SetPeliculas.fromJSON (new File (Settings.ACTIVE_SET_PATH)).stream ().findFirst ()
                     .orElse (SetPeliculas.getDefault ());
+
+            if (s.size () < SetPeliculas.minSize () || s.size () > SetPeliculas.maxSize ()) {
+                Settings.setActiveSet ();
+
+                return SetPeliculas.getDefault ();
+            }
+
+            return s;
         }
 
         catch (Exception e) {

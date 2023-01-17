@@ -32,25 +32,25 @@ import internals.GestorBD;
 import internals.swing.JTextFieldLimit;
 
 public class InicioSesionWindow extends JFrame {
-    public InicioSesionWindow (GestorBD db) {
+    public InicioSesionWindow (final GestorBD db) {
         this (db, null);
     }
 
-    public InicioSesionWindow (GestorBD db, InicioWindow w) throws NullPointerException {
+    public InicioSesionWindow (final GestorBD db, final InicioWindow w) throws NullPointerException {
         super ();
 
         if (db == null)
             throw new NullPointerException (
                     "No se puede pasar una base de datos nula a la ventana de inicio de sesión");
 
-        InicioSesionWindow f = this;
-        InicioWindow pw[] = new InicioWindow [] { w };
+        final InicioSesionWindow f = this;
+        final InicioWindow pw[] = new InicioWindow [] { w };
 
         this.addWindowListener (new WindowAdapter () {
             @Override
             public void windowClosed (WindowEvent e) {
                 if (pw [0] != null)
-                    pw [0].setVisible (true);
+                    w.setVisible (true);
             }
         });
 

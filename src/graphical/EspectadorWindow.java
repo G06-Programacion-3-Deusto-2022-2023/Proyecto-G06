@@ -67,7 +67,7 @@ public class EspectadorWindow extends JFrame {
             @Override
             public void windowClosed (WindowEvent e) {
                 if (pw [0] != null)
-                    pw [0].setVisible (true);
+                    w.setVisible (true);
             }
         });
 
