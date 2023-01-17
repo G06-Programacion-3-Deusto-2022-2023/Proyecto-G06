@@ -1135,31 +1135,35 @@ public class GestorBD {
                     this.deleteSetPeliculasData ((SetPeliculas) data [i [0]]);
                     ((SetPeliculas) data [i [0]]).setPeliculas (p);
                     this.insertArraySetPelicula ((SetPeliculas) data [i [0]]);
+
+                    if (((SetPeliculas) data [i [0]]).size () < SetPeliculas.minSize ()
+                            || ((SetPeliculas) data [i [0]]).size () > SetPeliculas.maxSize ())
+                        this.delete (data [i [0]]);
+
+                    if (Settings.getActiveSet ().equals (data [i [0]]))
+                        Settings.setActiveSet ((SetPeliculas) data [i [0]]);
                 }
 
                 else if (data [i [0]] instanceof Administrador) {
                     GestorBD db = this;
 
-                    Set <SetPeliculas> add_delete[] = new Set [] {
-                            ((Supplier <Set <SetPeliculas>>) ( () -> {
-                                Set <SetPeliculas> sp = ((Administrador) data [i [0]])
-                                        .getSetsPeliculas ();
-                                sp.removeAll (db.getSetsPeliculas ());
+                    List <SetPeliculas> add_delete[] = new List [] { this.getSetsPeliculas (),
+                            new ArrayList <SetPeliculas> (),
+                            new ArrayList <SetPeliculas> () };
 
-                                return sp;
-                            })).get (), ((Supplier <Set <SetPeliculas>>) ( () -> {
-                                Set <SetPeliculas> sp = db.getSetsPeliculas ().stream ()
-                                        .filter (e -> ((Administrador) data [i [0]])
-                                                .equals (e.getAdministrador ()))
-                                        .collect (Collectors.toSet ());
-                                sp.removeAll (((Administrador) data [i [0]])
-                                        .getSetsPeliculas ());
+                    for (int j = 0; j < add_delete [0].size (); j++) {
+                        if (((Administrador) data [i [0]]).getSetsPeliculas ().contains (add_delete [0].get (j))) {
+                            add_delete [1].add (add_delete [0].get (j));
 
-                                return sp;
-                            })).get () };
+                            continue;
+                        }
 
-                    this.insert (add_delete [0]);
-                    this.delete (add_delete [1]);
+                        add_delete [2].add (add_delete [0].get (j));
+                    }
+                    add_delete [1].addAll (((Administrador) data [i [0]]).getSetsPeliculas ());
+
+                    this.insert (add_delete [1]);
+                    this.delete (add_delete [2]);
                 }
 
                 else if (data [i [0]] instanceof Espectador) {
@@ -1181,6 +1185,16 @@ public class GestorBD {
 
                     this.update (add_delete [1]);
                     this.delete (add_delete [2]);
+                }
+
+                else if (data [i [0]] instanceof Pelicula) {
+                    this.update (((Pelicula) data [i [0]]).getSets ());
+
+                    if (Settings.getActiveSet ().contains ((Pelicula) data [i [0]])) {
+                        SetPeliculas as = Settings.getActiveSet ();
+                        as.replace ((Pelicula) data [i [0]]);
+                        Settings.setActiveSet (as);
+                    }
                 }
 
                 int result = stmt.executeUpdate (strs [4]);
@@ -1227,7 +1241,12 @@ public class GestorBD {
 
     public void delete (HasID... data) {
         for (int i[] = new int [1]; i [0] < data.length; i [0]++) {
-            if (data [i [0]] == null)
+            if (data [i [0]] == null
+                    || (data [i [0]] instanceof Pelicula && ((Pelicula) data [i [0]]).isDefault ())
+                    || (data [i [0]] instanceof SetPeliculas
+                            && ((SetPeliculas) data [i [0]]).isDefault ())
+                    || (data [i [0]] instanceof Complemento
+                            && ((Complemento) data [i [0]]).isDefault ()))
                 continue;
 
             GestorBD.unlock ();
@@ -1301,7 +1320,17 @@ public class GestorBD {
                     },
                     new Object [] {
                             GestorBD.TABLES [0].x, "película", "películas", "la película",
-                            null
+                            (Runnable) () -> {
+                                Set <SetPeliculas> sp = ((Pelicula) data [i [0]]).getSets ();
+                                ((Pelicula) data [i [0]]).removeFromSets ();
+                                this.update (sp);
+
+                                if (Settings.getActiveSet ().contains ((Pelicula) data [i [0]])) {
+                                    SetPeliculas as = Settings.getActiveSet ();
+                                    as.remove ((Pelicula) data [i [0]]);
+                                    Settings.setActiveSet (as);
+                                }
+                            }
                     },
                     new Object [] {
                             GestorBD.TABLES [4].x, "set de peliculas", "sets de películas",

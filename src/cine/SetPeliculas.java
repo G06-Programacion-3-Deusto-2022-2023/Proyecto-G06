@@ -294,6 +294,29 @@ public class SetPeliculas implements Comparable <SetPeliculas>, Treeable <SetPel
         return this.remove (this.peliculas);
     }
 
+    public boolean replace (Pelicula pelicula) {
+        if (!this.contains (pelicula)) {
+            this.add (pelicula);
+
+            return false;
+        }
+
+        this.remove (pelicula);
+        this.add (pelicula);
+
+        return true;
+    }
+
+    public boolean replace (Collection <Pelicula> peliculas) {
+        Pelicula array[] = peliculas.toArray (new Pelicula [0]);
+
+        boolean all = true;
+        for (int i = 0; i < array.length; all = all & this.replace (array [i++]))
+            ;
+
+        return all;
+    }
+
     public boolean contains (Pelicula pelicula) {
         return pelicula != null && this.peliculas.contains (pelicula);
     }

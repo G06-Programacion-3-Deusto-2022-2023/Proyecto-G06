@@ -642,6 +642,7 @@ public class GestionarPeliculasWindow extends JFrame {
 
                                     db.delete ((Pelicula) (peliculas.getSelectedItem ()));
                                     filters.get (0).run ();
+                                    filters.get (1).run ();
                                 });
 
                                 return b;
@@ -1143,6 +1144,7 @@ public class GestionarPeliculasWindow extends JFrame {
                                     db.delete (l);
 
                                     filters.get (0).run ();
+                                    filters.get (1).run ();
                                 });
                             });
 
@@ -1285,7 +1287,7 @@ public class GestionarPeliculasWindow extends JFrame {
                             })).get (),
                             ((Supplier <JButton>) ( () -> {
                                 JButton b = new JButton ("Marcar como activo");
-
+                                
                                 b.setEnabled (false);
                                 b.addActionListener (e -> {
                                     Settings.setActiveSet ((SetPeliculas) setspeliculas.getSelectedItem ());
