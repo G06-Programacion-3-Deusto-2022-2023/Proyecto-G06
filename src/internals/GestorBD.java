@@ -102,6 +102,9 @@ public class GestorBD {
             new Pair <String, Pair <String, String> []> ("ARRAY_ENTRADA", new Pair [] {
                     new Pair <String, String> ("ID_ENTRADA", "'%s'"),
                     new Pair <String, String> ("ID_COMPLEMENTO", "'%s'"),
+                    new Pair <String, String> ("NOMBRE_COMPLEMENTO", "'%s'"),
+                    new Pair <String, String> ("PRECIO", "'%.2f'"),
+                    new Pair <String, String> ("DESCUENTO", "%d"),
                     new Pair <String, String> ("CANTIDAD", "%d")
             }),
             new Pair <String, Pair <String, String> []> ("LLAVE", new Pair [] {
@@ -466,9 +469,14 @@ public class GestorBD {
                                     GestorBD.TABLES [7].y [0].x)
                             + String.format ("%s VARCHAR(36) NOT NULL,%n",
                                     GestorBD.TABLES [7].y [1].x)
-                            + String.format ("%s INTEGER UNSIGNED NOT NULL,%n",
+                            + String.format ("%s STRING NOT NULL,%n",
                                     GestorBD.TABLES [7].y [2].x)
-                            + String.format ("PRIMARY KEY (ID_ENTRADA, ID_COMPLEMENTO)%n",
+                            + String.format ("%s DECIMAL(65,2),%n",
+                                    GestorBD.TABLES [7].y [3].x)
+                            + String.format ("%s INTEGER,%n", GestorBD.TABLES [7].y [4].x)
+                            + String.format ("%s INTEGER UNSIGNED NOT NULL,%n",
+                                    GestorBD.TABLES [7].y [5].x)
+                            + String.format ("PRIMARY KEY (%s, %s)%n",
                                     GestorBD.TABLES [7].y [0].x,
                                     GestorBD.TABLES [7].y [1].x)
                             + ");",
@@ -824,6 +832,9 @@ public class GestorBD {
                         String.format (GestorBD.insertIntoStatement (7),
                                 entrada.getId ().toString (),
                                 kv [i].getKey ().getId ().toString (),
+                                kv [i].getKey ().getNombre (),
+                                kv [i].getKey ().getPrecio (),
+                                kv [i].getKey ().getDescuento (),
                                 kv [i].getValue ()));
 
             Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
@@ -1154,7 +1165,8 @@ public class GestorBD {
                 else if (data [i [0]] instanceof Espectador) {
                     GestorBD db = this;
 
-                    List <Entrada> add_delete[] = new List [] { this.getEntradas (), new ArrayList <Entrada> (), new ArrayList <Entrada> () };
+                    List <Entrada> add_delete[] = new List [] { this.getEntradas (), new ArrayList <Entrada> (),
+                            new ArrayList <Entrada> () };
 
                     for (int j = 0; j < add_delete [0].size (); j++) {
                         if (((Espectador) data [i [0]]).getHistorial ().contains (add_delete [0].get (j))) {
@@ -1759,32 +1771,12 @@ public class GestorBD {
                             GestorBD.TABLES [7].x, GestorBD.TABLES [7].y [0].x,
                             String.format (GestorBD.TABLES [7].y [0].y, id.toString ())));
 
-            for (; rs.next ();) {
-                Complemento c = this.getComplementos ().stream ()
-                        .filter (e -> {
-                            try {
-                                return e.getId ().equals (UUID.fromString (rs
-                                        .getString (GestorBD.TABLES [7].y [1].x)));
-                            }
-
-                            catch (SQLException e1) {
-                                Logger.getLogger (GestorBD.class.getName ()).log (
-                                        Level.WARNING,
-                                        String.format (
-                                                "Hubo un error al intentar recuperar un ID de complemento: %s",
-                                                e1.getMessage ()));
-                                e1.printStackTrace ();
-
-                                return false;
-                            }
-                        })
-                        .findFirst ().orElse (null);
-
-                if (c == null)
-                    continue;
-
-                m.put (c, rs.getBigDecimal (GestorBD.TABLES [7].y [2].x).toBigInteger ());
-            }
+            for (; rs.next ();)
+                m.put (new Complemento (UUID.fromString (rs.getString (GestorBD.TABLES [7].y [1].x)),
+                        rs.getString (GestorBD.TABLES [7].y [2].x),
+                        new BigDecimal (rs.getString (GestorBD.TABLES [7].y [3].x).replace (",", ".")),
+                        rs.getInt (GestorBD.TABLES [7].y [4].x)),
+                        rs.getBigDecimal (GestorBD.TABLES [7].y [5].x).toBigInteger ());
 
             rs.close ();
         }
