@@ -137,6 +137,7 @@ public class MiscOptionsWindow extends JFrame {
                     JComboBox <String> cb = new JComboBox <String> (
                             Arrays.asList ("Asientos", "Tabla").stream ()
                                     .collect (Collectors.toCollection (Vector::new)));
+                    cb.setSelectedIndex (Settings.usingFallbackRenderer () ? 1 : 0);
 
                     JButton b[] = new JButton [] {
                             new JButton (new ImageIcon (

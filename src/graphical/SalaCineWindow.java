@@ -79,6 +79,7 @@ public class SalaCineWindow extends JFrame {
         final boolean cont[] = new boolean [1];
 
         Sala sala = Sala.getSalas ().get (new Random ().nextInt (5));
+        sala.llenarSala (pelicula);
         int selection[] = new int [] { -1 };
 
         new LoadingWindow ( () -> {
@@ -91,7 +92,8 @@ public class SalaCineWindow extends JFrame {
                     if (cont [0])
                         new ComplementosWindow (new ConcurrentHashMap <Complemento, BigInteger> (), db,
                                 new Entrada (espectador, pelicula, Calendar.getInstance (), sala,
-                                        sala.getButacas ().get (selection [0])), w);
+                                        sala.getButacas ().get (selection [0])),
+                                w);
                 }
             });
 
@@ -107,8 +109,6 @@ public class SalaCineWindow extends JFrame {
                 JPanel p = new JPanel ();
                 p.setBorder (BorderFactory.createEmptyBorder (25, 25, 25, 25));
                 p.setLayout (new BoxLayout (p, BoxLayout.Y_AXIS));
-
-                sala.llenarSala (pelicula);
 
                 JLabel selectionLabel = (((Supplier <JLabel>) ( () -> {
                     JLabel l = new JLabel ("Ninguna butaca seleccionada");
@@ -322,6 +322,7 @@ public class SalaCineWindow extends JFrame {
                                 r.add (((Supplier <ImageDisplayer>) ( () -> {
                                     ImageDisplayer disp = new ImageDisplayer (
                                             img [sala.getButacas ().get (i [0]).ocupada () ? 1 : 0]);
+                                    disp.setButaca (true); // Una solución un poco guarra de última hora pero sirve.
 
                                     if (!sala.getButacas ().get (i [0]).ocupada ())
                                         disp.addMouseListener (new MouseAdapter () {

@@ -72,7 +72,6 @@ public class GestorBD {
                     new Pair <String, String> ("ID_ESPECTADOR", "'%s'"),
                     new Pair <String, String> ("NOMBRE_ESPECTADOR", "'%s'"),
                     new Pair <String, String> ("CONTRASENA_ESPECTADOR", "'%s'"),
-                    new Pair <String, String> ("EDAD", "%d")
             }),
             new Pair <String, Pair <String, String> []> ("COMPLEMENTO", new Pair [] {
                     new Pair <String, String> ("ID_COMPLEMENTO", "'%s'"),
@@ -93,6 +92,14 @@ public class GestorBD {
                     new Pair <String, String> ("ID_ENTRADA", "'%s'"),
                     new Pair <String, String> ("ID_ESPECTADOR", "'%s'"),
                     new Pair <String, String> ("ID_PELICULA", "'%s'"),
+                    new Pair <String, String> ("NOMBRE_PELICULA", "'%s'"),
+                    new Pair <String, String> ("RUTA_IMAGEN_PELICULA", "'%s'"),
+                    new Pair <String, String> ("VALORACION_PELICULA", "%s"),
+                    new Pair <String, String> ("FECHA_PELICULA", "%d"),
+                    new Pair <String, String> ("DIRECTOR_PELICULA", "'%s'"),
+                    new Pair <String, String> ("DURACION_PELICULA", "%d"),
+                    new Pair <String, String> ("EDAD_RECOMENDADA_PELICULA", "%d"),
+                    new Pair <String, String> ("GENEROS_PELICULA", "%d"),
                     new Pair <String, String> ("FECHA", "'%s'"),
                     new Pair <String, String> ("SALA", "%d"),
                     new Pair <String, String> ("BUTACA", "%d"),
@@ -103,8 +110,8 @@ public class GestorBD {
                     new Pair <String, String> ("ID_ENTRADA", "'%s'"),
                     new Pair <String, String> ("ID_COMPLEMENTO", "'%s'"),
                     new Pair <String, String> ("NOMBRE_COMPLEMENTO", "'%s'"),
-                    new Pair <String, String> ("PRECIO", "'%.2f'"),
-                    new Pair <String, String> ("DESCUENTO", "%d"),
+                    new Pair <String, String> ("PRECIO_COMPLEMENTO", "'%.2f'"),
+                    new Pair <String, String> ("DESCUENTO_COMPLEMENTO", "%d"),
                     new Pair <String, String> ("CANTIDAD", "%d")
             }),
             new Pair <String, Pair <String, String> []> ("LLAVE", new Pair [] {
@@ -390,7 +397,7 @@ public class GestorBD {
                             + String.format ("%s VARCHAR(36) PRIMARY KEY,%n",
                                     GestorBD.TABLES [0].y [0].x)
                             + String.format ("%s STRING,%n", GestorBD.TABLES [0].y [1].x)
-                            + String.format ("%s STRING, %n", GestorBD.TABLES [0].y [2].x)
+                            + String.format ("%s STRING,%n", GestorBD.TABLES [0].y [2].x)
                             + String.format ("%s DECIMAL(3, 1) NOT NULL,%n",
                                     GestorBD.TABLES [0].y [3].x)
                             + String.format ("%s INTEGER,%n", GestorBD.TABLES [0].y [4].x)
@@ -415,9 +422,8 @@ public class GestorBD {
                                     GestorBD.TABLES [2].y [0].x)
                             + String.format ("%s STRING NOT NULL,%n",
                                     GestorBD.TABLES [2].y [1].x)
-                            + String.format ("%s STRING NOT NULL,%n",
+                            + String.format ("%s STRING NOT NULL%n",
                                     GestorBD.TABLES [2].y [2].x)
-                            + String.format ("%s INTEGER%n", GestorBD.TABLES [2].y [3].x)
                             + ");",
                     String.format ("CREATE TABLE IF NOT EXISTS %s (%n", GestorBD.TABLES [3].x)
                             + String.format ("%s VARCHAR(36) PRIMARY KEY,%n",
@@ -451,17 +457,30 @@ public class GestorBD {
                             + String.format ("%s VARCHAR(36),%n",
                                     GestorBD.TABLES [6].y [2].x)
                             + String.format ("%s STRING,%n", GestorBD.TABLES [6].y [3].x)
+                            + String.format ("%s STRING,%n", GestorBD.TABLES [6].y [4].x)
+                            + String.format ("%s DECIMAL(3, 1) NOT NULL,%n",
+                                    GestorBD.TABLES [6].y [5].x)
+                            + String.format ("%s INTEGER,%n", GestorBD.TABLES [6].y [6].x)
+                            + String.format ("%s STRING NOT NULL,%n",
+                                    GestorBD.TABLES [6].y [7].x)
+                            + String.format ("%s INTEGER NOT NULL,%n",
+                                    GestorBD.TABLES [6].y [8].x)
+                            + String.format ("%s INTEGER NOT NULL,%n",
+                                    GestorBD.TABLES [6].y [9].x)
+                            + String.format ("%s INTEGER NOT NULL,%n",
+                                    GestorBD.TABLES [6].y [10].x)
+                            + String.format ("%s STRING,%n", GestorBD.TABLES [6].y [11].x)
                             + String.format ("%s INTEGER CHECK (SALA BETWEEN -1 AND %d),%n",
-                                    GestorBD.TABLES [6].y [4].x,
+                                    GestorBD.TABLES [6].y [12].x,
                                     Sala.getSalas ().size () - 1)
                             + String.format (
                                     "%s INTEGER CHECK (BUTACA BETWEEN -1 AND %d),%n",
-                                    GestorBD.TABLES [6].y [5].x,
+                                    GestorBD.TABLES [6].y [13].x,
                                     Sala.getFilas () * Sala.getColumnas () - 1)
                             + String.format ("%s DECIMAL(3, 1),%n",
-                                    GestorBD.TABLES [6].y [6].x)
+                                    GestorBD.TABLES [6].y [14].x)
                             + String.format ("%s DECIMAL(65, 2)%n",
-                                    GestorBD.TABLES [6].y [7].x)
+                                    GestorBD.TABLES [6].y [15].x)
                             + ");",
                     String.format ("CREATE TABLE IF NOT EXISTS %s (%n",
                             GestorBD.TABLES [7].x)
@@ -623,16 +642,15 @@ public class GestorBD {
         // Se abre la conexión y se obtiene el Statement
         try (Connection con = DriverManager.getConnection (GestorBD.CONNECTION_STRING);
                 Statement stmt = con.createStatement ()) {
-            if (stmt
-                    .executeUpdate (String.format (
-                            GestorBD.insertIntoStatement (0),
-                            pelicula.getId ().toString (), pelicula.getNombre (),
-                            pelicula.getRutaImagen (),
-                            Double.toString (pelicula.getValoracion ()).replace (",", "."),
-                            pelicula.getFecha ().getValue (),
-                            pelicula.getDirector (), pelicula.getDuracion ().toMinutes (),
-                            pelicula.getEdad ().getValue (),
-                            Genero.Nombre.toValor (pelicula.getGeneros ()))) == 1)
+            if (stmt.executeUpdate (String.format (
+                    GestorBD.insertIntoStatement (0),
+                    pelicula.getId ().toString (), pelicula.getNombre (),
+                    pelicula.getRutaImagen (),
+                    Double.toString (pelicula.getValoracion ()).replace (",", "."),
+                    pelicula.getFecha ().getValue (),
+                    pelicula.getDirector (), pelicula.getDuracion ().toMinutes (),
+                    pelicula.getEdad ().getValue (),
+                    Genero.Nombre.toValor (pelicula.getGeneros ()))) == 1)
                 Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
                         String.format ("Pelicula insertada: %s", pelicula.toString ()));
 
@@ -682,8 +700,7 @@ public class GestorBD {
                     String.format (
                             GestorBD.insertIntoStatement (2),
                             espectador.getId (), espectador.getNombre (),
-                            espectador.getContrasena (),
-                            espectador.getEdad ())) == 1)
+                            espectador.getContrasena ())) == 1)
                 Logger.getLogger (GestorBD.class.getName ()).log (Level.INFO,
                         String.format ("Espectador insertado: %s", espectador.toString ()));
 
@@ -793,7 +810,22 @@ public class GestorBD {
                             : entrada.getEspectador ().getId ().toString (),
                     entrada.getPelicula () == null ? ""
                             : entrada.getPelicula ().getId ().toString (),
-                    new SimpleDateFormat ("yyyy-MM-dd").format (entrada.getFecha ().getTime ()),
+                    entrada.getPelicula () == null ? "" : entrada.getPelicula ().getNombre (),
+                    entrada.getPelicula () == null ? "" : entrada.getPelicula ().getRutaImagen (),
+                    entrada.getPelicula () == null ? "0.0"
+                            : Double.toString (entrada.getPelicula ().getValoracion ()).replace (",", "."),
+                    entrada.getPelicula () == null ? Pelicula.defaultFecha ().getValue ()
+                            : entrada.getPelicula ().getFecha ().getValue (),
+                    entrada.getPelicula () == null ? "" : entrada.getPelicula ().getDirector (),
+                    entrada.getPelicula () == null ? Pelicula.getDefaultDuracion ().toMinutes ()
+                            : entrada.getPelicula ().getDuracion ().toMinutes (),
+                    entrada.getPelicula () == null ? EdadRecomendada.TODOS.getValue ()
+                            : entrada.getPelicula ().getEdad ().getValue (),
+                    entrada.getPelicula () == null ? Genero.Nombre.NADA.getValue ()
+                            : Genero.Nombre.toValor (entrada.getPelicula ().getGeneros ()),
+                    new SimpleDateFormat ("yyyy-MM-dd")
+                            .format (entrada.getFecha () == null ? Entrada.getDefaultFecha ().getTime ()
+                                    : entrada.getFecha ().getTime ()),
                     entrada.getSala () == null ? -1 : Sala.indexOf (entrada.getSala ()),
                     entrada.getSala () == null || entrada.getButaca () == null ? -1
                             : ((IntSupplier) ( () -> {
@@ -980,12 +1012,53 @@ public class GestorBD {
                                                                     .toString ()
                                             : "",
                                     data [i [0]] instanceof Entrada
-                                            ? new SimpleDateFormat (
-                                                    "yyyy-MM-dd")
-                                                            .format (((Entrada) data [i [0]])
-                                                                    .getFecha ()
-                                                                    .getTime ())
+                                            ? ((Entrada) data [i [0]]).getPelicula () == null ? ""
+                                                    : ((Entrada) data [i [0]]).getPelicula ().getNombre ()
                                             : "",
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getPelicula () == null ? ""
+                                                    : ((Entrada) data [i [0]]).getPelicula ().getRutaImagen ()
+                                            : "",
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getPelicula () == null ? "0.0"
+                                                    : Double.toString (
+                                                            ((Entrada) data [i [0]]).getPelicula ().getValoracion ())
+                                                            .replace (",", ".")
+                                            : "0.0",
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getPelicula () == null
+                                                    ? Pelicula.defaultFecha ().getValue ()
+                                                    : ((Entrada) data [i [0]]).getPelicula ().getFecha ().getValue ()
+                                            : Pelicula.defaultFecha ().getValue (),
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getPelicula () == null ? ""
+                                                    : ((Entrada) data [i [0]]).getPelicula ().getDirector ()
+                                            : "",
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getPelicula ().getDuracion () == null
+                                                    ? Pelicula.getDefaultDuracion ().toMinutes ()
+                                                    : ((Entrada) data [i [0]]).getPelicula ().getDuracion ()
+                                                            .toMinutes ()
+                                            : Pelicula.getDefaultDuracion ().toMinutes (),
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getPelicula () == null
+                                                    ? EdadRecomendada.TODOS.getValue ()
+                                                    : ((Entrada) data [i [0]]).getPelicula ().getEdad ().getValue ()
+                                            : EdadRecomendada.TODOS.getValue (),
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getPelicula () == null
+                                                    ? Genero.Nombre.NADA.getValue ()
+                                                    : Genero.Nombre.toValor (
+                                                            ((Entrada) data [i [0]]).getPelicula ().getGeneros ())
+                                            : Genero.Nombre.NADA.getValue (),
+                                    new SimpleDateFormat (
+                                            "yyyy-MM-dd")
+                                                    .format (!(data [i [0]] instanceof Entrada)
+                                                            || ((Entrada) data [i [0]]).getFecha () == null
+                                                                    ? Entrada.getDefaultFecha ().getTime ()
+                                                                    : ((Entrada) data [i [0]])
+                                                                            .getFecha ()
+                                                                            .getTime ()),
                                     data [i [0]] instanceof Entrada
                                             ? ((Entrada) data [i [0]])
                                                     .getSala () == null
@@ -1020,16 +1093,18 @@ public class GestorBD {
                                                             .getValoracion () < 1.0f
                                                     || ((Entrada) data [i [0]])
                                                             .getValoracion () > 10.0f
-                                                                    ? 0
+                                                                    ? 0.0f
                                                                     : ((Entrada) data [i [0]])
                                                                             .getValoracion ())
                                                     .replace (",", ".")
-                                            : "0",
-                                    data [i [0]] instanceof Entrada
-                                            ? ((Entrada) data [i [0]])
-                                                    .getPrecio ()
-                                                    .toString ()
                                             : "0.0",
+                                    data [i [0]] instanceof Entrada
+                                            ? ((Entrada) data [i [0]]).getPrecio () == null
+                                                    ? Entrada.getDefaultPrecio ().toPlainString ().replace (",", ".")
+                                                    : ((Entrada) data [i [0]])
+                                                            .getPrecio ()
+                                                            .toPlainString ().replace (",", ".")
+                                            : Entrada.getDefaultPrecio ().toPlainString ().replace (",", "."),
                                     data [i [0]].getId ().toString ())
                     },
                     new String [] {
@@ -1044,10 +1119,6 @@ public class GestorBD {
                                             ? ((Espectador) data [i [0]])
                                                     .getContrasena ()
                                             : "",
-                                    data [i [0]] instanceof Espectador
-                                            ? ((Espectador) data [i [0]])
-                                                    .getEdad ()
-                                            : 0,
                                     data [i [0]].getId ())
                     },
                     new String [] {
@@ -1072,7 +1143,7 @@ public class GestorBD {
                                             ? ((Pelicula) data [i [0]])
                                                     .getFecha ()
                                                     .getValue ()
-                                            : 0,
+                                            : Pelicula.defaultFecha ().getValue (),
                                     data [i [0]] instanceof Pelicula
                                             ? ((Pelicula) data [i [0]])
                                                     .getDirector ()
@@ -1081,17 +1152,17 @@ public class GestorBD {
                                             ? ((Pelicula) data [i [0]])
                                                     .getDuracion ()
                                                     .toMinutes ()
-                                            : 0,
+                                            : Pelicula.getDefaultDuracion ().toMinutes (),
                                     data [i [0]] instanceof Pelicula
                                             ? ((Pelicula) data [i [0]])
                                                     .getEdad ()
                                                     .getValue ()
-                                            : 0,
+                                            : EdadRecomendada.TODOS.getValue (),
                                     data [i [0]] instanceof Pelicula
                                             ? Genero.Nombre.toValor (
                                                     ((Pelicula) data [i [0]])
                                                             .getGeneros ())
-                                            : 0,
+                                            : Genero.Nombre.NADA.getValue (),
                                     data [i [0]].getId ())
                     },
                     new String [] {
@@ -1468,11 +1539,11 @@ public class GestorBD {
                         rs.getDouble (GestorBD.TABLES [0].y [3].x),
                         Year.of (rs.getInt (GestorBD.TABLES [0].y [4].x)),
                         rs.getString (GestorBD.TABLES [0].y [5].x),
-                        Duration.ofMinutes (rs.getInt (GestorBD.TABLES [0].y [6].x)),
+                        Duration.ofMinutes (rs.getLong (GestorBD.TABLES [0].y [6].x)),
                         EdadRecomendada.fromValue (rs.getByte (GestorBD.TABLES [0].y [7].x)),
                         Genero.Nombre
-                                .toGeneros ((short) rs
-                                        .getInt (GestorBD.TABLES [0].y [8].x)),
+                                .toGeneros (rs
+                                        .getShort (GestorBD.TABLES [0].y [8].x)),
                         null));
             }
 
@@ -1548,8 +1619,7 @@ public class GestorBD {
                 UUID id = UUID.fromString (rs.getString (GestorBD.TABLES [2].y [0].x));
 
                 espectador = new Espectador (id, rs.getString (GestorBD.TABLES [2].y [1].x),
-                        rs.getString (GestorBD.TABLES [2].y [2].x),
-                        (byte) rs.getInt (GestorBD.TABLES [2].y [3].x),
+                        rs.getString (GestorBD.TABLES [2].y [2].x), Espectador.getDefaultEdad (),
                         null, null, null);
 
                 List <Entrada> entradas = this.getEntradas ().stream ()
@@ -1724,37 +1794,26 @@ public class GestorBD {
 
             for (; rs.next ();) {
                 UUID id = UUID.fromString (rs.getString (GestorBD.TABLES [6].y [0].x));
-                int i[] = new int [] { rs.getInt (GestorBD.TABLES [6].y [4].x),
-                        rs.getInt (GestorBD.TABLES [6].y [5].x) };
+                int i[] = new int [] { rs.getInt (GestorBD.TABLES [6].y [12].x),
+                        rs.getInt (GestorBD.TABLES [6].y [13].x) };
 
                 l.add (new Entrada (id,
                         new Espectador (UUID.fromString (
                                 rs.getString (GestorBD.TABLES [6].y [1].x)), "", "",
                                 Espectador.getDefaultEdad (), null, null, null),
-                        this.getPeliculas ().stream ().filter (
-                                e -> {
-                                    try {
-                                        return e.getId ()
-                                                .equals (UUID.fromString (
-                                                        rs.getString (GestorBD.TABLES [6].y [2].x)));
-                                    }
-                                    catch (SQLException e1) {
-                                        Logger.getLogger (GestorBD.class
-                                                .getName ())
-                                                .log (Level.WARNING,
-                                                        String.format ("No pudo obtenerse un ID de película: %s",
-                                                                e1.getMessage ()));
-                                        e1.printStackTrace ();
-
-                                        return false;
-                                    }
-                                })
-                                .findFirst ().orElse (null),
+                        new Pelicula (UUID.fromString (rs.getString (GestorBD.TABLES [6].y [2].x)),
+                                rs.getString (GestorBD.TABLES [6].y [3].x), rs.getString (GestorBD.TABLES [6].y [4].x),
+                                rs.getDouble (GestorBD.TABLES [6].y [5].x),
+                                Year.of (rs.getInt (GestorBD.TABLES [6].y [6].x)),
+                                rs.getString (GestorBD.TABLES [6].y [7].x),
+                                Duration.ofMinutes (rs.getLong (GestorBD.TABLES [6].y [8].x)),
+                                EdadRecomendada.fromValue (rs.getByte (GestorBD.TABLES [6].y [9].x)),
+                                Genero.Nombre.toGeneros (rs.getShort (GestorBD.TABLES [6].y [10].x))),
                         ((Supplier <Calendar>) ( () -> {
                             Calendar c = Calendar.getInstance ();
                             try {
                                 c.setTime (new SimpleDateFormat ("yyyy-MM-dd")
-                                        .parse (rs.getString (GestorBD.TABLES [6].y [3].x)));
+                                        .parse (rs.getString (GestorBD.TABLES [6].y [11].x)));
                             }
                             catch (SQLException | ParseException e1) {
                                 Logger.getLogger (GestorBD.class.getName ()).log (
@@ -1771,8 +1830,8 @@ public class GestorBD {
                         i [0] == -1 || i [1] == -1 ? null
                                 : Sala.getSalas ().get (i [0]).getButacas ()
                                         .get (i [1]),
-                        this.getArrayEntrada (id), rs.getDouble (GestorBD.TABLES [6].y [6].x),
-                        rs.getBigDecimal (GestorBD.TABLES [6].y [7].x)));
+                        this.getArrayEntrada (id), rs.getDouble (GestorBD.TABLES [6].y [14].x),
+                        rs.getBigDecimal (GestorBD.TABLES [6].y [15].x)));
             }
 
             rs.close ();

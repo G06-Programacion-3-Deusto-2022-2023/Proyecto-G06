@@ -11,6 +11,7 @@ import javax.swing.JPanel;
 
 public class ImageDisplayer extends JPanel {
     private Image image;
+    private boolean isButaca;
 
     public ImageDisplayer () {
         this (new BufferedImage (1, 1, BufferedImage.TYPE_INT_RGB));
@@ -34,7 +35,12 @@ public class ImageDisplayer extends JPanel {
         if (image == null)
             throw new NullPointerException ("No se puede mostrar una imagen nula en un ImageDisplayer.");
 
+        this.isButaca = false;
         this.setImage (image, width, height, hints);
+    }
+
+    public void setButaca (boolean b) {
+        this.isButaca = b;
     }
 
     public Image getImage () {
@@ -59,6 +65,11 @@ public class ImageDisplayer extends JPanel {
 
         this.image = image.getScaledInstance (width, height, hints);
         this.image.setAccelerationPriority (1);
+        if (this.isButaca) {
+            this.repaint ();
+
+            return;
+        }
         this.setSize (this.getSize ());
     }
 

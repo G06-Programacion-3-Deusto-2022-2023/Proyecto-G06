@@ -595,6 +595,10 @@ public class Pelicula implements Comparable <Pelicula>, Treeable <Pelicula>, Has
         return this.duracion;
     }
 
+    public static Duration getDefaultDuracion () {
+        return Pelicula.DEFAULT_DURACION;
+    }
+
     public void setDuracion (Duration duracion) {
         // En estos momentos echo de menos la extensión backtrace () de GNU para
         // C

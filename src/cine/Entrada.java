@@ -44,6 +44,8 @@ import internals.bst.Filter;
 import internals.bst.Treeable;
 
 public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID {
+    private static final Calendar DEFAULT_FECHA = new Calendar.Builder ().setCalendarType ("gregorian").setDate (2003, 2, 21).build ();
+
     private UUID id;
     private Espectador espectador;
     private Pelicula pelicula;
@@ -63,8 +65,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
     }
 
     public Entrada (Espectador espectador, Pelicula pelicula) {
-        this (espectador, pelicula,
-                new Calendar.Builder ().setCalendarType ("gregorian").setDate (2003, 2, 21).build ());
+        this (espectador, pelicula, Entrada.DEFAULT_FECHA);
     }
 
     public Entrada (Espectador espectador, Pelicula pelicula, Calendar fecha) {
@@ -132,6 +133,10 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
 
     public Calendar getFecha () {
         return this.fecha;
+    }
+
+    public static Calendar getDefaultFecha () {
+        return Entrada.DEFAULT_FECHA;
     }
 
     public void setFecha (Calendar fecha) {
