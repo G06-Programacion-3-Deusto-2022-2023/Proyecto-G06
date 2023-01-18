@@ -30,7 +30,7 @@ public final class Utils {
     }
 
     public static boolean isAmongstCallers (String str, StackTraceElement stt[]) {
-        for (int i = 1; i <= Utils.STACK_DEPTH && i < stt.length;)
+        for (int i = 3; i <= Utils.STACK_DEPTH && i < stt.length;)
             if (stt [i++].getClassName ().equals (str))
                 return true;
 

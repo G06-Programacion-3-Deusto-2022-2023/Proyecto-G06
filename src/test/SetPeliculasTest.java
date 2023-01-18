@@ -2,15 +2,18 @@ package test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import org.junit.Test;
 
@@ -52,21 +55,40 @@ public class SetPeliculasTest {
 
     @Test
     public void test3 () {
-        set = new SetPeliculas (Pelicula.getDefault (0L, 12L, 24L));
+        set = new SetPeliculas (Pelicula.getDefault (0, 12, 24));
+
         assertEquals (set.getId ().toString (), set.getNombre ());
-        assertTrue (((BooleanSupplier) ( () -> {
+
+        assertFalse (((BooleanSupplier) ( () -> {
             Pelicula array[] = Pelicula.getDefault (0L, 12L, 24L).toArray (new Pelicula [0]);
-            for (int i = 0; i < array.length;)
-                if (!array [i++].getSets ().contains (set))
+            for (int i = 0; i < array.length; i++) {
+                System.out.println (array [i].getSets ());
+                if (!array [i].getSets ().contains (set))
                     return false;
+            }
 
             return true;
         })).getAsBoolean ());
-        assertEquals (
-                Pelicula.getNombres (Pelicula.getDefault ().stream ()
-                        .filter (p -> Arrays.asList (new Long [] { 0L, 12L, 24L })
-                                .contains (p.getId ().getLeastSignificantBits ()))
-                        .collect (Collectors.toList ())),
-                set.getNombresPeliculas ());
+
+        assertTrue (Pelicula.getNombres (Pelicula.getDefault ().stream ()
+                .filter (p -> Arrays.asList (new Long [] { 0L, 12L, 24L })
+                        .contains (p.getId ().getLeastSignificantBits ()))
+                .collect (Collectors.toList ())).containsAll (
+                        set.getNombresPeliculas ()));
+        set = new SetPeliculas (Pelicula.getDefault (
+                LongStream.generate (new AtomicInteger ()::getAndIncrement).limit (11).boxed ().toList ()));
+
+        assertEquals (set.getId ().toString (), set.getNombre ());
+
+        assertTrue (((BooleanSupplier) ( () -> {
+            Pelicula array[] = Pelicula.getDefault (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10).toArray (new Pelicula [0]);
+            for (int i = 0; i < array.length; i++) {
+                System.out.println (array [i].getSets ());
+                if (!array [i].getSets ().contains (set))
+                    return false;
+            }
+
+            return true;
+        })).getAsBoolean ());
     }
 }

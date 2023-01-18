@@ -44,7 +44,8 @@ import internals.bst.Filter;
 import internals.bst.Treeable;
 
 public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID {
-    private static final Calendar DEFAULT_FECHA = new Calendar.Builder ().setCalendarType ("gregorian").setDate (2003, 2, 21).build ();
+    private static final Calendar DEFAULT_FECHA = new Calendar.Builder ().setCalendarType ("gregorian")
+            .setDate (2003, 2, 21).build ();
 
     private UUID id;
     private Espectador espectador;
@@ -281,7 +282,7 @@ public class Entrada implements Comparable <Entrada>, Treeable <Entrada>, HasID 
                                         : String.format ("descuento del %d %%", c.get (i).getKey ().getDescuento ()),
                                 c.get (i).getValue ().intValue ()));
 
-                    return str.deleteCharAt (str.length () - 1).append ("%n\t}").toString ();
+                    return str.deleteCharAt (str.length () - 1).append ("\n\t}").toString ();
                 })).get (), this.precio.doubleValue (),
                 Double.isNaN (this.valoracion) || this.valoracion < 1 || this.valoracion > 10 ? "-"
                         : String.format ("%.1f", this.valoracion),

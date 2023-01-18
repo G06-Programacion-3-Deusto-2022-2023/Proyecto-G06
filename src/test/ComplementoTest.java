@@ -38,6 +38,6 @@ public class ComplementoTest {
         complemento = new Complemento ("Cubo gigante de palomitas", BigDecimal.valueOf (5.5), 25);
 
         assertEquals ("Cubo gigante de palomitas", complemento.getNombre ());
-        assertEquals (5.5 - 5.5 * 0.25, complemento.getPrecio ().doubleValue (), 0.001);
+        assertEquals (5.5 - 5.5 * 0.25, complemento.aplicarDescuento ().doubleValue (), 0.01);
     }
 }

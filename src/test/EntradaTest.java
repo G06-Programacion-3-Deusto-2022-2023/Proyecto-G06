@@ -32,6 +32,6 @@ public class EntradaTest {
         entrada.setComplementos (new HashMap <Complemento, BigInteger> (Collections
                 .singletonMap (new Complemento (BigDecimal.valueOf (5)), BigInteger.valueOf (2))));
 
-        assertEquals (Entrada.getDefaultPrecio ().doubleValue () + 5 * 2, entrada.getPrecio ().doubleValue (), 0.001);
+        assertEquals (Entrada.getDefaultPrecio ().doubleValue () + 5 * 2, entrada.total ().doubleValue (), 0.001);
     }
 }
