@@ -30,8 +30,14 @@ public final class Utils {
     }
 
     public static boolean isAmongstCallers (String str, StackTraceElement stt[]) {
-        for (int i = 3; i <= Utils.STACK_DEPTH && i < stt.length;)
-            if (stt [i++].getClassName ().equals (str))
+        for (int i = 1; i <= Utils.STACK_DEPTH && i < stt.length; i++)
+            if (!(stt [i].getClass ().isAnnotationPresent (org.junit.Test.class)
+                    || stt [i].getClass ().isAnnotationPresent (org.junit.Ignore.class)
+                    || stt [i].getClass ().isAnnotationPresent (org.junit.Before.class)
+                    || stt [i].getClass ().isAnnotationPresent (org.junit.BeforeClass.class)
+                    || stt [i].getClass ().isAnnotationPresent (org.junit.After.class)
+                    || stt [i].getClass ().isAnnotationPresent (org.junit.AfterClass.class))
+                    && stt [i].getClassName ().equals (str))
                 return true;
 
         return false;

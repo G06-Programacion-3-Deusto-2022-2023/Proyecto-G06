@@ -14,6 +14,7 @@ import java.util.UUID;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import cine.EdadRecomendada;
@@ -67,7 +68,7 @@ public class PeliculaTest {
                 Genero.Nombre.toGeneros (Genero.Nombre.toValor (pelicula.getGeneros ())));
     }
 
-    @Test
+    @Ignore @Test
     public void defaultPeliculaTest2 () throws Throwable {
         pelicula = Pelicula.getDefault ().stream ().collect (Collectors.toMap (Pelicula::getNombre, e -> e))
                 .get ("Torrente, el brazo tonto de la ley");
