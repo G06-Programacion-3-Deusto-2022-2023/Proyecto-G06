@@ -9,13 +9,16 @@ import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -24,9 +27,12 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
+import javax.swing.ListSelectionModel;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
@@ -35,9 +41,12 @@ import javax.swing.WindowConstants;
 import cine.Complemento;
 import cine.Entrada;
 import cine.Espectador;
+import cine.Pelicula;
 import internals.Pair;
 import internals.Triplet;
 import internals.Utils;
+import internals.swing.ComplementosListCellRenderer;
+import internals.swing.PeliculasListRenderer;
 
 public class HistorialWindow extends JFrame {
     public HistorialWindow (Espectador espectador) {
@@ -100,7 +109,8 @@ public class HistorialWindow extends JFrame {
                 JLabel fecha = new JLabel ();
                 JLabel duracion = new JLabel ();
                 JSplitPane complementosPane = new JSplitPane ();
-                complementosPane.setRightComponent (Box.createRigidArea (new Dimension (10, 10)));
+                Dimension dims;
+                complementosPane.setRightComponent (Box.createRigidArea (dims = new Dimension (200, 100)));
                 Component filler = Box.createRigidArea (new Dimension (10, 0));
                 JPanel s = ((Supplier <JPanel>) ( () -> {
                     JPanel t = new JPanel ();
@@ -136,15 +146,17 @@ public class HistorialWindow extends JFrame {
                     s.removeAll ();
                     s.add (new JLabel ("Complementos:"));
 
-                    if (historial [current [0]].getComplementos () == null
-                            || !historial [current [0]].getComplementos ().isEmpty ()) {
-                        complementosPane.setLeftComponent (((Supplier <JList <String>>) ( () -> {
-                            JList <String> l = new JList <String> (
-                                    historial [current [0]].getComplementos () == null ? new Vector <String> ()
+                    if (historial [current [0]].getComplementos () != null
+                            && !historial [current [0]].getComplementos ().isEmpty ()) {
+                        complementosPane.setLeftComponent (((Supplier <JScrollPane>) ( () -> {
+                            JList <Complemento> l = new JList <Complemento> (
+                                    historial [current [0]].getComplementos () == null ? new Vector <Complemento> ()
                                             : historial [current [0]].getComplementos ().keySet ().stream ()
-                                                    .map (Complemento::getNombre)
                                                     .collect (Collectors.toCollection (Vector::new)));
+                            l.setCellRenderer (new ComplementosListCellRenderer ());
+                            l.setVisibleRowCount (5);
 
+                            l.setSelectionMode (ListSelectionModel.SINGLE_SELECTION);
                             l.addListSelectionListener (e -> {
                                 if (historial [current [0]].getComplementos () == null
                                         || l.getSelectedValue () == null) {
@@ -153,15 +165,40 @@ public class HistorialWindow extends JFrame {
                                     return;
                                 }
 
-                                complementosPane.setRightComponent (((Supplier <JPanel>) ( () -> {
+                                complementosPane.setRightComponent (((Supplier <JScrollPane>) ( () -> {
                                     JPanel t = new JPanel ();
                                     t.setLayout (new BoxLayout (t, BoxLayout.Y_AXIS));
+                                    t.setBorder (BorderFactory.createEmptyBorder (10, 10, 10, 10));
+
+                                    JScrollPane sp = new JScrollPane (t,
+                                            ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED) {
+                                        @Override
+                                        public Dimension getSize () {
+                                            return this.getPreferredSize ();
+                                        }
+
+                                        @Override
+                                        public Dimension getPreferredSize () {
+                                            return dims;
+                                        }
+
+                                        @Override
+                                        public Dimension getMinimumSize () {
+                                            return this.getPreferredSize ();
+                                        }
+
+                                        @Override
+                                        public Dimension getMaximumSize () {
+                                            return this.getPreferredSize ();
+                                        }
+                                    };
 
                                     Pair <Complemento, BigInteger> c = ((Supplier <Pair <Complemento, BigInteger>>) ( () -> {
                                         Complemento ks[] = historial [current [0]].getComplementos ().keySet ()
                                                 .toArray (new Complemento [0]);
                                         for (int i = 0; i < ks.length; i++)
-                                            if (ks [i].getNombre ().equals (l.getSelectedValue ()))
+                                            if (ks [i].equals (l.getSelectedValue ()))
                                                 return new Pair <Complemento, BigInteger> (ks [i],
                                                         historial [current [0]].getComplementos ().get (ks [i]));
 
@@ -169,22 +206,45 @@ public class HistorialWindow extends JFrame {
                                     })).get ();
 
                                     if (c == null)
-                                        return t;
+                                        return sp;
 
                                     int d;
 
                                     t.add (new JLabel ("Nombre: " + c.x.getNombre ()));
                                     t.add (new JLabel (
-                                            "Precio: " + String.format ("%.2f", c.x.getPrecio ().doubleValue ())));
+                                            "Precio: " + String.format ("%.2f €",
+                                                    c.x.aplicarDescuento ().doubleValue ())));
                                     if ((d = c.x.getDescuento ()) != 0)
                                         t.add (new JLabel ("Descuento: " + d + "%"));
                                     t.add (new JLabel ("Unidades: " + c.y));
 
-                                    return t;
+                                    return sp;
                                 })).get ());
                             });
+                            l.setSelectedIndex (0);
 
-                            return l;
+                            return new JScrollPane (l, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                    ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED) {
+                                @Override
+                                public Dimension getSize () {
+                                    return this.getPreferredSize ();
+                                }
+
+                                @Override
+                                public Dimension getPreferredSize () {
+                                    return dims;
+                                }
+
+                                @Override
+                                public Dimension getMinimumSize () {
+                                    return this.getPreferredSize ();
+                                }
+
+                                @Override
+                                public Dimension getMaximumSize () {
+                                    return this.getPreferredSize ();
+                                }
+                            };
                         })).get ());
 
                         s.add (filler);
@@ -287,10 +347,16 @@ public class HistorialWindow extends JFrame {
                     JPanel r = new JPanel (new FlowLayout ());
                     r.setAlignmentX (Component.CENTER_ALIGNMENT);
 
-                    JList <String> list = new JList <String> (
-                            espectador.getHistorial ().isEmpty () ? new Vector <String> ()
-                                    : espectador.getHistorial ().stream ().map (e -> e.getPelicula ().getNombre ())
+                    JButton b = new JButton ("Valorar");
+
+                    JList <Pelicula> list = new JList <Pelicula> (
+                            espectador.getHistorial ().isEmpty () ? new Vector <Pelicula> ()
+                                    : espectador.getHistorial ().stream ().map (e -> e.getPelicula ())
                                             .collect (Collectors.toCollection (Vector::new)));
+                    list.setCellRenderer (new PeliculasListRenderer ());
+
+                    list.setSelectionMode (ListSelectionModel.SINGLE_SELECTION);
+                    list.addListSelectionListener (e -> b.setEnabled (list.getSelectedValue () != null));
 
                     JSpinner s = new JSpinner (new SpinnerNumberModel (5, 1, 10, 0.1));
                     s.setToolTipText ("La valoración de la película (un número del 1 al 10).");
@@ -300,19 +366,27 @@ public class HistorialWindow extends JFrame {
                     r.add (s, BorderLayout.LINE_END);
 
                     r.add (((Supplier <JButton>) ( () -> {
-                        JButton b = new JButton ("Valorar");
+                        b.setEnabled (false);
+
                         b.addActionListener (e -> {
                             if (list.getSelectedValue () == null)
                                 return;
 
-                            ((Supplier <Map <String, Entrada>>) ( () -> {
-                                Map <String, Entrada> map = new HashMap <String, Entrada> ();
+                            List <Entrada> le = ((Supplier <Map <Pelicula, List <Entrada>>>) ( () -> {
+                                Map <Pelicula, List <Entrada>> map = new HashMap <Pelicula, List <Entrada>> ();
 
-                                for (int i = 0; i < historial.length; i++)
-                                    map.put (historial [i].getPelicula ().getNombre (), historial [i]);
+                                for (int i[] = new int [1]; i [0] < historial.length; i [0]++)
+                                    map.putIfAbsent (historial [i [0]].getPelicula (),
+                                            Arrays.asList (historial).stream ()
+                                                    .filter (
+                                                            x -> x.getPelicula ()
+                                                                    .equals (historial [i [0]].getPelicula ()))
+                                                    .toList ());
 
                                 return map;
-                            })).get ().get (list.getSelectedValue ()).setValoracion ((Double) s.getValue ());
+                            })).get ().get (list.getSelectedValue ());
+                            for (int i = 0; i < le.size (); le.get (i++).setValoracion ((Double) s.getValue ()))
+                                ;
 
                             valoracion.setText (
                                     "Valoración personal: " + (Double.isNaN (historial [current [0]].getValoracion ())
@@ -320,6 +394,8 @@ public class HistorialWindow extends JFrame {
                                             : String.format ("%.1f", historial [current [0]].getValoracion ())));
 
                             valoracion.repaint ();
+
+                            list.setSelectedValue (null, false);
                         });
 
                         return b;

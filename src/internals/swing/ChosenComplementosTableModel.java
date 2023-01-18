@@ -61,8 +61,7 @@ public class ChosenComplementosTableModel extends DefaultTableModel {
             return;
         }
 
-        this.setValueAt (this.c.get (c).add (BigInteger.ONE),
-                this.dataVector.stream ().map (e -> e.get (0)).toList ().indexOf (c), 1);
+        this.setValueAt (this.c.get (c), this.dataVector.stream ().map (e -> e.get (0)).toList ().indexOf (c), 1);
     }
 
     public void update () {
