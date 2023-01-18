@@ -1,5 +1,6 @@
 package internals.swing;
 
+import java.awt.Font;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Vector;
@@ -8,8 +9,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import java.awt.Font;
 
 import javax.swing.JLabel;
 import javax.swing.table.DefaultTableModel;

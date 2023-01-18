@@ -52,7 +52,6 @@ import org.jdesktop.swingx.JXPanel;
 import cine.Complemento;
 import cine.Consumible;
 import cine.Entrada;
-import cine.Espectador;
 import internals.GestorBD;
 import internals.swing.ChosenComplementosTableModel;
 
